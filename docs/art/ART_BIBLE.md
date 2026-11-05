@@ -74,8 +74,21 @@ Cấu trúc sáng tối (value): ba dải trong thế giới. Tối (mực/bóng
 | LGT-02 | Fog độ sâu/độ cao ngả màu `paper` để tách lớp | review |
 | ENV-01 | Cấm glow/bloom (trừ khi chỉ bắt vào vật liệu signal), DOF, SSAO, SSR, SSIL, SDFGI, lens flare, chromatic aberration, vignette | có (WorldEnvironment/CameraAttributes) |
 | ENV-02 | Tonemap `linear` để màu palette ra đúng; không auto-exposure | có |
-| OUT-01 | Nét mực `ink` cho nhân vật, vật tương tác và landmark; độ dày cố định theo khoảng cách, không đổi giữa các asset | review |
-| GRN-01 | Hạt giấy là texture thế giới (triplanar) rất nhẹ, không phải lớp phủ màn hình | review |
+| OUT-01 | Nét mực `ink` cho nhân vật, vật tương tác và landmark; độ dày cố định theo khoảng cách, không đổi giữa các asset cùng hạng (xem WC-03) | review |
+| GRN-01 | Hạt giấy là texture thế giới (triplanar), nhẹ nhưng **thấy được** (xem WC-01), không phải lớp phủ màn hình | review |
+
+### 5a. Dấu hiệu khắc gỗ (phải thấy trên ảnh look-dev)
+
+Đúng hết §5 mới chỉ ra "toon 3D sạch". Thứ làm hình đọc như **tranh khắc gỗ in trên giấy** là bốn dấu hiệu dưới
+đây. Mỗi dấu hiệu phải nhìn thấy được trên ảnh look-dev (ảnh cận `lookdev_detail.png` nếu có, nếu không thì ảnh
+game ở 100%), không chỉ tồn tại trong tham số.
+
+| Mã | Dấu hiệu | Đủ khi | Không được thành |
+|---|---|---|---|
+| WC-01 | Hạt giấy dó | Sợi và đốm giấy world-space/triplanar, biên độ khoảng ±3–5% độ sáng, bật mặc định trên mọi vật liệu `env_*`; thấy ở ảnh cận, gần như biến mất ở ảnh cỡ điện thoại; đứng yên khi camera di chuyển | noise trắng đều, lớp phủ màn hình, vân ảnh chụp |
+| WC-02 | Vệt đục | Nét gạch song song mảnh màu `shadow_indigo` hoặc `ink`, **chỉ** trong dải bóng và sát ranh sáng/tối của mặt lớn (tường, mái, thân quầy, khối sàn cao), hướng cố định theo thế giới, thưa | gạch trên mặt sáng, trên vật nhỏ < 0.5 m, trên vùng sàn dành cho telegraph; hoa văn dày đặc (AI-03) |
+| WC-03 | Nét mực đọc được | Viền `ink` dày ≥ 2 px ở ảnh 1280×720 và vẫn thấy ở ảnh 640×360 trên nhân vật, vật tương tác, landmark; ba hạng độ dày: tương tác/nhân vật > landmark > prop thường; sàn không viền | nét mảnh mất khi thu nhỏ; độ dày khác nhau giữa hai asset cùng hạng |
+| WC-04 | Khối lệch tay | Đồ thủ công và kiến trúc nghiêng 2–5° (mái, quầy, cọc, chồng thùng), nhịp cọc không đều, cạnh trên không thẳng tắp tuyệt đối (§4) | hộp vuông vức đặt thẳng trục; méo vô lý (AI-08) |
 
 ## 6. Texture và ảnh 2D
 
@@ -144,4 +157,5 @@ dòng tương ứng trong manifest.
 ## 11. Định nghĩa "đạt"
 
 Không mục AI-xx nào, `check_art.py` xanh, rubric ≥ 16/20 và không tiêu chí nào 0 điểm, đọc được ở ảnh cỡ điện thoại
-và ảnh thang xám, và có dòng manifest đầy đủ.
+và ảnh thang xám, thấy được các dấu hiệu khắc gỗ §5a, và có dòng manifest đầy đủ. Khi file này còn `proposed`,
+tiêu chí 10 của rubric tối đa 1 điểm (chưa có mục tiêu đã duyệt để so).
