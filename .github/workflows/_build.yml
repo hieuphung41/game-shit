@@ -1,0 +1,73 @@
+name: build
+
+# Reusable export job: Web + Android for one channel (staging | production).
+# Runs inside the godot-ci image (Godot 4.7.2, export templates, Android SDK, JDK 17,
+# debug keystore). Uploads artifacts `web-<channel>` and `android-<channel>`.
+on:
+  workflow_call:
+    inputs:
+      channel:
+        type: string
+        required: true
+      version:
+        type: string
+        required: true
+    secrets:
+      ANDROID_KEYSTORE_BASE64:
+        required: false
+      ANDROID_KEYSTORE_ALIAS:
+        required: false
+      ANDROID_KEYSTORE_PASSWORD:
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    # Bind the job to the channel's environment so its branch/tag policy applies and
+    # environment secrets (Android release keystore on `production`) are readable here.
+    environment: ${{ inputs.channel }}
+    container:
+      image: barichello/godot-ci:4.7.2
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Point $HOME at the image's Godot templates and editor settings
+        run: |
+          mkdir -p "$HOME/.local/share/godot" "$HOME/.config"
+          ln -sfn /root/.local/share/godot/export_templates "$HOME/.local/share/godot/export_templates"
+          rm -rf "$HOME/.config/godot" && cp -r /root/.config/godot "$HOME/.config/godot"
+          godot --headless --version
+
+      - name: Write build info
+        run: tools/ci/write_build_info.sh "${{ inputs.channel }}" "${{ inputs.version }}" "$GITHUB_SHA"
+
+      - name: Import project
+        run: godot --headless --path game --import
+
+      - name: Export Web (${{ inputs.channel }})
+        run: tools/ci/export.sh web "${{ inputs.channel }}"
+
+      - name: Export Android (${{ inputs.channel }})
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_ALIAS: ${{ secrets.ANDROID_KEYSTORE_ALIAS }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: tools/ci/export.sh android "${{ inputs.channel }}"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: web-${{ inputs.channel }}
+          path: build/${{ inputs.channel }}/web/
+          if-no-files-found: error
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: android-${{ inputs.channel }}
+          path: build/${{ inputs.channel }}/android/
+          if-no-files-found: warn
+          retention-days: 14

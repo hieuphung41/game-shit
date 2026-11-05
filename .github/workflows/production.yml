@@ -1,0 +1,72 @@
+name: production
+
+# Push a tag vX.Y.Z (matching game/project.godot config/version, on main) →
+# ci → export (production channel) → deploy to the `production` environment
+# (only v*.*.* tags may deploy) = a GitHub Release with web zip + signed APK.
+# Android signing secrets live on the `production` environment:
+# ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_ALIAS, ANDROID_KEYSTORE_PASSWORD.
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: v
+        name: Tag must match project version and be on main
+        run: |
+          set -euo pipefail
+          version="$(tools/ci/version.sh)"
+          if [[ "${GITHUB_REF_NAME}" != "v${version}" ]]; then
+            echo "::error::tag ${GITHUB_REF_NAME} != v${version} from game/project.godot"; exit 1
+          fi
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main || { echo "::error::tag is not on main"; exit 1; }
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+  ci:
+    needs: guard
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    needs: [guard, ci]
+    uses: ./.github/workflows/_build.yml
+    with:
+      channel: production
+      version: ${{ needs.guard.outputs.version }}
+    secrets: inherit
+
+  deploy:
+    needs: [guard, build]
+    runs-on: ubuntu-24.04
+    environment:
+      name: production
+      url: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+      - name: Package
+        run: (cd dist/web-production && zip -qr "../../web-${GITHUB_REF_NAME}.zip" .)
+      - name: Publish GitHub Release
+        run: |
+          set -euo pipefail
+          files=("web-${GITHUB_REF_NAME}.zip")
+          for apk in dist/android-production/*.apk; do [[ -e "$apk" ]] && files+=("$apk"); done
+          gh release create "$GITHUB_REF_NAME" "${files[@]}" \
+            --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes \
+            --title "Khế Ước Tàn Vương ${GITHUB_REF_NAME}"

@@ -1,0 +1,65 @@
+name: staging
+
+# Every push to main: ci → export (staging channel) → deploy to the `staging`
+# environment = the rolling `staging` pre-release (web zip + debug APK).
+# Play it with `tools/run-staging.sh` (web) or `tools/run-staging.sh apk`.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: staging
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  version:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: v
+        run: echo "version=$(tools/ci/version.sh)-staging.${GITHUB_RUN_NUMBER}+${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: [ci, version]
+    uses: ./.github/workflows/_build.yml
+    with:
+      channel: staging
+      version: ${{ needs.version.outputs.version }}
+
+  deploy:
+    needs: [build, version]
+    runs-on: ubuntu-24.04
+    environment:
+      name: staging
+      url: ${{ github.server_url }}/${{ github.repository }}/releases/tag/staging
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+      - name: Package
+        run: |
+          set -euo pipefail
+          (cd dist/web-staging && zip -qr ../../web-staging.zip .)
+          ls -la web-staging.zip dist/android-staging || true
+      - name: Publish rolling `staging` pre-release
+        run: |
+          set -euo pipefail
+          gh release delete staging --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes 2>/dev/null || true
+          files=(web-staging.zip)
+          for apk in dist/android-staging/*.apk; do [[ -e "$apk" ]] && files+=("$apk"); done
+          gh release create staging "${files[@]}" \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+            --title "Staging $VERSION" \
+            --notes "Rolling staging build from \`main\` @ ${GITHUB_SHA::7} (run #${GITHUB_RUN_NUMBER}). Not for players. Run locally: \`tools/run-staging.sh\`."

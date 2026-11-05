@@ -1,6 +1,6 @@
 # Game-shit workflow
 
-This project uses a bounded, file-backed agent workflow. The normative rules are in the root [AGENTS.md](../../AGENTS.md), with the reusable task loop at [game-task-loop](../../.agents/skills/game-task-loop/SKILL.md) and the narrative review gate at [game-lore-review](../../.agents/skills/game-lore-review/SKILL.md).
+This project used a bounded, file-backed agent workflow. Since 2026-11-05 the normative task loop, the `game-task-loop` / `game-lore-review` skills and the task board live in the internal studio workspace (outside this repo); this file and `docs/workflow/tasks/` are kept as history. Repository facts for agents are in the root [AGENTS.md](../../AGENTS.md).
 
 ## Standard flow
 

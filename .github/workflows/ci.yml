@@ -1,0 +1,52 @@
+name: ci
+
+# Quality gate: docs links + Godot import, unit tests and smoke run.
+# Runs on every pull request; staging.yml and production.yml call it before building.
+on:
+  pull_request:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GODOT_VERSION: 4.7.2
+
+jobs:
+  docs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check relative Markdown links
+        run: tools/check.sh --docs-only
+
+  godot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Cache Godot ${{ env.GODOT_VERSION }}
+        id: cache-godot
+        uses: actions/cache@v6
+        with:
+          path: ~/.local/godot
+          key: godot-${{ env.GODOT_VERSION }}-linux-x86_64
+
+      - name: Install Godot ${{ env.GODOT_VERSION }} (verified SHA-512)
+        if: steps.cache-godot.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          base="https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable"
+          zip="Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          mkdir -p ~/.local/godot && cd ~/.local/godot
+          curl -sSLO "$base/$zip"
+          curl -sSL "$base/SHA512-SUMS.txt" | grep " $zip\$" | sha512sum -c -
+          unzip -q "$zip" && rm "$zip"
+          mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
+          touch _sc_   # self-contained: editor data stays next to the binary
+
+      - name: Import, unit tests, smoke run
+        run: GODOT_BIN="$HOME/.local/godot/godot" tools/check.sh --skip-docs

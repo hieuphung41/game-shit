@@ -1,0 +1,24 @@
+# Godot
+.godot/
+game/config/build_info.cfg
+*.translation
+
+# Builds / CI outputs
+build/
+*.apk
+*.aab
+*.keystore
+*.jks
+export_credentials.cfg
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# Agent-studio internals stay in the local game-studio repo, never here
+.studio/
+.agents/
+.claude/
+.codex/
