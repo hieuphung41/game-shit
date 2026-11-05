@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Quality gate shared by local runs, studio workers and CI.
-#   tools/check.sh              docs links + Godot import + unit tests + main-scene smoke run
+#   tools/check.sh              static (docs links, Art Bible lint, tool tests) + Godot import/tests/smoke run
 #   tools/check.sh --skip-docs  Godot part only
-#   tools/check.sh --docs-only  docs part only
+#   tools/check.sh --docs-only  static part only
 # Godot binary: $GODOT_BIN, else `godot` on PATH (Godot 4.7.2).
 set -euo pipefail
 
@@ -24,6 +24,12 @@ trap 'rm -rf "$LOG_DIR"' EXIT
 if [[ $RUN_DOCS == 1 ]]; then
   step "docs: relative links"
   python3 "$ROOT/tools/check_docs.py" "$ROOT/docs" "$ROOT/README.md" "$ROOT/AGENTS.md"
+
+  step "art: Art Bible rules (docs/art/ART_BIBLE.md)"
+  python3 "$ROOT/tools/check_art.py" "$ROOT"
+
+  step "tools: unit tests"
+  python3 -m unittest discover -s "$ROOT/tools/tests" -q
 fi
 
 if [[ $RUN_GODOT == 1 ]]; then

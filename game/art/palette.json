@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "status": "proposed",
+  "style": "khac-go-son-bac-mau",
+  "doc": "docs/art/ART_BIBLE.md",
+  "rules": {
+    "delta_e_tolerance": 8.0,
+    "min_in_palette_ratio": 0.97,
+    "max_unique_colors": 48,
+    "max_texture_size": 1024
+  },
+  "lanes": {
+    "env": {
+      "ink": "#1F1A17",
+      "shadow_indigo": "#2C3142",
+      "stone_dark": "#4B4945",
+      "stone": "#7A756C",
+      "paper": "#D8CDB4",
+      "paper_light": "#ECE3CF",
+      "wood_dark": "#4A3426",
+      "wood": "#7B5B40",
+      "wood_light": "#A98A63",
+      "rope": "#B39C74",
+      "iron": "#3E4246",
+      "water_deep": "#1E3836",
+      "water": "#2E524D",
+      "foam": "#8EA69B",
+      "sea_bluegrey": "#4E6570",
+      "canvas_red_dark": "#55221D",
+      "canvas_red": "#7B2F27",
+      "ochre_dark": "#6E5A2A",
+      "ochre": "#A4873B",
+      "bronze": "#7A5C3A",
+      "verdigris": "#5D7E6D",
+      "cloth_indigo": "#39496A",
+      "hemp": "#BBA47F",
+      "skin_dark": "#6B4733",
+      "skin_mid": "#9C6E4F",
+      "skin_light": "#C99B78"
+    },
+    "light": {
+      "lamp_warm": "#E9C27F",
+      "lamp_cold": "#9CC6D9"
+    },
+    "signal": {
+      "danger": "#E5482D",
+      "beacon_dim": "#2F6E8E",
+      "beacon": "#52B6EA",
+      "objective": "#F2C14E",
+      "interact": "#F4EBD8"
+    },
+    "ui": {
+      "ui_paper": "#E9E0CB",
+      "ui_ink": "#221D19",
+      "ui_stamp_red": "#A3362A",
+      "ui_muted": "#8A8173"
+    },
+    "rarity": {
+      "r1_trang": "#D6D2C8",
+      "r2_xanh_la": "#6F9E5B",
+      "r3_xanh_duong": "#4C7DBE",
+      "r4_tim": "#8B5CB4",
+      "r5_vang": "#D1A63A",
+      "r6_do": "#C1432F"
+    }
+  },
+  "lane_usage": {
+    "env": "mọi vật liệu/texture thế giới; không phát sáng",
+    "light": "đèn thực tế trong cảnh (đèn treo, bếp); được emission",
+    "signal": "chỉ gameplay: telegraph, beacon/extract, objective, highlight tương tác; được emission",
+    "ui": "giao diện, thẻ, con dấu",
+    "rarity": "chỉ trên thẻ/UI item, không bao giờ trên vật liệu thế giới"
+  },
+  "zones": {
+    "A": ["sea_bluegrey", "wood", "rope", "paper", "beacon"],
+    "B": ["canvas_red", "canvas_red_dark", "wood_dark", "stone", "lamp_warm"],
+    "C": ["ochre", "ochre_dark", "iron", "rope", "lamp_warm"],
+    "D": ["water_deep", "water", "foam", "iron", "wood_dark"],
+    "E": ["bronze", "verdigris", "stone_dark", "stone", "lamp_cold"]
+  }
+}

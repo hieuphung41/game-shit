@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "art_bible": "docs/art/ART_BIBLE.md",
+  "_fields": {
+    "id": "stable id, kebab-case",
+    "path": "repo path of the file under game/assets/, or a glob for a third-party pack folder",
+    "role": "gameplay role",
+    "lane": "palette lane(s) the texture may use: env | light | signal | ui | rarity",
+    "status": "placeholder | in_review | approved",
+    "source.kind": "authored | third_party | generated",
+    "source.url_or_tool": "origin URL, or tool/model for generated",
+    "source.license": "e.g. CC0-1.0, QAL-1.0, project",
+    "source.prompt_card": "docs/art/prompts/<id>.md (required for generated)",
+    "source.normalized": "true once quantized/cleaned per ART_BIBLE §8 (required for generated)",
+    "verification.rubric_score": "0-20 from docs/art/templates/review-rubric.md",
+    "verification.approved_by": "reviewer agent or person"
+  },
+  "assets": []
+}

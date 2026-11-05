@@ -8,11 +8,13 @@ Mobile 2.5D action-extraction game, offline-first. This repo holds the **design 
 | Path | What |
 |---|---|
 | `docs/` | Design corpus. Canon order: `docs/story/MAIN_STORY.md` wins over every other story doc. |
+| `docs/art/` | **Art Bible** (visual contract), templates (asset brief, prompt card, review rubric), asset manifest. |
+| `game/art/` | `palette.json` (the only colours), material library and shaders (`game/art/shaders/`). |
 | `game/` | Godot 4.7.2 project (`project.godot`). GDScript only, statically typed. |
 | `game/src/` | Game code. `autoload/app_env.gd` = build channel + per-environment config. |
 | `game/config/env/{dev,staging,production}.cfg` | Per-environment flags (debug menu, env badge, save namespace). |
 | `game/tests/` | Headless tests: `unit/test_*.gd`, runner `run_tests.gd`. |
-| `tools/` | `check.sh` (quality gate), `check_docs.py`, `run-staging.sh`, `serve_web.py`, `ci/*`. |
+| `tools/` | `check.sh` (quality gate), `check_docs.py`, `check_art.py` (Art Bible lint), `run-staging.sh`, `serve_web.py`, `ci/*`. |
 | `.github/workflows/` | `ci.yml` (PR gate), `staging.yml` (main → staging), `production.yml` (tag → production), `_build.yml` (export). |
 
 ## Engine rules
@@ -23,6 +25,14 @@ Mobile 2.5D action-extraction game, offline-first. This repo holds the **design 
 - Write to `user://` only (`AppEnv.save_dir()` namespaces saves per channel); `res://` is read-only in exports.
 - Commit `*.uid` and `*.import` files; never commit `.godot/`, `build/`, keystores or `game/config/build_info.cfg`.
 - New non-resource data files must be covered by the export presets' `include_filter` (currently `config/*.cfg`).
+
+## Visual rules (anything that is seen on screen)
+
+- Follow `docs/art/ART_BIBLE.md`. Its banned list (AI-01…AI-12) is an automatic fail; `tools/check_art.py` enforces
+  the measurable part (matte materials, no specular/metallic, palette-only colours, no cinematic post, PNG rules,
+  provenance in `docs/art/asset-manifest.json`, untouched LOCK blocks in prompt cards).
+- Every asset file under `game/assets/` needs a manifest entry; generated images need a prompt card and normalisation.
+- No text baked into images; no living artist/studio names in prompts or briefs.
 
 ## Environments
 

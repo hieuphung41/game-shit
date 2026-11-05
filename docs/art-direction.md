@@ -4,6 +4,8 @@
 
 **Nguồn ràng buộc:** [Cảng Hắc Thuế](maps/black-tax-port.md), [vertical slice](vertical-slice.md), [inventory và loadout](systems/inventory-and-loadout.md), [thiết kế item](story/ITEM_NARRATIVE_DESIGN.md), [Story Bible](story/STORY_BIBLE.md). Khi tài liệu này khác các luật hệ thống hoặc story đã có, tài liệu nguồn được ưu tiên.
 
+**Thông số đo được, palette và luật chống "vẻ AI":** [Art Bible](art/ART_BIBLE.md) (bắt buộc cho mọi asset/agent làm hình).
+
 ## 1. Lời hứa trình bày
 
 Hình ảnh cần làm rõ cảm giác của một Người Thu Hồi nghèo nhưng chủ động: đi vào một vùng bị quản thúc, nhìn được lối về, nhận ra vật nào đáng đổi chỗ trong ba lô, rồi tự chọn lúc rút. Cảng không phải một kho tàng fantasy vô chủ; dấu thuế, vết niêm, hàng cứu trợ và những lối đi bị kiểm soát phải khiến quyền lực hiện hữu ngay cả khi người chơi không mở lore.

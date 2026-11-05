@@ -22,3 +22,7 @@ export_credentials.cfg
 .agents/
 .claude/
 .codex/
+
+# Python
+__pycache__/
+*.pyc
