@@ -14,6 +14,9 @@ không phải một khu playable.
   không nhân màu vật liệu lần hai hoặc nhân với màu đèn;
   màu đèn chỉ giữ hướng và shadow map. Mặt tối, kể cả bóng trên sàn, trả `shadow_indigo` trước khi
   vệt đục được đặt lên. Vì vậy `lamp_warm` chỉ là sắc rất nhẹ ở vật liệu đèn, không nhuộm gỗ hay đá.
+  Trong `light()` của GL Compatibility, `shadow_indigo` và `hatch_gouge_colour` đến dưới dạng sRGB thô còn
+  `ALBEDO` là tuyến tính; shader bắt buộc gọi `srgb_to_linear()` cho cả hai trước khi chia cho `ALBEDO`.
+  Không đổi `vec3` sang `vec4` để sửa lỗi này: cách đó không tuyến tính hoá màu và làm bóng sàn trôi về xám.
   world-space/triplanar. Mặc định của mọi `env_*` là `paper_grain_enabled = true`, strength `0.04`
   (dao động sáng ±4%), fibre scale `14` và speckle density `7`: chỉ thấy rõ ở ảnh cận, không là lớp phủ màn hình.
 - Vệt đục là nét song song đứt đoạn theo trục thế giới, chỉ shader đặt vào dải bóng. Cargo 2×2 và thân quầy dùng
