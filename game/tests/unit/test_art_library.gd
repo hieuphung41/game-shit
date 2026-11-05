@@ -1,7 +1,7 @@
 extends RefCounted
 ## Library resources must keep the matte contract when later scenes reuse them.
 
-const MATERIAL_PATHS := [
+const ENV_MATERIAL_PATHS := [
 	"res://art/materials/env_wood.tres",
 	"res://art/materials/env_wood_dark.tres",
 	"res://art/materials/env_stone.tres",
@@ -9,23 +9,37 @@ const MATERIAL_PATHS := [
 	"res://art/materials/env_iron.tres",
 	"res://art/materials/env_rope.tres",
 	"res://art/materials/env_paper.tres",
+]
+const SIGNAL_AND_WET_MATERIAL_PATHS := [
 	"res://art/materials/water_wet.tres",
 	"res://art/materials/signal_beacon.tres",
 	"res://art/materials/signal_danger.tres",
 	"res://art/materials/light_lamp_warm.tres",
 ]
-const PRIORITY_OUTLINE_WIDTH := 0.04
+const GRAIN_STRENGTH := 0.04
+const PROP_OUTLINE_WIDTH := 0.035
+const LANDMARK_OUTLINE_WIDTH := 0.045
+const PRIORITY_OUTLINE_WIDTH := 0.055
 
 
 func test_art_material_library_is_matte(t) -> bool:
-	for path: String in MATERIAL_PATHS:
-		var material := load(path) as StandardMaterial3D
+	for path: String in ENV_MATERIAL_PATHS:
+		var material := load(path) as ShaderMaterial
 		if not t.ok(material != null, "%s loads" % path):
 			continue
-		t.eq(material.metallic, 0.0, "%s has no metallic" % path)
-		t.ok(material.roughness >= 0.85 or path.ends_with("water_wet.tres"), "%s is matte" % path)
+		t.ok(material.shader != null, "%s uses the matte toon shader" % path)
+		t.eq(material.get_shader_parameter("paper_grain_enabled"), true, "%s enables paper grain" % path)
+		t.eq(material.get_shader_parameter("paper_grain_strength"), GRAIN_STRENGTH, "%s keeps visible 4 percent grain" % path)
+		t.ok(material.get_shader_parameter("hatch_enabled") is bool, "%s exposes the hatch toggle" % path)
+		t.ok(float(material.get_shader_parameter("hatch_density")) >= 2.0, "%s exposes hatch density" % path)
+	for path: String in SIGNAL_AND_WET_MATERIAL_PATHS:
+		var special_material := load(path) as StandardMaterial3D
+		if not t.ok(special_material != null, "%s loads" % path):
+			continue
+		t.eq(special_material.metallic, 0.0, "%s has no metallic" % path)
+		t.ok(special_material.roughness >= 0.85 or path.ends_with("water_wet.tres"), "%s is matte" % path)
 		var expected_specular := BaseMaterial3D.SPECULAR_TOON if path.ends_with("water_wet.tres") else BaseMaterial3D.SPECULAR_DISABLED
-		t.eq(material.specular_mode, expected_specular, "%s has allowed specular mode" % path)
+		t.eq(special_material.specular_mode, expected_specular, "%s has allowed specular mode" % path)
 	return true
 
 
@@ -33,6 +47,22 @@ func test_art_shaders_load_from_library(t) -> bool:
 	for path: String in ["res://art/shaders/toon_matte.gdshader", "res://art/shaders/ink_outline.gdshader"]:
 		var shader := load(path) as Shader
 		t.ok(shader != null, "%s loads" % path)
+	return true
+
+
+func test_toon_shader_exposes_triplanar_paper_and_shadow_hatch(t) -> bool:
+	var shader := load("res://art/shaders/toon_matte.gdshader") as Shader
+	if not t.ok(shader != null, "toon shader loads for woodcut parameters"):
+		return true
+	var code := shader.code
+	t.ok("triplanar_paper" in code, "paper grain is triplanar and world-space")
+	t.ok("paper_fiber_scale" in code and "paper_speckle_density" in code, "paper grain has fibre and speckle controls")
+	t.ok("hatch_enabled" in code and "hatch_density" in code and "hatch_line_width" in code and "hatch_gouge_colour" in code, "hatch can be enabled, coloured, and tuned per material")
+	t.ok("along * 0.82" in code, "hatch uses long broken gouge segments instead of grain-sized dashes")
+	t.ok("(1.0 - lit)" in code, "hatch is limited to the shadow band")
+	var outline_shader := load("res://art/shaders/ink_outline.gdshader") as Shader
+	if outline_shader != null:
+		t.ok("hint_range(0.03, 0.07)" in outline_shader.code, "ink width accepts the three outline ranks")
 	return true
 
 
@@ -62,16 +92,17 @@ func test_lookdev_priority_props_use_toon_and_ink_pass(t) -> bool:
 	var lookdev := scene.instantiate()
 	t.tree.root.add_child(lookdev)
 	await t.tree.process_frame
-	var target_paths := [
-		"Cargo2x2",
-		"TaxStall/Counter",
-		"TaxStall/SlopedRoof",
-		"Beacon/Stem",
-		"Beacon/Signal",
-		"DispatchTable/Table",
-		"RetrieverStandin",
-	]
-	for path: String in target_paths:
+	var outline_widths := {
+		"Cargo2x2": PRIORITY_OUTLINE_WIDTH,
+		"TaxStall/Counter": PRIORITY_OUTLINE_WIDTH,
+		"TaxStall/SlopedRoof": LANDMARK_OUTLINE_WIDTH,
+		"Beacon/Stem": LANDMARK_OUTLINE_WIDTH,
+		"Beacon/Signal": PRIORITY_OUTLINE_WIDTH,
+		"DispatchTable/Table": PRIORITY_OUTLINE_WIDTH,
+		"RetrieverStandin": PRIORITY_OUTLINE_WIDTH,
+		"Crate": PROP_OUTLINE_WIDTH,
+	}
+	for path: String in outline_widths:
 		var mesh := lookdev.get_node_or_null(path) as MeshInstance3D
 		if not t.ok(mesh != null, "%s exists" % path):
 			continue
@@ -82,7 +113,34 @@ func test_lookdev_priority_props_use_toon_and_ink_pass(t) -> bool:
 		var outline := material.next_pass as ShaderMaterial
 		if not t.ok(outline != null, "%s has ink next pass" % path):
 			continue
-		t.eq(outline.get_shader_parameter("outline_width"), PRIORITY_OUTLINE_WIDTH, "%s shares the phone-readable ink width" % path)
+		t.eq(outline.get_shader_parameter("outline_width"), outline_widths[path], "%s uses its silhouette outline rank" % path)
+		t.eq(material.get_shader_parameter("paper_grain_enabled"), true, "%s keeps world-space paper grain enabled" % path)
+	for path: String in ["Cargo2x2", "TaxStall/Counter", "TaxStall/SlopedRoof"]:
+		var hatched_mesh := lookdev.get_node_or_null(path) as MeshInstance3D
+		var hatched_material := hatched_mesh.material_override as ShaderMaterial
+		t.eq(hatched_material.get_shader_parameter("hatch_enabled"), true, "%s enables sparse shadow hatching" % path)
+		t.ok(float(hatched_material.get_shader_parameter("hatch_density")) >= 2.0, "%s has a material hatch density" % path)
+	for path: String in ["Cargo2x2", "TaxStall/Counter"]:
+		var repair_mesh := lookdev.get_node_or_null(path) as MeshInstance3D
+		var repair_material := repair_mesh.material_override as ShaderMaterial
+		t.ok(float(repair_material.get_shader_parameter("hatch_density")) <= 2.7, "%s spaces gouge rows far enough apart to read separately" % path)
+		t.ok(float(repair_material.get_shader_parameter("hatch_line_width")) >= 0.20, "%s uses wide phone-readable gouge strokes" % path)
+		t.ok(float(repair_material.get_shader_parameter("hatch_strength")) >= 0.90, "%s carries gouge strokes to ink contrast in shadow" % path)
+	var dark_cargo := lookdev.get_node_or_null("Cargo2x2") as MeshInstance3D
+	if dark_cargo != null:
+		var dark_cargo_material := dark_cargo.material_override as ShaderMaterial
+		var paper_light := Color(0.92549, 0.890196, 0.811765, 1)
+		t.eq(dark_cargo_material.get_shader_parameter("hatch_gouge_colour"), paper_light, "Cargo2x2 cuts paper-light relief through its dark shadow band")
+	var wood_counter := lookdev.get_node_or_null("TaxStall/Counter") as MeshInstance3D
+	if wood_counter != null:
+		var wood_counter_material := wood_counter.material_override as ShaderMaterial
+		var ink := Color(0.121569, 0.101961, 0.090196, 1)
+		t.eq(wood_counter_material.get_shader_parameter("hatch_gouge_colour"), ink, "TaxStall counter keeps ink gouges on lighter wood")
+	var floor := lookdev.get_node_or_null("Floor") as MeshInstance3D
+	if floor != null:
+		var floor_material := floor.material_override as ShaderMaterial
+		t.ok(floor_material.next_pass == null, "telegraph floor has no ink outline")
+		t.eq(floor_material.get_shader_parameter("hatch_enabled"), false, "telegraph floor has no hatch")
 	lookdev.queue_free()
 	await t.tree.process_frame
 	return true

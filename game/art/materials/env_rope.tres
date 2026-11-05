@@ -1,9 +1,16 @@
-[gd_resource type="StandardMaterial3D" format=3]
+[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+
+[ext_resource type="Shader" path="res://art/shaders/toon_matte.gdshader" id="1_toon"]
 
 [resource]
 resource_name = "env_rope"
-albedo_color = Color(0.701961, 0.611765, 0.454902, 1)
-metallic = 0.0
-roughness = 0.97
-specular_mode = 2
-diffuse_mode = 3
+shader = ExtResource("1_toon")
+shader_parameter/albedo_color = Color(0.701961, 0.611765, 0.454902, 1)
+shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
+shader_parameter/paper_grain_enabled = true
+shader_parameter/paper_grain_strength = 0.04
+shader_parameter/paper_fiber_scale = 14.0
+shader_parameter/paper_speckle_density = 7.0
+shader_parameter/hatch_enabled = false
+shader_parameter/hatch_density = 5.0
+shader_parameter/hatch_strength = 0.34

@@ -1,4 +1,4 @@
-[gd_scene load_steps=41 format=3]
+[gd_scene load_steps=49 format=3]
 
 [ext_resource type="Script" path="res://src/lookdev/lookdev.gd" id="1_script"]
 [ext_resource type="Environment" path="res://art/env_default.tres" id="2_environment"]
@@ -35,6 +35,12 @@ size = Vector3(3.1, 0.18, 1.75)
 top_radius = 0.16
 bottom_radius = 0.21
 height = 2.8
+radial_segments = 8
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_post_short"]
+top_radius = 0.16
+bottom_radius = 0.21
+height = 2.1
 radial_segments = 8
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_beacon"]
@@ -80,10 +86,22 @@ radial_segments = 8
 size = Vector3(2.46, 0.14, 0.035)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ink_outline"]
-resource_name = "ink_outline_040"
+resource_name = "ink_outline_prop_035"
 shader = ExtResource("15_ink")
 shader_parameter/ink = Color(0.121569, 0.101961, 0.090196, 1)
-shader_parameter/outline_width = 0.04
+shader_parameter/outline_width = 0.035
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ink_landmark"]
+resource_name = "ink_outline_landmark_045"
+shader = ExtResource("15_ink")
+shader_parameter/ink = Color(0.121569, 0.101961, 0.090196, 1)
+shader_parameter/outline_width = 0.045
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ink_priority"]
+resource_name = "ink_outline_priority_055"
+shader = ExtResource("15_ink")
+shader_parameter/ink = Color(0.121569, 0.101961, 0.090196, 1)
+shader_parameter/outline_width = 0.055
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_toon_wood"]
 resource_name = "toon_env_wood"
@@ -91,7 +109,9 @@ next_pass = SubResource("ShaderMaterial_ink_outline")
 shader = ExtResource("14_toon")
 shader_parameter/albedo_color = Color(0.482353, 0.356863, 0.25098, 1)
 shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
-shader_parameter/paper_grain_enabled = false
+shader_parameter/paper_grain_enabled = true
+shader_parameter/paper_grain_strength = 0.04
+shader_parameter/hatch_enabled = false
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_toon_wood_dark"]
 resource_name = "toon_env_wood_dark"
@@ -99,14 +119,17 @@ next_pass = SubResource("ShaderMaterial_ink_outline")
 shader = ExtResource("14_toon")
 shader_parameter/albedo_color = Color(0.290196, 0.203922, 0.14902, 1)
 shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
-shader_parameter/paper_grain_enabled = false
+shader_parameter/paper_grain_enabled = true
+shader_parameter/paper_grain_strength = 0.04
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_toon_stone"]
 resource_name = "toon_env_stone"
 shader = ExtResource("14_toon")
 shader_parameter/albedo_color = Color(0.478431, 0.458824, 0.423529, 1)
 shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
-shader_parameter/paper_grain_enabled = false
+shader_parameter/paper_grain_enabled = true
+shader_parameter/paper_grain_strength = 0.04
+shader_parameter/hatch_enabled = false
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_toon_canvas"]
 resource_name = "toon_env_canvas_red"
@@ -114,15 +137,17 @@ next_pass = SubResource("ShaderMaterial_ink_outline")
 shader = ExtResource("14_toon")
 shader_parameter/albedo_color = Color(0.482353, 0.184314, 0.152941, 1)
 shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
-shader_parameter/paper_grain_enabled = false
+shader_parameter/paper_grain_enabled = true
+shader_parameter/paper_grain_strength = 0.04
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_toon_iron"]
 resource_name = "toon_env_iron"
-next_pass = SubResource("ShaderMaterial_ink_outline")
+next_pass = SubResource("ShaderMaterial_ink_landmark")
 shader = ExtResource("14_toon")
 shader_parameter/albedo_color = Color(0.243137, 0.258824, 0.27451, 1)
 shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
-shader_parameter/paper_grain_enabled = false
+shader_parameter/paper_grain_enabled = true
+shader_parameter/paper_grain_strength = 0.04
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_toon_rope"]
 resource_name = "toon_env_rope"
@@ -130,7 +155,8 @@ next_pass = SubResource("ShaderMaterial_ink_outline")
 shader = ExtResource("14_toon")
 shader_parameter/albedo_color = Color(0.701961, 0.611765, 0.454902, 1)
 shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
-shader_parameter/paper_grain_enabled = false
+shader_parameter/paper_grain_enabled = true
+shader_parameter/paper_grain_strength = 0.04
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_toon_paper"]
 resource_name = "toon_env_paper"
@@ -138,15 +164,17 @@ next_pass = SubResource("ShaderMaterial_ink_outline")
 shader = ExtResource("14_toon")
 shader_parameter/albedo_color = Color(0.847059, 0.803922, 0.705882, 1)
 shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
-shader_parameter/paper_grain_enabled = false
+shader_parameter/paper_grain_enabled = true
+shader_parameter/paper_grain_strength = 0.04
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_toon_beacon"]
 resource_name = "toon_signal_beacon"
-next_pass = SubResource("ShaderMaterial_ink_outline")
+next_pass = SubResource("ShaderMaterial_ink_priority")
 shader = ExtResource("14_toon")
 shader_parameter/albedo_color = Color(0.321569, 0.713725, 0.917647, 1)
 shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
-shader_parameter/paper_grain_enabled = false
+shader_parameter/paper_grain_enabled = true
+shader_parameter/paper_grain_strength = 0.04
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_toon_danger"]
 resource_name = "toon_signal_danger"
@@ -154,7 +182,8 @@ next_pass = SubResource("ShaderMaterial_ink_outline")
 shader = ExtResource("14_toon")
 shader_parameter/albedo_color = Color(0.898039, 0.282353, 0.176471, 1)
 shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
-shader_parameter/paper_grain_enabled = false
+shader_parameter/paper_grain_enabled = true
+shader_parameter/paper_grain_strength = 0.04
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_toon_lamp"]
 resource_name = "toon_light_lamp_warm"
@@ -162,7 +191,66 @@ next_pass = SubResource("ShaderMaterial_ink_outline")
 shader = ExtResource("14_toon")
 shader_parameter/albedo_color = Color(0.913725, 0.760784, 0.498039, 1)
 shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
-shader_parameter/paper_grain_enabled = false
+shader_parameter/paper_grain_enabled = true
+shader_parameter/paper_grain_strength = 0.04
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_toon_wood_hatch_priority"]
+resource_name = "toon_env_wood_hatch_priority"
+next_pass = SubResource("ShaderMaterial_ink_priority")
+shader = ExtResource("14_toon")
+shader_parameter/albedo_color = Color(0.482353, 0.356863, 0.25098, 1)
+shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
+shader_parameter/paper_grain_enabled = true
+shader_parameter/paper_grain_strength = 0.04
+shader_parameter/hatch_enabled = true
+shader_parameter/hatch_density = 2.6
+shader_parameter/hatch_line_width = 0.22
+shader_parameter/hatch_strength = 0.9
+shader_parameter/hatch_gouge_colour = Color(0.121569, 0.101961, 0.090196, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_toon_wood_dark_hatch_priority"]
+resource_name = "toon_env_wood_dark_hatch_priority"
+next_pass = SubResource("ShaderMaterial_ink_priority")
+shader = ExtResource("14_toon")
+shader_parameter/albedo_color = Color(0.290196, 0.203922, 0.14902, 1)
+shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
+shader_parameter/paper_grain_enabled = true
+shader_parameter/paper_grain_strength = 0.04
+shader_parameter/hatch_enabled = true
+shader_parameter/hatch_density = 2.6
+shader_parameter/hatch_line_width = 0.22
+shader_parameter/hatch_strength = 0.9
+shader_parameter/hatch_gouge_colour = Color(0.92549, 0.890196, 0.811765, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_toon_canvas_hatch_landmark"]
+resource_name = "toon_env_canvas_hatch_landmark"
+next_pass = SubResource("ShaderMaterial_ink_landmark")
+shader = ExtResource("14_toon")
+shader_parameter/albedo_color = Color(0.482353, 0.184314, 0.152941, 1)
+shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
+shader_parameter/paper_grain_enabled = true
+shader_parameter/paper_grain_strength = 0.04
+shader_parameter/hatch_enabled = true
+shader_parameter/hatch_density = 5.5
+shader_parameter/hatch_strength = 0.31
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_toon_canvas_priority"]
+resource_name = "toon_env_canvas_priority"
+next_pass = SubResource("ShaderMaterial_ink_priority")
+shader = ExtResource("14_toon")
+shader_parameter/albedo_color = Color(0.482353, 0.184314, 0.152941, 1)
+shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
+shader_parameter/paper_grain_enabled = true
+shader_parameter/paper_grain_strength = 0.04
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_toon_wood_priority"]
+resource_name = "toon_env_wood_priority"
+next_pass = SubResource("ShaderMaterial_ink_priority")
+shader = ExtResource("14_toon")
+shader_parameter/albedo_color = Color(0.482353, 0.356863, 0.25098, 1)
+shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
+shader_parameter/paper_grain_enabled = true
+shader_parameter/paper_grain_strength = 0.04
 
 [node name="LookDev" type="Node3D"]
 script = ExtResource("1_script")
@@ -186,6 +274,14 @@ size = 14.0
 near = 0.1
 far = 60.0
 
+[node name="DetailCamera3D" type="Camera3D" parent="."]
+position = Vector3(5, 5, 5)
+rotation_degrees = Vector3(-30, 45, 0)
+projection = 1
+size = 5.0
+near = 0.1
+far = 60.0
+
 [node name="Floor" type="MeshInstance3D" parent="."]
 position = Vector3(0, -0.08, -1.6)
 mesh = SubResource("BoxMesh_floor")
@@ -200,7 +296,7 @@ material_override = ExtResource("10_water")
 position = Vector3(-1.8, 0.675, -1.5)
 rotation_degrees = Vector3(0, -4, 0)
 mesh = SubResource("BoxMesh_cargo")
-material_override = SubResource("ShaderMaterial_toon_wood_dark")
+material_override = SubResource("ShaderMaterial_toon_wood_dark_hatch_priority")
 
 [node name="CargoTie" type="MeshInstance3D" parent="."]
 position = Vector3(-0.79, 0.7, -1.5)
@@ -216,7 +312,13 @@ material_override = SubResource("ShaderMaterial_toon_paper")
 
 [node name="Crate" type="MeshInstance3D" parent="."]
 position = Vector3(0.25, 0.55, -1.75)
-rotation_degrees = Vector3(0, 3, 0)
+rotation_degrees = Vector3(2, 3, -2)
+mesh = SubResource("BoxMesh_crate")
+material_override = SubResource("ShaderMaterial_toon_wood")
+
+[node name="CrateTop" type="MeshInstance3D" parent="."]
+position = Vector3(0.38, 1.62, -1.68)
+rotation_degrees = Vector3(-3, -2, 4)
 mesh = SubResource("BoxMesh_crate")
 material_override = SubResource("ShaderMaterial_toon_wood")
 
@@ -227,13 +329,13 @@ rotation_degrees = Vector3(0, 3, 0)
 [node name="Counter" type="MeshInstance3D" parent="TaxStall"]
 position = Vector3(0, 0.55, 0)
 mesh = SubResource("BoxMesh_counter")
-material_override = SubResource("ShaderMaterial_toon_wood")
+material_override = SubResource("ShaderMaterial_toon_wood_hatch_priority")
 
 [node name="SlopedRoof" type="MeshInstance3D" parent="TaxStall"]
 position = Vector3(0, 1.72, 0)
 rotation_degrees = Vector3(0, 0, 5)
 mesh = SubResource("BoxMesh_roof")
-material_override = SubResource("ShaderMaterial_toon_canvas")
+material_override = SubResource("ShaderMaterial_toon_canvas_hatch_landmark")
 
 [node name="WaterlineDragMark" type="MeshInstance3D" parent="TaxStall"]
 position = Vector3(0, 0.30, 0.38)
@@ -244,6 +346,18 @@ material_override = SubResource("ShaderMaterial_toon_wood_dark")
 position = Vector3(-4.25, 1.4, -0.55)
 rotation_degrees = Vector3(0, 0, -3)
 mesh = SubResource("CylinderMesh_post")
+material_override = SubResource("ShaderMaterial_toon_wood")
+
+[node name="MooringPostTall" type="MeshInstance3D" parent="."]
+position = Vector3(-3.52, 1.63, -0.72)
+rotation_degrees = Vector3(2, 0, 4)
+mesh = SubResource("CylinderMesh_post")
+material_override = SubResource("ShaderMaterial_toon_wood")
+
+[node name="MooringPostShort" type="MeshInstance3D" parent="."]
+position = Vector3(-4.86, 1.18, -0.92)
+rotation_degrees = Vector3(-2, 0, -3)
+mesh = SubResource("CylinderMesh_post_short")
 material_override = SubResource("ShaderMaterial_toon_wood")
 
 [node name="Beacon" type="Node3D" parent="."]
@@ -272,7 +386,7 @@ rotation_degrees = Vector3(0, -3, 0)
 [node name="Table" type="MeshInstance3D" parent="DispatchTable"]
 position = Vector3(0, 0.94, 0)
 mesh = SubResource("BoxMesh_table")
-material_override = SubResource("ShaderMaterial_toon_wood")
+material_override = SubResource("ShaderMaterial_toon_wood_priority")
 
 [node name="ManifestPlaceholder" type="MeshInstance3D" parent="DispatchTable"]
 position = Vector3(0.12, 1.025, 0)
@@ -282,7 +396,7 @@ material_override = SubResource("ShaderMaterial_toon_paper")
 [node name="RetrieverStandin" type="MeshInstance3D" parent="."]
 position = Vector3(-1.05, 0.85, 1.2)
 mesh = SubResource("CapsuleMesh_retriever")
-material_override = SubResource("ShaderMaterial_toon_canvas")
+material_override = SubResource("ShaderMaterial_toon_canvas_priority")
 
 [node name="HangingLamp" type="Node3D" parent="."]
 position = Vector3(3.25, 2.6, 1.25)

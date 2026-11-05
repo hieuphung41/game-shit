@@ -4,6 +4,8 @@ extends Node3D
 const PHONE_WIDTH := 640
 const PHONE_HEIGHT := 360
 
+@onready var detail_camera: Camera3D = $DetailCamera3D
+
 
 func _ready() -> void:
 	for argument: String in OS.get_cmdline_user_args():
@@ -28,6 +30,7 @@ func _capture(capture_directory: String) -> void:
 	var game_path := capture_directory.path_join("lookdev_game.png")
 	var gray_path := capture_directory.path_join("lookdev_gray.png")
 	var phone_path := capture_directory.path_join("lookdev_phone.png")
+	var detail_path := capture_directory.path_join("lookdev_detail.png")
 	var result := game_image.save_png(game_path)
 	if result == OK:
 		var gray_image := _grayscale(game_image)
@@ -36,6 +39,16 @@ func _capture(capture_directory: String) -> void:
 		var phone_image: Image = game_image.duplicate()
 		phone_image.resize(PHONE_WIDTH, PHONE_HEIGHT, Image.INTERPOLATE_NEAREST)
 		result = phone_image.save_png(phone_path)
+	if result == OK:
+		detail_camera.make_current()
+		await get_tree().process_frame
+		await get_tree().process_frame
+		RenderingServer.force_sync()
+		var detail_image: Image = get_viewport().get_texture().get_image()
+		if detail_image == null:
+			result = ERR_CANT_ACQUIRE_RESOURCE
+		else:
+			result = detail_image.save_png(detail_path)
 	if result != OK:
 		push_error("Could not save look-dev capture(s): %s" % error_string(result))
 	get_tree().quit(0 if result == OK else 1)
