@@ -68,6 +68,18 @@ float triplanar_hatch(vec3 position, vec3 normal) {
 		+ hatch_plane(position.xy, hatch_density) * weights.z;
 }
 
+// Spatial light() receives and writes linear light.  In GL Compatibility the
+// review capture reads that light buffer directly before its display transfer,
+// so encode the final printed ink here.  This keeps the PNG (and therefore the
+// phone review) at the palette's declared sRGB colour instead of a dark linear
+// interpretation of it.  This is deliberately applied after the two tone and
+// hatch choices: both lit faces and indigo shadows remain flat printed inks.
+vec3 linear_to_srgb(vec3 linear_colour) {
+	vec3 low = linear_colour * 12.92;
+	vec3 high = vec3(1.055) * pow(max(linear_colour, vec3(0.0)), vec3(1.0 / 2.4)) - vec3(0.055);
+	return mix(low, high, step(vec3(0.0031308), linear_colour));
+}
+
 void vertex() {
 	world_position = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	world_normal = normalize(MODEL_NORMAL_MATRIX * NORMAL);
@@ -81,13 +93,14 @@ void fragment() {
 }
 
 void light() {
-	// Keep the dark step as the palette's indigo instead of multiplying it into
-	// black. ATTENUATION carries the directional shadow map result on GL
-	// Compatibility; the normal test keeps the lit edge hard and readable.
+	// Printed colour is the palette colour itself. The directional light supplies
+	// only a stable direction and shadow map: multiplying by its lamp tint would
+	// turn wood orange and stone sandy. ATTENUATION carries the directional
+	// shadow result on GL Compatibility; the normal test keeps the edge hard.
 	float faces_light = step(0.20, dot(normalize(NORMAL), normalize(LIGHT)));
 	float receives_light = step(0.01, ATTENUATION);
 	float lit = faces_light * receives_light;
 	float shadow_hatch = hatch_mark * (1.0 - lit) * hatch_strength;
 	vec3 shadow_colour = mix(shadow_indigo, hatch_gouge_colour, shadow_hatch);
-	DIFFUSE_LIGHT += mix(shadow_colour, ALBEDO * LIGHT_COLOR.rgb, lit);
+	DIFFUSE_LIGHT += linear_to_srgb(mix(shadow_colour, ALBEDO, lit));
 }
