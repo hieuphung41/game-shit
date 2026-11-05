@@ -1,0 +1,339 @@
+[gd_scene load_steps=41 format=3]
+
+[ext_resource type="Script" path="res://src/lookdev/lookdev.gd" id="1_script"]
+[ext_resource type="Environment" path="res://art/env_default.tres" id="2_environment"]
+[ext_resource type="Material" path="res://art/materials/env_wood.tres" id="3_wood"]
+[ext_resource type="Material" path="res://art/materials/env_wood_dark.tres" id="4_wood_dark"]
+[ext_resource type="Material" path="res://art/materials/env_stone.tres" id="5_stone"]
+[ext_resource type="Material" path="res://art/materials/env_canvas_red.tres" id="6_canvas"]
+[ext_resource type="Material" path="res://art/materials/env_iron.tres" id="7_iron"]
+[ext_resource type="Material" path="res://art/materials/env_rope.tres" id="8_rope"]
+[ext_resource type="Material" path="res://art/materials/env_paper.tres" id="9_paper"]
+[ext_resource type="Material" path="res://art/materials/water_wet.tres" id="10_water"]
+[ext_resource type="Material" path="res://art/materials/signal_beacon.tres" id="11_beacon"]
+[ext_resource type="Material" path="res://art/materials/signal_danger.tres" id="12_danger"]
+[ext_resource type="Material" path="res://art/materials/light_lamp_warm.tres" id="13_lamp"]
+[ext_resource type="Shader" path="res://art/shaders/toon_matte.gdshader" id="14_toon"]
+[ext_resource type="Shader" path="res://art/shaders/ink_outline.gdshader" id="15_ink"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+size = Vector3(15, 0.16, 12)
+
+[sub_resource type="BoxMesh" id="BoxMesh_cargo"]
+size = Vector3(2, 1.35, 2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_crate"]
+size = Vector3(1.1, 1.1, 1.1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_counter"]
+size = Vector3(2.4, 1.1, 0.72)
+
+[sub_resource type="BoxMesh" id="BoxMesh_roof"]
+size = Vector3(3.1, 0.18, 1.75)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_post"]
+top_radius = 0.16
+bottom_radius = 0.21
+height = 2.8
+radial_segments = 8
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_beacon"]
+top_radius = 0.34
+bottom_radius = 0.34
+height = 0.22
+radial_segments = 8
+
+[sub_resource type="BoxMesh" id="BoxMesh_table"]
+size = Vector3(1.8, 0.12, 1.05)
+
+[sub_resource type="BoxMesh" id="BoxMesh_paper"]
+size = Vector3(0.72, 0.035, 0.48)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_retriever"]
+radius = 0.32
+height = 1.7
+radial_segments = 8
+rings = 2
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_water"]
+size = Vector2(4.2, 3.1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_lamp"]
+radius = 0.22
+height = 0.44
+radial_segments = 8
+rings = 4
+
+[sub_resource type="BoxMesh" id="BoxMesh_swatch"]
+size = Vector3(0.42, 0.42, 0.42)
+
+[sub_resource type="BoxMesh" id="BoxMesh_rope_tie"]
+size = Vector3(0.09, 1.4, 2.08)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_tax_seal"]
+top_radius = 0.24
+bottom_radius = 0.24
+height = 0.035
+radial_segments = 8
+
+[sub_resource type="BoxMesh" id="BoxMesh_waterline"]
+size = Vector3(2.46, 0.14, 0.035)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ink_outline"]
+resource_name = "ink_outline_040"
+shader = ExtResource("15_ink")
+shader_parameter/ink = Color(0.121569, 0.101961, 0.090196, 1)
+shader_parameter/outline_width = 0.04
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_toon_wood"]
+resource_name = "toon_env_wood"
+next_pass = SubResource("ShaderMaterial_ink_outline")
+shader = ExtResource("14_toon")
+shader_parameter/albedo_color = Color(0.482353, 0.356863, 0.25098, 1)
+shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
+shader_parameter/paper_grain_enabled = false
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_toon_wood_dark"]
+resource_name = "toon_env_wood_dark"
+next_pass = SubResource("ShaderMaterial_ink_outline")
+shader = ExtResource("14_toon")
+shader_parameter/albedo_color = Color(0.290196, 0.203922, 0.14902, 1)
+shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
+shader_parameter/paper_grain_enabled = false
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_toon_stone"]
+resource_name = "toon_env_stone"
+shader = ExtResource("14_toon")
+shader_parameter/albedo_color = Color(0.478431, 0.458824, 0.423529, 1)
+shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
+shader_parameter/paper_grain_enabled = false
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_toon_canvas"]
+resource_name = "toon_env_canvas_red"
+next_pass = SubResource("ShaderMaterial_ink_outline")
+shader = ExtResource("14_toon")
+shader_parameter/albedo_color = Color(0.482353, 0.184314, 0.152941, 1)
+shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
+shader_parameter/paper_grain_enabled = false
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_toon_iron"]
+resource_name = "toon_env_iron"
+next_pass = SubResource("ShaderMaterial_ink_outline")
+shader = ExtResource("14_toon")
+shader_parameter/albedo_color = Color(0.243137, 0.258824, 0.27451, 1)
+shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
+shader_parameter/paper_grain_enabled = false
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_toon_rope"]
+resource_name = "toon_env_rope"
+next_pass = SubResource("ShaderMaterial_ink_outline")
+shader = ExtResource("14_toon")
+shader_parameter/albedo_color = Color(0.701961, 0.611765, 0.454902, 1)
+shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
+shader_parameter/paper_grain_enabled = false
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_toon_paper"]
+resource_name = "toon_env_paper"
+next_pass = SubResource("ShaderMaterial_ink_outline")
+shader = ExtResource("14_toon")
+shader_parameter/albedo_color = Color(0.847059, 0.803922, 0.705882, 1)
+shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
+shader_parameter/paper_grain_enabled = false
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_toon_beacon"]
+resource_name = "toon_signal_beacon"
+next_pass = SubResource("ShaderMaterial_ink_outline")
+shader = ExtResource("14_toon")
+shader_parameter/albedo_color = Color(0.321569, 0.713725, 0.917647, 1)
+shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
+shader_parameter/paper_grain_enabled = false
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_toon_danger"]
+resource_name = "toon_signal_danger"
+next_pass = SubResource("ShaderMaterial_ink_outline")
+shader = ExtResource("14_toon")
+shader_parameter/albedo_color = Color(0.898039, 0.282353, 0.176471, 1)
+shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
+shader_parameter/paper_grain_enabled = false
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_toon_lamp"]
+resource_name = "toon_light_lamp_warm"
+next_pass = SubResource("ShaderMaterial_ink_outline")
+shader = ExtResource("14_toon")
+shader_parameter/albedo_color = Color(0.913725, 0.760784, 0.498039, 1)
+shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
+shader_parameter/paper_grain_enabled = false
+
+[node name="LookDev" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = ExtResource("2_environment")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-48, -34, 0)
+light_color = Color(0.913725, 0.760784, 0.498039, 1)
+light_energy = 1.15
+shadow_enabled = true
+directional_shadow_max_distance = 35.0
+
+[node name="Camera3D" type="Camera3D" parent="."]
+position = Vector3(10, 10, 10)
+rotation_degrees = Vector3(-30, 45, 0)
+current = true
+projection = 1
+size = 14.0
+near = 0.1
+far = 60.0
+
+[node name="Floor" type="MeshInstance3D" parent="."]
+position = Vector3(0, -0.08, -1.6)
+mesh = SubResource("BoxMesh_floor")
+material_override = SubResource("ShaderMaterial_toon_stone")
+
+[node name="WaterPatch" type="MeshInstance3D" parent="."]
+position = Vector3(-2.3, 0.012, -3.3)
+mesh = SubResource("PlaneMesh_water")
+material_override = ExtResource("10_water")
+
+[node name="Cargo2x2" type="MeshInstance3D" parent="."]
+position = Vector3(-1.8, 0.675, -1.5)
+rotation_degrees = Vector3(0, -4, 0)
+mesh = SubResource("BoxMesh_cargo")
+material_override = SubResource("ShaderMaterial_toon_wood_dark")
+
+[node name="CargoTie" type="MeshInstance3D" parent="."]
+position = Vector3(-0.79, 0.7, -1.5)
+rotation_degrees = Vector3(0, -4, 0)
+mesh = SubResource("BoxMesh_rope_tie")
+material_override = SubResource("ShaderMaterial_toon_rope")
+
+[node name="TaxSeal" type="MeshInstance3D" parent="."]
+position = Vector3(-1.8, 1.37, -1.5)
+rotation_degrees = Vector3(0, -4, 0)
+mesh = SubResource("CylinderMesh_tax_seal")
+material_override = SubResource("ShaderMaterial_toon_paper")
+
+[node name="Crate" type="MeshInstance3D" parent="."]
+position = Vector3(0.25, 0.55, -1.75)
+rotation_degrees = Vector3(0, 3, 0)
+mesh = SubResource("BoxMesh_crate")
+material_override = SubResource("ShaderMaterial_toon_wood")
+
+[node name="TaxStall" type="Node3D" parent="."]
+position = Vector3(2.65, 0, -1.65)
+rotation_degrees = Vector3(0, 3, 0)
+
+[node name="Counter" type="MeshInstance3D" parent="TaxStall"]
+position = Vector3(0, 0.55, 0)
+mesh = SubResource("BoxMesh_counter")
+material_override = SubResource("ShaderMaterial_toon_wood")
+
+[node name="SlopedRoof" type="MeshInstance3D" parent="TaxStall"]
+position = Vector3(0, 1.72, 0)
+rotation_degrees = Vector3(0, 0, 5)
+mesh = SubResource("BoxMesh_roof")
+material_override = SubResource("ShaderMaterial_toon_canvas")
+
+[node name="WaterlineDragMark" type="MeshInstance3D" parent="TaxStall"]
+position = Vector3(0, 0.30, 0.38)
+mesh = SubResource("BoxMesh_waterline")
+material_override = SubResource("ShaderMaterial_toon_wood_dark")
+
+[node name="MooringPost" type="MeshInstance3D" parent="."]
+position = Vector3(-4.25, 1.4, -0.55)
+rotation_degrees = Vector3(0, 0, -3)
+mesh = SubResource("CylinderMesh_post")
+material_override = SubResource("ShaderMaterial_toon_wood")
+
+[node name="Beacon" type="Node3D" parent="."]
+position = Vector3(-4.15, 0, -3.45)
+
+[node name="Stem" type="MeshInstance3D" parent="Beacon"]
+position = Vector3(0, 0.9, 0)
+mesh = SubResource("CylinderMesh_post")
+material_override = SubResource("ShaderMaterial_toon_iron")
+
+[node name="Signal" type="MeshInstance3D" parent="Beacon"]
+position = Vector3(0, 2.38, 0)
+mesh = SubResource("CylinderMesh_beacon")
+material_override = SubResource("ShaderMaterial_toon_beacon")
+
+[node name="BeaconLight" type="OmniLight3D" parent="Beacon"]
+position = Vector3(0, 2.35, 0)
+light_color = Color(0.321569, 0.713725, 0.917647, 1)
+light_energy = 0.35
+omni_range = 3.0
+
+[node name="DispatchTable" type="Node3D" parent="."]
+position = Vector3(1.45, 0, 1.8)
+rotation_degrees = Vector3(0, -3, 0)
+
+[node name="Table" type="MeshInstance3D" parent="DispatchTable"]
+position = Vector3(0, 0.94, 0)
+mesh = SubResource("BoxMesh_table")
+material_override = SubResource("ShaderMaterial_toon_wood")
+
+[node name="ManifestPlaceholder" type="MeshInstance3D" parent="DispatchTable"]
+position = Vector3(0.12, 1.025, 0)
+mesh = SubResource("BoxMesh_paper")
+material_override = SubResource("ShaderMaterial_toon_paper")
+
+[node name="RetrieverStandin" type="MeshInstance3D" parent="."]
+position = Vector3(-1.05, 0.85, 1.2)
+mesh = SubResource("CapsuleMesh_retriever")
+material_override = SubResource("ShaderMaterial_toon_canvas")
+
+[node name="HangingLamp" type="Node3D" parent="."]
+position = Vector3(3.25, 2.6, 1.25)
+
+[node name="Rope" type="MeshInstance3D" parent="HangingLamp"]
+position = Vector3(0, 0.58, 0)
+mesh = SubResource("CylinderMesh_post")
+material_override = SubResource("ShaderMaterial_toon_rope")
+
+[node name="Lamp" type="MeshInstance3D" parent="HangingLamp"]
+mesh = SubResource("SphereMesh_lamp")
+material_override = SubResource("ShaderMaterial_toon_lamp")
+
+[node name="LampLight" type="OmniLight3D" parent="HangingLamp"]
+light_color = Color(0.913725, 0.760784, 0.498039, 1)
+light_energy = 0.3
+omni_range = 2.5
+
+[node name="PaletteStrip" type="Node3D" parent="."]
+position = Vector3(-2.0, 0.22, 2.75)
+
+[node name="Wood" type="MeshInstance3D" parent="PaletteStrip"]
+mesh = SubResource("BoxMesh_swatch")
+material_override = SubResource("ShaderMaterial_toon_wood")
+
+[node name="Stone" type="MeshInstance3D" parent="PaletteStrip"]
+position = Vector3(0.5, 0, 0)
+mesh = SubResource("BoxMesh_swatch")
+material_override = SubResource("ShaderMaterial_toon_stone")
+
+[node name="Canvas" type="MeshInstance3D" parent="PaletteStrip"]
+position = Vector3(1, 0, 0)
+mesh = SubResource("BoxMesh_swatch")
+material_override = SubResource("ShaderMaterial_toon_canvas")
+
+[node name="Iron" type="MeshInstance3D" parent="PaletteStrip"]
+position = Vector3(1.5, 0, 0)
+mesh = SubResource("BoxMesh_swatch")
+material_override = SubResource("ShaderMaterial_toon_iron")
+
+[node name="Water" type="MeshInstance3D" parent="PaletteStrip"]
+position = Vector3(2, 0, 0)
+mesh = SubResource("BoxMesh_swatch")
+material_override = ExtResource("10_water")
+
+[node name="Beacon" type="MeshInstance3D" parent="PaletteStrip"]
+position = Vector3(2.5, 0, 0)
+mesh = SubResource("BoxMesh_swatch")
+material_override = SubResource("ShaderMaterial_toon_beacon")
+
+[node name="Lamp" type="MeshInstance3D" parent="PaletteStrip"]
+position = Vector3(3, 0, 0)
+mesh = SubResource("BoxMesh_swatch")
+material_override = SubResource("ShaderMaterial_toon_lamp")
