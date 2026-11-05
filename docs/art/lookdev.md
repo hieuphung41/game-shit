@@ -10,7 +10,8 @@ không phải một khu playable.
 - `signal_beacon`, `signal_danger` chỉ dành cho tín hiệu gameplay; `light_lamp_warm` chỉ cho nguồn đèn trong cảnh.
   Không dùng chúng cho loot, rarity hoặc trang trí.
 - `art/shaders/toon_matte.gdshader` tạo hai bậc sáng/tối, bóng `shadow_indigo` và hạt giấy dó.
-  **Màu in = màu palette:** mặt sáng trả đúng `albedo_color` của vật liệu, không nhân với màu đèn;
+  **Màu in = màu palette:** mặt sáng dùng hệ số ánh sáng `vec3(1.0)` để Godot trả đúng `albedo_color` của vật liệu,
+  không nhân màu vật liệu lần hai hoặc nhân với màu đèn;
   màu đèn chỉ giữ hướng và shadow map. Mặt tối, kể cả bóng trên sàn, trả `shadow_indigo` trước khi
   vệt đục được đặt lên. Vì vậy `lamp_warm` chỉ là sắc rất nhẹ ở vật liệu đèn, không nhuộm gỗ hay đá.
   world-space/triplanar. Mặc định của mọi `env_*` là `paper_grain_enabled = true`, strength `0.04`
@@ -27,8 +28,9 @@ không phải một khu playable.
   sàn không có vết grunge. Mái/quầy/cọc/chồng thùng nghiêng 2–5° và ba cọc neo cao thấp lệch nhịp.
 - Bàn dispatch và Người Thu Hồi được chừa một khoảng sàn rõ ở ảnh điện thoại; giấy trên bàn là điểm sáng duy nhất
   của cụm tương tác đó.
-- `art/env_default.tres` giữ tonemap linear, nền `sea_bluegrey`, fog `paper` mật độ thấp chỉ để tách lớp
-  và không ảnh hưởng nền, không bloom, DOF, SSAO hoặc auto exposure. Với GL Compatibility, `lookdev.gd`
+- `art/env_default.tres` giữ tonemap linear, nền `sea_bluegrey`; fog tắt trong GL Compatibility vì fog của renderer này
+  thay clear background bằng đen kể cả khi `fog_sky_affect = 0`. Màu `paper` vẫn là màu fog đã khai báo cho renderer
+  hỗ trợ tách lớp mà không che nền; cảnh này không bloom, DOF, SSAO hoặc auto exposure. Với GL Compatibility, `lookdev.gd`
   lấy đúng `background_color` của resource làm clear color của viewport để PNG giữ mã palette đã khai báo.
 - Beacon và đèn treo đọc bằng emission của `signal_beacon` và `light_lamp_warm`; look-dev không dùng
   `OmniLight3D`, nên không có quầng sáng tròn trên sàn, mái hoặc cargo.
@@ -49,13 +51,16 @@ Lệnh dùng GL Compatibility (`opengl3`), `$DISPLAY` hoặc `xvfb-run`, và ph�
 - `game-shit/build/lookdev/lookdev_detail.png` — 1280×720, camera cùng góc −30°/45°, orthographic size 5,
   khung cận cargo 2×2 và quầy thuế để soi hạt giấy/vệt đục.
 - `game-shit/build/lookdev/probe.json` — kết quả probe màu tự động. Sau khi ảnh game được chụp,
-  `lookdev.gd` chiếu từng `Marker3D` nhóm `lookdev_probe` qua `Camera3D`, lấy mẫu pixel tại toạ độ đó;
+  `lookdev.gd` chiếu từng `Marker3D` nhóm `lookdev_probe` qua `Camera3D`, ray tới mesh `surface_path` đầu tiên,
+  rồi mới lấy mẫu pixel tại toạ độ đó; một điểm bị che ghi `occluded` và làm probe lỗi.
   `tools/lookdev_probe.py` in bảng `vật liệu · màu đo · màu mong đợi · ΔE76`, ghi file này và trả lỗi
   nếu quá ngưỡng (nền ≤ 5, mặt sáng ≤ 10, bóng ≤ 12).
 
 Thêm điểm probe cho asset mới: thêm một `Marker3D` có tên mô tả vào `lookdev.tscn`, đặt nó nhô 0.005 m
-trên mặt nhìn thấy, gán nhóm `lookdev_probe`, và metadata `expected_hex`, `tolerance`, `role`. Chọn vùng
-không có nét mực hoặc ranh sáng/tối; probe sẽ fail nếu điểm nằm ngoài khung hoặc phía sau camera.
+trên mặt nhìn thấy, gán nhóm `lookdev_probe`, và metadata `surface_path`, `tolerance`, `role`. Probe mặt sáng
+cần thêm `expected_hex`; probe bóng có thể bỏ `expected_hex` để lấy `shadow_indigo` từ ShaderMaterial của
+`surface_path`. Chọn vùng không có nét mực hoặc ranh sáng/tối; probe sẽ fail nếu điểm nằm ngoài khung, phía
+sau camera hoặc bị mesh khác che.
 
 Chấm cả ba ảnh theo [rubric](templates/review-rubric.md): kiểm cargo 2×2, thùng, quầy thuế mái nghiêng,
 cọc neo, beacon, bàn dispatch, Người Thu Hồi placeholder, nước, đèn treo và dải palette ở camera orthographic

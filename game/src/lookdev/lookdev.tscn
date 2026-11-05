@@ -462,33 +462,38 @@ position = Vector3(-2, 0.435, 2.75)
 metadata/expected_hex = "#7B5B40"
 metadata/tolerance = 10.0
 metadata/role = "lit_palette"
+metadata/surface_path = "PaletteStrip/Wood"
 
 [node name="ProbeWoodDark" type="Marker3D" parent="." groups=["lookdev_probe"]]
 position = Vector3(-2.5, 0.435, 2.75)
 metadata/expected_hex = "#4A3426"
 metadata/tolerance = 10.0
 metadata/role = "lit_palette"
+metadata/surface_path = "PaletteStrip/WoodDark"
 
 [node name="ProbeStone" type="Marker3D" parent="." groups=["lookdev_probe"]]
 position = Vector3(-1.5, 0.435, 2.75)
 metadata/expected_hex = "#7A756C"
 metadata/tolerance = 10.0
 metadata/role = "lit_palette"
+metadata/surface_path = "PaletteStrip/Stone"
 
 [node name="ProbeCanvas" type="Marker3D" parent="." groups=["lookdev_probe"]]
 position = Vector3(-1, 0.435, 2.75)
 metadata/expected_hex = "#7B2F27"
 metadata/tolerance = 10.0
 metadata/role = "lit_palette"
+metadata/surface_path = "PaletteStrip/Canvas"
 
 [node name="ProbePaper" type="Marker3D" parent="." groups=["lookdev_probe"]]
 position = Vector3(1.5, 0.435, 2.75)
 metadata/expected_hex = "#D8CDB4"
 metadata/tolerance = 10.0
 metadata/role = "lit_palette"
+metadata/surface_path = "PaletteStrip/Paper"
 
 [node name="ProbeFloorShadow" type="Marker3D" parent="." groups=["lookdev_probe"]]
-position = Vector3(-0.6, 0.005, -3.2)
-metadata/expected_hex = "#2C3142"
+position = Vector3(4.85, 0.005, -3.5)
 metadata/tolerance = 12.0
-metadata/role = "shadow_indigo"
+metadata/role = "shadow_shader"
+metadata/surface_path = "Floor"

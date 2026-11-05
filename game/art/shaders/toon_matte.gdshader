@@ -2,7 +2,11 @@ shader_type spatial;
 render_mode diffuse_toon, specular_disabled;
 
 uniform vec4 albedo_color : source_color = vec4(0.482353, 0.356863, 0.25098, 1.0);
-uniform vec3 shadow_indigo : source_color = vec3(0.172549, 0.192157, 0.258824);
+// Keep this a vec4 source colour.  In GL Compatibility a vec3 colour parameter
+// is passed as raw linear data, which raises the declared indigo during the
+// final display transfer.  The alpha channel is unused, but vec4 preserves the
+// palette's source-colour conversion just like albedo_color.
+uniform vec4 shadow_indigo : source_color = vec4(0.172549, 0.192157, 0.258824, 1.0);
 uniform bool paper_grain_enabled = true;
 uniform float paper_grain_strength : hint_range(0.0, 0.06) = 0.04;
 uniform float paper_fiber_scale : hint_range(4.0, 28.0) = 14.0;
@@ -68,18 +72,6 @@ float triplanar_hatch(vec3 position, vec3 normal) {
 		+ hatch_plane(position.xy, hatch_density) * weights.z;
 }
 
-// Spatial light() receives and writes linear light.  In GL Compatibility the
-// review capture reads that light buffer directly before its display transfer,
-// so encode the final printed ink here.  This keeps the PNG (and therefore the
-// phone review) at the palette's declared sRGB colour instead of a dark linear
-// interpretation of it.  This is deliberately applied after the two tone and
-// hatch choices: both lit faces and indigo shadows remain flat printed inks.
-vec3 linear_to_srgb(vec3 linear_colour) {
-	vec3 low = linear_colour * 12.92;
-	vec3 high = vec3(1.055) * pow(max(linear_colour, vec3(0.0)), vec3(1.0 / 2.4)) - vec3(0.055);
-	return mix(low, high, step(vec3(0.0031308), linear_colour));
-}
-
 void vertex() {
 	world_position = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	world_normal = normalize(MODEL_NORMAL_MATRIX * NORMAL);
@@ -93,14 +85,15 @@ void fragment() {
 }
 
 void light() {
-	// Printed colour is the palette colour itself. The directional light supplies
-	// only a stable direction and shadow map: multiplying by its lamp tint would
-	// turn wood orange and stone sandy. ATTENUATION carries the directional
-	// shadow result on GL Compatibility; the normal test keeps the edge hard.
+	// Godot combines DIFFUSE_LIGHT with ALBEDO after light().  A lit face therefore
+	// needs a unit multiplier, not its albedo a second time.  The directional
+	// light supplies only a stable direction and shadow map: its tint and energy
+	// must not recolour printed palette ink.
 	float faces_light = step(0.20, dot(normalize(NORMAL), normalize(LIGHT)));
 	float receives_light = step(0.01, ATTENUATION);
 	float lit = faces_light * receives_light;
 	float shadow_hatch = hatch_mark * (1.0 - lit) * hatch_strength;
-	vec3 shadow_colour = mix(shadow_indigo, hatch_gouge_colour, shadow_hatch);
-	DIFFUSE_LIGHT += linear_to_srgb(mix(shadow_colour, ALBEDO, lit));
+	vec3 shadow_colour = mix(shadow_indigo.rgb, hatch_gouge_colour, shadow_hatch);
+	vec3 shadow_multiplier = shadow_colour / max(ALBEDO, vec3(0.02));
+	DIFFUSE_LIGHT += mix(shadow_multiplier, vec3(1.0), lit);
 }

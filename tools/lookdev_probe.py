@@ -41,13 +41,15 @@ def main(raw_path: Path, output_path: Path) -> int:
     print("vật liệu · màu đo · màu mong đợi · ΔE76")
     for sample in samples:
         projected = sample.get("projected", False)
+        occluded = sample.get("occluded", False)
         expected = sample.get("expected", "")
         measured = sample.get("measured", "")
-        delta = delta_e76(measured, expected) if projected and len(expected) == 7 else float("inf")
+        available = projected and not occluded
+        delta = delta_e76(measured, expected) if available and len(expected) == 7 else float("inf")
         sample["delta_e76"] = round(delta, 3) if math.isfinite(delta) else None
-        sample["passed"] = bool(projected and delta <= float(sample.get("tolerance", 0.0)))
+        sample["passed"] = bool(available and delta <= float(sample.get("tolerance", 0.0)))
         valid = valid and sample["passed"]
-        delta_text = f"{delta:.2f}" if math.isfinite(delta) else "projection error"
+        delta_text = f"{delta:.2f}" if math.isfinite(delta) else ("occluded" if occluded else "projection error")
         print(f"{sample.get('name')} · {measured} · {expected} · {delta_text}")
     payload["passed"] = valid
     output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

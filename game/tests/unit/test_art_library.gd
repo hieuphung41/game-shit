@@ -61,7 +61,9 @@ func test_toon_shader_exposes_triplanar_paper_and_shadow_hatch(t) -> bool:
 	t.ok("hatch_enabled" in code and "hatch_density" in code and "hatch_line_width" in code and "hatch_gouge_colour" in code, "hatch can be enabled, coloured, and tuned per material")
 	t.ok("along * 0.82" in code, "hatch uses long broken gouge segments instead of grain-sized dashes")
 	t.ok("(1.0 - lit)" in code, "hatch is limited to the shadow band")
-	t.ok("linear_to_srgb(mix(shadow_colour, ALBEDO, lit))" in code, "GL Compatibility capture encodes lit palette ink and indigo shadows")
+	t.ok("uniform vec4 shadow_indigo : source_color" in code, "shadow indigo keeps Godot source-colour conversion in GL Compatibility")
+	t.ok("DIFFUSE_LIGHT += mix(shadow_multiplier, vec3(1.0), lit);" in code, "GL Compatibility keeps lit palette ink at a unit albedo multiplier")
+	t.ok("shadow_colour / max(ALBEDO, vec3(0.02))" in code, "shadow multiplier resolves to the shader's indigo or gouge ink")
 	t.ok("ALBEDO * LIGHT_COLOR" not in code, "directional lamp colour cannot recolour printed palette ink")
 	var outline_shader := load("res://art/shaders/ink_outline.gdshader") as Shader
 	if outline_shader != null:
@@ -78,7 +80,7 @@ func test_lookdev_environment_keeps_background_and_paper_fog_separate(t) -> bool
 	t.eq(environment.background_energy_multiplier, 1.0, "background renders at its declared palette value")
 	t.eq(environment.ambient_light_energy, 0.0, "ambient light cannot wash printed palette ink")
 	t.eq(environment.fog_sky_affect, 0.0, "paper fog cannot cover the declared background")
-	t.ok(environment.fog_enabled and environment.fog_light_energy > 0.0, "paper fog remains enabled for depth separation")
+	t.eq(environment.fog_enabled, false, "GL Compatibility fog stays off so it cannot replace the palette background with black")
 	var lookdev_script := load("res://src/lookdev/lookdev.gd") as Script
 	if lookdev_script != null:
 		t.ok("RenderingServer.set_default_clear_color(world_environment.environment.background_color)" in lookdev_script.source_code, "GL Compatibility clear colour is read from env_default")
@@ -107,12 +109,25 @@ func test_lookdev_scene_has_fixed_isometric_camera(t) -> bool:
 		{"name": "ProbeStone", "hex": "#7A756C"},
 		{"name": "ProbeCanvas", "hex": "#7B2F27"},
 		{"name": "ProbePaper", "hex": "#D8CDB4"},
-		{"name": "ProbeFloorShadow", "hex": "#2C3142"},
 	]:
 		var probe := lookdev.get_node_or_null(str(expected_probe["name"])) as Marker3D
 		if not t.ok(probe != null, "%s exists" % expected_probe["name"]):
 			continue
 		t.eq(probe.get_meta("expected_hex"), expected_probe["hex"], "%s locks its palette expectation" % expected_probe["name"])
+	var shadow_probe := lookdev.get_node_or_null("ProbeFloorShadow") as Marker3D
+	if shadow_probe != null:
+		t.eq(shadow_probe.get_meta("surface_path"), "Floor", "floor-shadow probe targets the visible floor rather than a roof")
+		t.eq(str(shadow_probe.get_meta("expected_hex", "")), "", "floor-shadow expectation comes from its shader parameters")
+		t.eq(shadow_probe.position, Vector3(4.85, 0.005, -3.5), "floor-shadow probe sits in the visible tax-stall cast shadow, outside the roof silhouette")
+	if camera != null:
+		for probe_name: String in ["ProbeBackground", "ProbeWood", "ProbeWoodDark", "ProbeStone", "ProbeCanvas", "ProbePaper", "ProbeFloorShadow"]:
+			var projected_probe := lookdev.get_node_or_null(probe_name) as Marker3D
+			if projected_probe != null:
+				t.ok(lookdev._probe_surface_is_visible(camera, projected_probe), "%s is not occluded before its intended sample surface" % probe_name)
+	var lookdev_script := load("res://src/lookdev/lookdev.gd") as Script
+	if lookdev_script != null:
+		t.ok("_first_mesh_on_camera_ray" in lookdev_script.source_code, "probe ray-checks the first visible mesh")
+		t.ok("\"occluded\": projected and not visible_surface" in lookdev_script.source_code, "occluded probe points are recorded for the verification gate")
 	lookdev.queue_free()
 	await t.tree.process_frame
 	return true
