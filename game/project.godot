@@ -28,6 +28,10 @@ window/handheld/orientation=0
 
 pointing/emulate_touch_from_mouse=true
 
+[internationalization]
+
+locale/translations=PackedStringArray("res://i18n/strings.csv")
+
 [input]
 
 move_left={
