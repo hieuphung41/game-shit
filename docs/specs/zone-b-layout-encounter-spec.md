@@ -43,8 +43,9 @@ wind-up, tốc độ) lấy nguyên từ [combat-slice-spec](combat-slice-spec.m
    | 19.5:9 | [−16.8, +22.2] |
    | 21:9 | [−18.3, +23.7] |
 
-   Mọi kiểm tra “trong khung” dưới đây dùng **4:3** (khung hẹp nhất), nên đúng với mọi tỉ lệ rộng hơn. Mọi kiểm tra
-   “ngoài khung” (điểm spawn) dùng **21:9**.
+   Mọi kiểm tra “trong khung” dưới đây dùng **4:3** (khung hẹp nhất), nên đúng với mọi tỉ lệ rộng hơn.
+   **Viewport thật** (không inset) rộng hơn khung trên 5% mỗi cạnh: D ∈ [−15.1, +24.9]; L ∈ [−10.6, +16.1] (4:3) …
+   [−20.6, +26.1] (21:9). Mọi kiểm tra “ngoài màn hình” (điểm spawn, không pop-in) dùng **viewport thật 21:9 + 0.5 m**.
 5. **Luật che khuất.** Vật cao h che phần sàn nằm sau nó, dài 1.73·h m về hướng (−x, −z), tức là phía trên màn hình.
    Từ đó có ba luật:
    - Vật cao > 1.0 m chỉ được đặt ở **mép tây** (x nhỏ) của dải chơi.
@@ -79,7 +80,7 @@ hình vẽ chỉ để minh hoạ.
  -27   ~~~~##==============:~~~      G GuardPost     1-4 CoverB1…B4       p PatrolReturnPath
  -26   ~~~~##===S==========:~~~      ! đèn báo (lamp)  * đèn lồng mái đỏ   h HoldLaneBPath
  -25   ~~~~##-----XXXXX----:~~~      E BEntry   R RouteToB (A)   A deck A
- -24   ~~~~.W..=====h====..:~~~
+ -24   ~~~~.W..==========h.:~~~
  -23   ~~~~....=====F====..:~~~
  -22   ~~~~##..===LLLL===..:~~~
  -21   ~~~~##33===LLLL===..:~~~
@@ -103,8 +104,8 @@ hình vẽ chỉ để minh hoạ.
   -3   ~~~~:...111........:~~~~
   -2   AA!A:..............:~~~~
   -1   AAAA......E........:~~~~
-   0   RAAAh..............:~~~~
-  +1   AAAA...........p...:~~~~
+   0   RAAA....h..........:~~~~
+  +1   AAAA..............p:~~~~
   +2   AAAA::::::::::::::::~~~~
 ```
 
@@ -123,7 +124,7 @@ Toạ độ ghi theo B (x, z); y = 0 trên sàn, trừ khi có ghi khác. Cột 
 | Node | B (x, z) | World (x, z) | Mục đích |
 |---|---|---|---|
 | `SeamAB` | (0, 0), rộng 3.0 | (7.0, −2.45) | Lối nối liền với A |
-| `BEntry` (Marker3D) | (3.0, −1.0) | (10.0, −3.45) | Vào B. Từ đây thấy cả GuardPost và BeaconA. |
+| `BEntry` (Marker3D) | (3.0, −1.0) | (10.0, −3.45) | Vào B. Từ đây thấy cả GuardPost và BeaconA (BeaconA trong viewport thật mọi tỉ lệ; trong khung inset 4:3 khi đứng x ≤ 2.5). |
 | `LandmarkEntryLantern` | (1.0, −3.6), cao 4.5 | (8.0, −6.05) | Cột đèn lồng mái đỏ đầu chợ (`light_`). Landmark chỉ hướng A. |
 | `CoverB1` (StaticBody3D) | (2.6, −2.8), 1.2×1.2, cao 1.2 | (9.6, −5.25) | Chặn tầm nhìn từ GuardPost ra sân. Chỗ đứng đọc vòng giữ ngõ. |
 | `GuardPost` + `GuardPostFacing` | (4.5, −7.5), facing (0, 0, +1) | (11.5, −9.95) | Gốc của `tax_guard`, quay về phía A. Leash 3.0 → z −4.5…−10.5. |
@@ -139,12 +140,12 @@ Toạ độ ghi theo B (x, z); y = 0 trên sàn, trừ khi có ghi khác. Cột 
 | `CalmZoneB` (Area3D) | tâm (4.5, −28.75), 7.0 × 6.5 | (11.5, −31.2) | Vùng sàn yên (§5.4) |
 | `CacheB` | (1.8, −29.5), 0.7 × 1.0, cao 0.7 | (8.8, −31.95) | Cache B. Item do TASK-82 quyết. Chạm từ phía đông. |
 | `BlockedRouteD` | (4.75, −32.0), lối 2.5 | (11.75, −34.45) | Lối D bị chặn (§2) |
-| `PatrolReturnPath/P0` = `PatrolSpawnB` | (5.5, +1.0) | (12.5, −1.45) | Spawn của patrol, nằm ở đầu A của lane B |
+| `PatrolReturnPath/P0` = `PatrolSpawnB` | (7.0, +1.0) | (14.0, −1.45) | Spawn của patrol, góc đông-nam sân đầu chợ (đầu A của lane B), cách `SeamAB` 7 m, không chắn lối về A |
 | `PatrolReturnPath/P1` | (3.0, −6.0) | (10.0, −8.45) | Patrol đi nửa tây của ngõ |
 | `PatrolReturnPath/P2` | (3.0, −19.0) | (10.0, −21.45) | Điểm quay đầu. Tầm với tối đa z −23.8, chưa tới gate. |
 | `PatrolAlertLampB` | (0.8, −17.5), cao 3.2 | (7.8, −19.95) | Một instance khác của `LaneBAlertLamp` (§6) |
 | `WithdrawPointPatrolB` | (7.0, −3.6), facing +x | (14.0, −6.05) | Góc đông-bắc của sân, không chắn đường về A |
-| `HoldLaneBSpawn` (H0) = `WithdrawPointHold` | (4.5, −24.0) | (11.5, −26.45) | Điểm xa nhất của lane B. Ngoài khung 21:9 với mọi chỗ đứng trong vòng beacon. |
+| `HoldLaneBSpawn` (H0) = `WithdrawPointHold` | (7.0, −24.5) | (14.0, −26.95) | Góc đông-bắc quảng, phía nam rào gate (không cần gate mở). Ngoài viewport thật 21:9 ≥ 0.9 m với mọi chỗ đứng trong vòng beacon trên deck. |
 | `HoldLaneBPath/H1`, `/H2`, `/H3` | (3.5, −8.0), (2.0, 0.0), (−0.8, 0.0) | (10.5, −10.45), (9.0, −2.45), (6.2, −2.45) | Ngõ → sân → miệng lane trên deck A |
 | `HoldLaneBPath/HG1` | (−3.0, −1.85) | (4.0, −4.3) | Nhánh của vệ binh, đi dưới lane hold |
 | `HoldGuardPost` | (−8.85, −2.0), facing −x | (−1.85, −4.45) | Cách mép `BeaconZoneA` 0.48 m, ở phía lane B |
@@ -169,7 +170,8 @@ Các probe vào group `zone_b_lookdev_probe` với metadata giống A. Camera ch
   - vệ binh đứng post, khiên nâng: L +5.7, D +3.5;
   - `CoverB1`: L +1.0, D +1.6;
   - mái đỏ ngõ;
-  - `BeaconA` phía sau: L −9.5, D +10.6. Lệch 0.2 m so với khung 4:3, nhưng thấy khi đứng ở x ≤ 2.5. Với 16:9 thì luôn thấy.
+  - `BeaconA` phía sau: L −9.5, D +12.0 (đèn cao 3.7 m nên trên màn hình tương đương D +18.4). Trong viewport thật
+    mọi tỉ lệ (mép 4:3 là −10.6); lệch 0.2 m ra ngoài khung inset 4:3, vào hẳn khi đứng ở x ≤ 2.5. Với 16:9 luôn trong khung.
 - **Lựa chọn:** quay A (lối 3 m ngay sau lưng, không có địch nào đuổi) hoặc vào ngõ.
 
 ### 5.2 Beat 1 — Vệ binh giữ ngõ
@@ -181,6 +183,7 @@ Các probe vào group `zone_b_lookdev_probe` với metadata giống A. Camera ch
 | Telegraph | Vòng `hold` + quạt wind-up 0.8 s. Luôn trong khung vì đòn chỉ ra khi người chơi ở trong 1.8 m. |
 | Cover / side space | Mỗi bên vệ binh còn 2.5 m để vòng ra hông. Tầm với tối đa = leash 3.0 + đòn 1.8 = 4.8 m, nên sân đầu chợ (z ≥ −2.7) ngoài tầm. |
 | Đường lùi về A | Lùi theo hướng +z (chéo xuống-trái màn hình). Ra khỏi leash thì vệ binh dừng ở z −4.5. Lối A cách 4–8 m. |
+| Lùi + telegraph cùng khung | Đi về +z thêm d m thì L = D = −0.707·d; khung 4:3 chứa tới d = 13.2 m. Từ mọi chỗ trong leash (z −4.5…−10.5), `SeamAB` (z ≤ +1.5) cách ≤ 12 m nên lối A, vòng giữ ngõ và vệ binh cùng nằm trong một khung. |
 | Kết thúc | Vệ binh vào `withdraw` (HP ≤ 34%) rồi đi tới hốc `WithdrawPointGuard`, hoặc vào `down` |
 
 ### 5.3 Beat 2 — Đốc công charge theo lane
@@ -194,6 +197,7 @@ Các probe vào group `zone_b_lookdev_probe` với metadata giống A. Camera ch
 | Cover / side space | Mỗi bên lane còn 2.7 m sàn. `CoverB2`/`CoverB3` ở mép tây, giữ ≥ 1.5 m sàn tới lane. `CoverB4` thấp ở mép đông. Phần sàn bị cover che (1.73·h) không chồng lên lane. |
 | Phản ứng | Dash ngang (lên/xuống trên màn hình), đứng ngoài lane, giữ khiên, hoặc đánh trong lúc `recover` |
 | Đường lùi về A | Ngõ thẳng hướng +z. Đốc công không rời lane quá 1.5 m. |
+| Lùi + telegraph cùng khung | Từ mọi chỗ trên lane (z −13.5…−22.5), cửa ngõ (z −11) cách 2.5–11.5 m (< 13.2 m), nên cửa ngõ, hai đầu lane và vạch charge cùng nằm trong một khung 4:3. Lùi ngang khỏi lane (2.7 m mỗi bên) không làm lane ra khỏi khung. |
 | Kết thúc | Đốc công vào `withdraw`, đi tới hốc `WithdrawPointForeman`, hoặc vào `down` |
 
 ### 5.4 Gate B và vùng yên
@@ -225,9 +229,11 @@ Các probe vào group `zone_b_lookdev_probe` với metadata giống A. Camera ch
      `patrol_cue_started`. `PatrolAlertLampB` chuyển `armed`, progress 0→1 trong 2.0 s (`PATROL_CUE_LEAD`).
    - `t = 2.0`: đèn chuyển `active`, patrol bắt đầu đi P0 → P1 → P2 rồi quay lại, lặp mãi, 1.6 m/s.
    - Đèn tắt khi patrol `withdrawn`/`down` hoặc khi người chơi về lại deck A (B x < 0).
-3. **Vì sao spawn ở P0:** khi đứng ở gate, khung theo chiều sâu nhìn xa tối đa 18.4 m về phía +z, với mọi tỉ lệ màn
-   hình. P0 cách gate 26.5 m.
-   - Kể cả khi người chơi chạy 4 m/s về A, patrol vào khung sớm nhất ở **t ≈ 2.0 s**, sau khi cue đã chạy đủ.
+3. **Vì sao spawn ở P0:** điểm sàn lệch (gx, gz) vào khung inset khi `gx + gz ≤ 18.4` (D ≥ −13.0), với mọi tỉ lệ màn
+   hình. Lúc người chơi rời `CalmZoneB` (mép bắc gate, B (4.5, −25.5)), P0 có gx + gz = 2.5 + 26.5 = 29.0, tức ngoài cả
+   viewport thật (D −20.5 < −15.1): không pop-in.
+   - Kể cả khi người chơi chạy 4 m/s về A, patrol vào khung sớm nhất ở **t ≈ 2.65 s** ((29.0 − 18.4) / 4), dư 0.65 s
+     so với `PATROL_CUE_LEAD` 2.0 s (ENM-17). P0 cũ ở x 5.5 chỉ dư 0.03 s nên được dời sang x 7.0.
    - Tới tầm đòn 1.8 m sớm nhất ở **t ≈ 5.0 s**.
    - Sát thương sớm nhất ở **t ≈ 5.8 s** (cộng wind-up 0.8 s).
 4. **Lựa chọn:** lách qua nửa đông của ngõ và quảng (x 5–8). Patrol đi nửa tây và chỉ leash 3 m quanh chỗ nó thấy người
@@ -247,10 +253,13 @@ Mọi số đo theo khung 4:3. L/D là vị trí của landmark so với chân n
 | Tâm `CalmZoneB` | Đầu bắc mái đỏ quảng | −6.2 / −0.5 | Trái-dưới |
 | Tâm `CalmZoneB` | Dây đèn lồng `LanternStringB` chạy dọc mặt tiền tây tới `LandmarkEntryLantern` | liên tục | Trái-dưới |
 | `PatrolReturnPath/P2` | Mái đỏ ngõ (x 0–2, z −4…−11) | −7.8 / −2.1 | Mái quảng nằm ngay cạnh |
-| `PatrolReturnPath/P2` | `PatrolAlertLampB` | −3.9 / +0.7 | — |
-| `PatrolReturnPath/P1` | `LandmarkEntryLantern` | −4.6 / −0.6 | Đèn cao 4.5 m nên hiện cao trên màn hình |
-| `PatrolReturnPath/P0` / `BEntry` (x ≤ 2.5) | `BeaconA` (đèn ở độ cao 3.7 m) | −9.0…−9.5 / +10.6 | Thấy hẳn khi đứng ở sân phía tây |
-| `PatrolReturnPath/P0` / `BEntry` (x ≤ 2.5) | Cầu tàu A | ≈ −8.9 / +9.7 | — |
+| `PatrolReturnPath/P2` | `PatrolAlertLampB` | −2.6 / +0.5 | — |
+| `PatrolReturnPath/P1` | `LandmarkEntryLantern` | −3.1 / −0.3 | Đèn cao 4.5 m nên hiện cao trên màn hình |
+| `PatrolReturnPath/P0` | `LandmarkEntryLantern` | −1.0 / +7.5 | Ngay trên-trái người chơi |
+| `PatrolReturnPath/P0` | `SeamAB` + lan can dây hai bên | −4.2 / +5.7 | Lối A mở rộng 3 m |
+| `PatrolReturnPath/P0` | `BeaconA` (đèn ở độ cao 3.7 m) | −11.0 / +16.3 | Ngoài 4:3, trong khung từ 16:9. Đi về tây tới x ≤ 4.5 là vào khung 4:3. |
+| Sân phía tây (B x 1.0–2.5, z −1) | `BeaconA` | −8.1…−9.2 / +10.6…+11.7 | Thấy hẳn ở mọi tỉ lệ |
+| Sân phía tây (B x 1.0–2.5, z −1) | Cầu tàu A (`ExtractPierA`) | −7.9…−8.9 / +10.2…+11.2 | — |
 | Spawn A (−1.45, 2.4) | `LandmarkEntryLantern` | +12.7 / −0.7 | Từ A thấy được lối B (G3) |
 
 Không landmark nào trong bảng nằm sau vật cao hơn 1.0 m theo hướng nhìn ↖: mọi vật cao đều ở mép tây. Không dùng
@@ -268,10 +277,12 @@ mái, cột đèn và biển mũi tên, không chỉ bằng màu.
    - đốc công: → `HoldChargeLane/end_a`.
    Đường đi hoàn toàn trên lane B. Không có điểm nào ở sau lưng hay phía nước.
 3. **Spawn ngoài khung:** director chọn điểm trên `HoldLaneBPath` gần A nhất mà vẫn nằm ngoài viewport thật ít nhất
-   0.5 m. Nếu không có điểm nào như vậy thì dùng H0. H0 luôn ngoài khung 21:9 từ mọi chỗ đứng trong vòng beacon (L ≥
-   24.7).
+   0.5 m. Nếu không có điểm nào như vậy thì dùng H0. Từ mọi chỗ đứng trong vòng beacon trên deck (z ≥ −5), H0 có
+   L ≥ 27.0, tức ngoài viewport thật 21:9 (mép +26.1) ít nhất 0.9 m. (H0 cũ ở B (4.5, −24.0) chỉ có L ≥ 24.9, nằm
+   trong viewport thật 21:9: pop-in, nên dời sang góc đông.)
    - Điểm địch vào khung luôn ở **mép phải** màn hình. Độ cao tuỳ tỉ lệ: y_norm 0.83 (4:3), 0.73 (16:9), 0.64
-     (19.5:9), 0.60 (21:9).
+     (19.5:9), 0.60 (21:9). Số 19.5:9/21:9 là ước tính (điểm vào nằm trên đoạn H0→H1 vừa dời); TASK-88 đo lại trên
+     greybox.
    - Từ lúc vào khung, địch còn đi 12–25 m trong tầm nhìn rồi mới tới vòng.
 4. **`HoldChargeLane`:** dải z −3.2…−1.6, đi lệch tâm qua nửa bắc của vòng.
    - Che **27%** phần vòng trên deck (11% nếu tính cả vòng). Phải ≤ 40%.
