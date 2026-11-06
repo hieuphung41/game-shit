@@ -15,5 +15,74 @@
     "verification.rubric_score": "0-20 from docs/art/templates/review-rubric.md",
     "verification.approved_by": "reviewer agent or person"
   },
-  "assets": []
+  "assets": [
+    {
+      "id": "kenney-pirate-crate",
+      "path": "game/assets/third_party/kenney-pirate-kit/crate.glb",
+      "role": "Khối thùng tham chiếu cạnh thùng greybox của Bến Ngoài; material gốc bị thay khi render.",
+      "lane": "env",
+      "status": "in_review",
+      "source": {
+        "kind": "third_party",
+        "url_or_tool": "https://kenney.nl/assets/pirate-kit (downloaded 2026-11-06)",
+        "license": "CC0-1.0",
+        "normalized": true
+      },
+      "verification": {
+        "rubric_score": 16,
+        "approved_by": "technical-artist self-review; art-director pending"
+      }
+    },
+    {
+      "id": "kenney-pirate-barrel",
+      "path": "game/assets/third_party/kenney-pirate-kit/barrel.glb",
+      "role": "Khối thùng tròn tham chiếu cạnh cargo greybox của Bến Ngoài; material gốc bị thay khi render.",
+      "lane": "env",
+      "status": "in_review",
+      "source": {
+        "kind": "third_party",
+        "url_or_tool": "https://kenney.nl/assets/pirate-kit (downloaded 2026-11-06)",
+        "license": "CC0-1.0",
+        "normalized": true
+      },
+      "verification": {
+        "rubric_score": 16,
+        "approved_by": "technical-artist self-review; art-director pending"
+      }
+    },
+    {
+      "id": "kenney-pirate-platform-planks",
+      "path": "game/assets/third_party/kenney-pirate-kit/platform-planks.glb",
+      "role": "Khối ván tham chiếu cạnh sàn greybox của Bến Ngoài; material gốc bị thay khi render.",
+      "lane": "env",
+      "status": "in_review",
+      "source": {
+        "kind": "third_party",
+        "url_or_tool": "https://kenney.nl/assets/pirate-kit (downloaded 2026-11-06)",
+        "license": "CC0-1.0",
+        "normalized": true
+      },
+      "verification": {
+        "rubric_score": 16,
+        "approved_by": "technical-artist self-review; art-director pending"
+      }
+    },
+    {
+      "id": "kenney-pirate-structure-platform-dock",
+      "path": "game/assets/third_party/kenney-pirate-kit/structure-platform-dock.glb",
+      "role": "Khối cầu tàu tham chiếu cạnh sàn greybox của Bến Ngoài; material gốc bị thay khi render.",
+      "lane": "env",
+      "status": "in_review",
+      "source": {
+        "kind": "third_party",
+        "url_or_tool": "https://kenney.nl/assets/pirate-kit (downloaded 2026-11-06)",
+        "license": "CC0-1.0",
+        "normalized": true
+      },
+      "verification": {
+        "rubric_score": 16,
+        "approved_by": "technical-artist self-review; art-director pending"
+      }
+    }
+  ]
 }

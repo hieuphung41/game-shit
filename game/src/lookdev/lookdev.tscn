@@ -1,4 +1,4 @@
-[gd_scene load_steps=49 format=3]
+[gd_scene load_steps=54 format=3]
 
 [ext_resource type="Script" path="res://src/lookdev/lookdev.gd" id="1_script"]
 [ext_resource type="Environment" path="res://art/env_default.tres" id="2_environment"]
@@ -15,6 +15,11 @@
 [ext_resource type="Material" path="res://art/materials/light_lamp_warm.tres" id="13_lamp"]
 [ext_resource type="Shader" path="res://art/shaders/toon_matte.gdshader" id="14_toon"]
 [ext_resource type="Shader" path="res://art/shaders/ink_outline.gdshader" id="15_ink"]
+[ext_resource type="Script" path="res://src/lookdev/third_party_lookdev_material.gd" id="16_third_party_material"]
+[ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/crate.glb" id="17_kenney_crate"]
+[ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/barrel.glb" id="18_kenney_barrel"]
+[ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/platform-planks.glb" id="19_kenney_planks"]
+[ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/structure-platform-dock.glb" id="20_kenney_dock"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_floor"]
 size = Vector3(15, 0.16, 12)
@@ -321,6 +326,38 @@ position = Vector3(0.38, 1.62, -1.68)
 rotation_degrees = Vector3(-3, -2, 4)
 mesh = SubResource("BoxMesh_crate")
 material_override = SubResource("ShaderMaterial_toon_wood")
+
+[node name="KenneyCrate" type="Node3D" parent="."]
+position = Vector3(1.55, 0, -2.75)
+rotation_degrees = Vector3(0, 3, 0)
+script = ExtResource("16_third_party_material")
+library_material = ExtResource("3_wood")
+
+[node name="Source" parent="KenneyCrate" instance=ExtResource("17_kenney_crate")]
+
+[node name="KenneyBarrel" type="Node3D" parent="."]
+position = Vector3(0.55, 0, -3.15)
+rotation_degrees = Vector3(0, -4, 0)
+script = ExtResource("16_third_party_material")
+library_material = ExtResource("4_wood_dark")
+
+[node name="Source" parent="KenneyBarrel" instance=ExtResource("18_kenney_barrel")]
+
+[node name="KenneyPlanks" type="Node3D" parent="."]
+position = Vector3(3.45, 0.02, -2.8)
+rotation_degrees = Vector3(0, 4, 0)
+script = ExtResource("16_third_party_material")
+library_material = ExtResource("3_wood")
+
+[node name="Source" parent="KenneyPlanks" instance=ExtResource("19_kenney_planks")]
+
+[node name="KenneyDock" type="Node3D" parent="."]
+position = Vector3(-4.7, 0.02, -4.8)
+rotation_degrees = Vector3(0, -3, 0)
+script = ExtResource("16_third_party_material")
+library_material = ExtResource("4_wood_dark")
+
+[node name="Source" parent="KenneyDock" instance=ExtResource("20_kenney_dock")]
 
 [node name="TaxStall" type="Node3D" parent="."]
 position = Vector3(2.65, 0, -1.65)
