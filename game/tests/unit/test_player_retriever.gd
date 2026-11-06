@@ -1,0 +1,106 @@
+extends RefCounted
+
+const BOOT_SCENE_PATH := "res://src/boot/boot.tscn"
+const PLAYER_SCENE_PATH := "res://src/player/retriever.tscn"
+const WORLD_SCENE_PATH := "res://src/world/zone_a_outer_pier.tscn"
+
+
+func test_retriever_movement_converts_input_to_isometric_camera_axes(t) -> bool:
+	var camera_basis := Basis.from_euler(Vector3(deg_to_rad(-30.0), deg_to_rad(45.0), 0.0))
+	var forward := RetrieverMovement.camera_relative_direction(Vector2(0.0, -1.0), camera_basis)
+	var right := RetrieverMovement.camera_relative_direction(Vector2.RIGHT, camera_basis)
+	t.ok(is_zero_approx(forward.y), "forward input stays on the ground plane")
+	t.ok(absf(forward.length() - 1.0) < 0.001, "full joystick input keeps full movement magnitude")
+	t.ok(forward.x < -0.69 and forward.z < -0.69, "upward joystick movement follows the isometric camera forward")
+	t.ok(right.x > 0.69 and right.z < -0.69, "rightward joystick movement follows the isometric camera right")
+	return true
+
+
+func test_touch_joystick_logic_has_a_deadzone_and_clamped_range(t) -> bool:
+	var region := Vector2(260.0, 260.0)
+	var resting := TouchJoystickLogic.direction_for_local_position(Vector2(130.0, 130.0), region)
+	var edge := TouchJoystickLogic.direction_for_local_position(Vector2(390.0, 130.0), region)
+	t.eq(resting, Vector2.ZERO, "joystick center is inside the deadzone")
+	t.ok(absf(edge.length() - 1.0) < 0.001, "joystick direction is capped at one")
+	t.ok(edge.x > 0.99 and is_zero_approx(edge.y), "joystick direction preserves touch direction")
+	return true
+
+
+func test_retriever_scene_has_character_body_and_one_hand_touch_joystick(t) -> bool:
+	var scene := load(PLAYER_SCENE_PATH) as PackedScene
+	if not t.ok(scene != null, "Retriever scene loads"):
+		return true
+	var retriever := scene.instantiate()
+	t.ok(retriever is CharacterBody3D, "Retriever uses CharacterBody3D")
+	t.ok(retriever.get_node_or_null("CollisionShape3D") is CollisionShape3D, "Retriever has a collision shape")
+	var body := retriever.get_node_or_null("Body") as MeshInstance3D
+	var body_material := body.material_override as ShaderMaterial if body != null else null
+	t.ok(body_material != null and body_material.next_pass is ShaderMaterial, "Retriever material includes the required ink outline pass")
+	var joystick := retriever.get_node_or_null("TouchControls/TouchJoystick") as Control
+	t.ok(joystick != null, "Retriever has a touch-first joystick")
+	if joystick != null:
+		t.ok(joystick.custom_minimum_size.x >= 240.0, "joystick touch region is large enough for one hand")
+	retriever.queue_free()
+	return true
+
+
+func test_wasd_actions_keep_the_desktop_secondary_control(t) -> bool:
+	t.ok(_action_has_physical_key(&"move_left", KEY_A), "move_left is bound to physical A")
+	t.ok(_action_has_physical_key(&"move_right", KEY_D), "move_right is bound to physical D")
+	t.ok(_action_has_physical_key(&"move_up", KEY_W), "move_up is bound to physical W")
+	t.ok(_action_has_physical_key(&"move_down", KEY_S), "move_down is bound to physical S")
+	return true
+
+
+func test_retriever_follow_keeps_isometric_rotation_and_beacon_in_frame_at_dispatch(t) -> bool:
+	var world_scene := load(WORLD_SCENE_PATH) as PackedScene
+	var player_scene := load(PLAYER_SCENE_PATH) as PackedScene
+	if not t.ok(world_scene != null and player_scene != null, "world and Retriever scenes load"):
+		return true
+	var world := world_scene.instantiate()
+	var retriever := player_scene.instantiate() as CharacterBody3D
+	world.add_child(retriever)
+	t.tree.root.add_child(world)
+	await t.tree.process_frame
+	var camera := world.get_node_or_null("CameraIsometric") as Camera3D
+	var dispatch := world.get_node_or_null("DispatchDesk") as Node3D
+	var beacon := world.get_node_or_null("BeaconA") as Node3D
+	if camera != null and dispatch != null:
+		retriever.global_position = dispatch.global_position + Vector3(0.0, 0.95, 0.0)
+		await t.tree.physics_frame
+		t.eq(roundi(camera.rotation_degrees.x), -30, "camera follow keeps fixed isometric pitch")
+		t.eq(roundi(camera.rotation_degrees.y), 45, "camera follow keeps fixed isometric yaw")
+	if camera != null and beacon != null:
+		t.ok(camera.is_position_in_frustum(beacon.global_position), "beacon A remains visible from dispatch")
+	world.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func _action_has_physical_key(action: StringName, expected_key: Key) -> bool:
+	for event in InputMap.action_get_events(action):
+		if event is InputEventKey and event.physical_keycode == expected_key:
+			return true
+	return false
+
+
+func test_boot_offers_outer_pier_entry(t) -> bool:
+	var scene := load(BOOT_SCENE_PATH) as PackedScene
+	if not t.ok(scene != null, "boot scene loads"):
+		return true
+	var boot := scene.instantiate()
+	t.tree.root.add_child(boot)
+	await t.tree.process_frame
+	var enter_button := boot.get_node_or_null("EnterOuterPierButton") as Button
+	t.ok(enter_button != null, "boot includes the outer-pier entry button")
+	if enter_button != null:
+		t.eq(enter_button.text, "Vào Bến Ngoài (thử nghiệm)", "entry uses the approved Vietnamese label")
+		enter_button.grab_focus()
+		t.ok(enter_button.has_focus(), "desktop keyboard can focus the entry button")
+		t.ok(enter_button.pressed.is_connected(Callable(boot, &"_on_enter_outer_pier_pressed")), "entry button is connected to the Zone A transition")
+	var world := boot.call("build_outer_pier_world") as Node3D
+	t.ok(world.get_node_or_null("Retriever") is CharacterBody3D, "boot transition prepares Zone A with the Retriever")
+	world.queue_free()
+	boot.queue_free()
+	await t.tree.process_frame
+	return true

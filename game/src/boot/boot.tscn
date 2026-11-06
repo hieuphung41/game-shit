@@ -1,6 +1,30 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://src/boot/boot.gd" id="1_boot"]
+
+[sub_resource type="StyleBoxFlat" id="ButtonNormal"]
+bg_color = Color(0.133333, 0.113725, 0.098039, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.913725, 0.878431, 0.796078, 1)
+
+[sub_resource type="StyleBoxFlat" id="ButtonHover"]
+bg_color = Color(0.541176, 0.505882, 0.45098, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.913725, 0.878431, 0.796078, 1)
+
+[sub_resource type="StyleBoxFlat" id="ButtonPressed"]
+bg_color = Color(0.635294, 0.211765, 0.164706, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.913725, 0.878431, 0.796078, 1)
 
 [node name="Boot" type="Control"]
 layout_mode = 3
@@ -51,6 +75,27 @@ theme_override_font_sizes/font_size = 24
 text = "Prototype — vertical slice đang dựng"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="EnterOuterPierButton" type="Button" parent="."]
+custom_minimum_size = Vector2(360, 60)
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -180.0
+offset_top = 84.0
+offset_right = 180.0
+offset_bottom = 144.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.913725, 0.878431, 0.796078, 1)
+theme_override_colors/font_hover_color = Color(0.913725, 0.878431, 0.796078, 1)
+theme_override_colors/font_pressed_color = Color(0.913725, 0.878431, 0.796078, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("ButtonNormal")
+theme_override_styles/hover = SubResource("ButtonHover")
+theme_override_styles/pressed = SubResource("ButtonPressed")
+text = "Vào Bến Ngoài (thử nghiệm)"
 
 [node name="EnvBadge" type="Label" parent="."]
 layout_mode = 1
