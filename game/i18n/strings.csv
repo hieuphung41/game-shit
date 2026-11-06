@@ -121,3 +121,59 @@ RECOVERY_BODY_LOCATION,Manifest R-17 chưa thu hồi · vị trí: bàn dispatch
 RECOVERY_BODY_RULE,"Tự lấy lại và xếp hợp lệ, rồi gọi, giữ khu và lên thuyền ở Cầu tàu A."
 RECOVERY_BODY_KIT,Có kit thu hồi cơ bản; không cần mua lại đồ.
 RECOVERY_BUTTON_BRIEFING,Vào briefing
+HUD_BUTTON_ATTACK,Đánh
+HUD_BUTTON_DODGE,Né
+HUD_BUTTON_GUARD,Giữ khiên
+HUD_BUTTON_REMEDY,Dùng thuốc
+HUD_HEALTH_VALUE,{hp}/{max_hp}
+HUD_HEALTH_LOW,Máu thấp
+HUD_ALERT_LANE_B,Địch tới từ Chợ Ngập
+HUD_ALERT_PATROL_B,Vệ binh đang về lối A
+HUD_DANGER_NEAR,Nguy hiểm gần
+HUD_DANGER_WINDUP,Địch sắp ra đòn!
+HUD_DANGER_CLOSE_HINT,Chạm để đóng và tự vệ
+PROMPT_COMBAT_TAX_GUARD_FIRST_SEEN,Quạt sàn báo đòn. Khiên chặn phía trước: đánh từ hông hoặc sau đòn.
+PROMPT_COMBAT_FOREMAN_FIRST_SEEN,Vạch sàn là đường lao của đốc công. Bước ra khỏi vạch hoặc né ngang.
+COMBAT_REMEDY_REFUSED_NO_REMEDY,Túi đeo chéo đã hết thuốc.
+COMBAT_REMEDY_REFUSED_HP_FULL,"Máu đang đầy, chưa cần dùng thuốc."
+COMBAT_REMEDY_INTERRUPTED,Bị ngắt khi đang dùng thuốc. Thuốc chưa mất.
+COMBAT_STUB_HP_ZERO,"Hết máu, run kết thúc. Bản thử này không giữ món nào, kể cả đồ đã niêm."
+COMBAT_STUB_BUTTON_BOOT,Về màn đầu
+ENEMY_TAX_GUARD_NAME,Vệ binh thuế khiên nhẹ
+ENEMY_FOREMAN_NAME,Đốc công
+WORLD_INTERACT_CACHE_B,Mở rương tịch thu
+PROMPT_LOOT_COLOR_NOT_VALUE,Màu không quyết định giá trị/ô; xem kích thước và công dụng.
+CACHE_CLOSED_LEFT_RANGE,Đã đóng rương vì bạn đi xa. Món chưa nhặt vẫn còn trong rương.
+CARD_PLACED_CONFIRM_BACKPACK,{item} đã vào ba lô.
+CARD_PLACED_CONFIRM_NOTARY_BOX,{item} đã niêm trong Hộp Công Chứng.
+CARD_QUANTITY_SUFFIX,×{quantity}
+CARD_TAG_ROTATABLE,xoay được
+CARD_TAG_STACKABLE,xếp chồng được
+CARD_TAG_SEALABLE,niêm được
+CARD_BACKPACK_FREE,Ba lô trống {free}/{total}
+CARD_FIT_BACKPACK_FITS,vừa ba lô
+CARD_FIT_BACKPACK_ROTATED_ONLY,vừa khi xoay
+CARD_FIT_BACKPACK_NO_FIT,ba lô không vừa
+CARD_FIT_NOTARY_BOX_FITS,vừa Hộp
+CARD_FIT_NOTARY_BOX_NO_FIT,Hộp không đủ chỗ
+CARD_FIT_NOTARY_BOX_NOT_SEALABLE,không niêm được
+ITEM_SCRAPED_TAX_COIN_NAME,Đồng Thuế Cạo Mặt
+ITEM_WATERLOGGED_STOCK_LEDGER_NAME,Sổ Kho Ngấm Nước
+CARD_SCRAPED_TAX_COIN_NAME,Đồng Thuế Cạo Mặt
+CARD_SCRAPED_TAX_COIN_FOOTPRINT,1x1 · 1 ô
+CARD_SCRAPED_TAX_COIN_USE,Đồ quý gọn · đáng giữ theo ô
+CARD_SCRAPED_TAX_COIN_CLAIM,Claim: Nhà Hắc Thuế
+CARD_SCRAPED_TAX_COIN_RARITY,Lớp thẩm định: Xanh lá · 2/6
+CARD_SCRAPED_TAX_COIN_LORE,Mặt cũ bị cạo để người trả thuế không nhớ ai đã hứa bảo hộ họ.
+CARD_WATERLOGGED_STOCK_LEDGER_NAME,Sổ Kho Ngấm Nước
+CARD_WATERLOGGED_STOCK_LEDGER_FOOTPRINT,1x2 · 2 ô
+CARD_WATERLOGGED_STOCK_LEDGER_USE,"Tài sản đăng ký, gọn vừa · không phải vật chứng"
+CARD_WATERLOGGED_STOCK_LEDGER_CLAIM,Claim: Nhà Hắc Thuế
+CARD_WATERLOGGED_STOCK_LEDGER_RARITY,Lớp thẩm định: Xanh dương · 3/6
+CARD_WATERLOGGED_STOCK_LEDGER_LORE,"Mực nhòe gần hết, trừ số pallet không ai muốn thấy quay về."
+INVENTORY_PICKUP_SOURCE_CACHE,"Còn ở rương, chưa nhặt"
+INVENTORY_PICKUP_HINT_ITEM,Chạm ô ba lô hoặc Hộp để xếp; vào Hộp là niêm phong.
+INVENTORY_PREVIEW_FITS_BACKPACK,Vừa. Nhấc ngón để đặt vào ba lô.
+INVENTORY_PREVIEW_FITS_NOTARY_BOX,Vừa. Nhấc ngón để niêm; trong run chưa rút ra lại được.
+INVENTORY_BUTTON_ROTATE,Xoay
+INVENTORY_FOOTPRINT_CHIP,{w}×{h}
