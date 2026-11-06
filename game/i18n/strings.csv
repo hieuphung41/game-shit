@@ -137,7 +137,7 @@ PROMPT_COMBAT_FOREMAN_FIRST_SEEN,Vạch sàn là đường lao của đốc côn
 COMBAT_REMEDY_REFUSED_NO_REMEDY,Túi đeo chéo đã hết thuốc.
 COMBAT_REMEDY_REFUSED_HP_FULL,"Máu đang đầy, chưa cần dùng thuốc."
 COMBAT_REMEDY_INTERRUPTED,Bị ngắt khi đang dùng thuốc. Thuốc chưa mất.
-COMBAT_STUB_HP_ZERO,"Hết máu, run kết thúc. Bản thử này không giữ món nào, kể cả đồ đã niêm."
+COMBAT_STUB_HP_ZERO,"Hết máu, run kết thúc. Bản thử chưa có cứu hộ và thu hồi; về màn đầu."
 COMBAT_STUB_BUTTON_BOOT,Về màn đầu
 ENEMY_TAX_GUARD_NAME,Vệ binh thuế khiên nhẹ
 ENEMY_FOREMAN_NAME,Đốc công
