@@ -16,6 +16,11 @@ uniform float hatch_density : hint_range(2.0, 12.0) = 5.0;
 // wider value so the individual gouge strokes survive the phone downsample.
 uniform float hatch_line_width : hint_range(0.04, 0.32) = 0.052;
 uniform float hatch_strength : hint_range(0.0, 0.90) = 0.34;
+// Defaults preserve the original broken-hatch pattern. Broad architectural
+// faces may opt in to hand-cut spacing and lengths without changing the
+// library materials that already use this shader.
+uniform float hatch_irregularity : hint_range(0.0, 1.0) = 0.0;
+uniform float hatch_dash_frequency : hint_range(0.20, 1.20) = 0.82;
 // Lighter materials cut toward ink; dark materials may cut toward paper so
 // their sparse relief remains distinct inside the indigo shadow band.
 uniform vec3 hatch_gouge_colour : source_color = vec3(0.121569, 0.101961, 0.090196);
@@ -61,17 +66,32 @@ float hatch_plane(vec2 plane, float density) {
 	// readable as a separate chisel pass rather than a texture fill.
 	float across = (plane.x + plane.y * 0.32) * density;
 	float along = (plane.y - plane.x * 0.32) * density;
-	// Every stroke uses a hard binary edge.  Its two ends narrow geometrically
-	// (not by alpha feathering), creating a cut-chisel tip at each uneven dash.
-	float dash_phase = fract(along * 0.82);
 	float row = floor(across);
-	float dash_start = mix(0.06, 0.22, hash21(vec2(row, row + 17.0)));
-	float dash_end = mix(0.66, 0.94, hash21(vec2(row + 31.0, row)));
+	float legacy_start = mix(0.06, 0.22, hash21(vec2(row, row + 17.0)));
+	float legacy_end = mix(0.66, 0.94, hash21(vec2(row + 31.0, row)));
+	float dash_frequency = mix(0.82, hatch_dash_frequency, hatch_irregularity);
+	float dash_coordinate = along * dash_frequency;
+	float dash_phase = fract(dash_coordinate);
+	float dash_index = floor(dash_coordinate);
+	// Each physical cut receives a different phase and length. The broad
+	// range (0.44..0.99 of a long interval) prevents decorative dot rows:
+	// the longest cut is at least twice the shortest before its pointed tips.
+	float cut_seed = hash21(vec2(row * 7.0 + 19.0, dash_index * 11.0 + 3.0));
+	float phase_seed = hash21(vec2(row * 13.0 + 5.0, dash_index * 17.0 + 29.0));
+	float cut_start = mix(0.01, 0.08, phase_seed);
+	float cut_length = mix(0.44, 0.99, cut_seed);
+	float cut_end = min(cut_start + cut_length, 0.99);
+	float dash_start = mix(legacy_start, cut_start, hatch_irregularity);
+	float dash_end = mix(legacy_end, cut_end, hatch_irregularity);
 	float dash = step(dash_start, dash_phase) * (1.0 - step(dash_end, dash_phase));
 	float distance_to_tip = min(dash_phase - dash_start, dash_end - dash_phase);
-	float tip = clamp(distance_to_tip / 0.16, 0.0, 1.0);
-	float stroke_half_width = hatch_line_width * mix(0.12, 1.0, tip);
-	float line = 1.0 - step(stroke_half_width, abs(fract(across) - 0.5));
+	float tip_span = min(0.16, (dash_end - dash_start) * 0.34);
+	float tip = clamp(distance_to_tip / max(tip_span, 0.001), 0.0, 1.0);
+	float stroke_half_width = hatch_line_width * tip;
+	// Jittered row centres only apply to the opt-in chisel treatment; a zero
+	// irregularity keeps the old evenly spaced hatch for every existing material.
+	float row_offset = (hash21(vec2(row + 41.0, row * 3.0 + 7.0)) - 0.5) * 0.52 * hatch_irregularity;
+	float line = 1.0 - step(stroke_half_width, abs(fract(across) - (0.5 + row_offset)));
 	return line * dash;
 }
 
