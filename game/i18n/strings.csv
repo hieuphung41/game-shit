@@ -1,0 +1,76 @@
+keys,vi
+BRIEFING_HEADER_TITLE,GIỮ GIẤY PHÉP
+BRIEFING_OBJECTIVE_MAIN,Lấy Manifest Hàng Hóa R-17 tại bàn dispatch A và extract ở Cầu tàu A.
+BRIEFING_RULES_LINE,Easy · Cầu tàu A mở · Đồ không niêm phong mất khi Phù Hiệu Hồi Hương kích hoạt.
+BRIEFING_MENTOR_SPEAKER,Người Thu Hồi già
+BRIEFING_MENTOR_LINE,"Mang bản dispatch về trước kỳ thuế. Nó chỉ là đầu mối, nhưng thiếu nó ta mất quyền nhận contract."
+BRIEFING_TOOLTIP_UNSEALED_LOSS,Đồ không niêm phong sẽ mất khi Phù Hiệu Hồi Hương kích hoạt.
+BRIEFING_BUTTON_ENTER,Vào cảng
+BRIEFING_BUTTON_ENTER_BLOCKED,Loadout chưa hợp lệ.
+LOADOUT_LABEL_BACKPACK,Ba lô
+LOADOUT_LABEL_SLING_POUCH,Túi đeo chéo
+LOADOUT_LABEL_NOTARY_BOX,Hộp Công Chứng
+LOADOUT_SUMMARY_DEFAULT_KIT,Vũ khí + khiên · vật hồi phục ở túi đeo chéo · ba lô 3x4 · Hộp 2x2 có một vật hồi phục đã niêm.
+HUD_OBJECTIVE_TAKE_MANIFEST,Lấy Manifest R-17 ở bàn dispatch A.
+HUD_OBJECTIVE_CROSS_TAX_POST,Qua trạm thuế.
+HUD_OBJECTIVE_DELIVER_PIER_A,Đưa Manifest ra Cầu tàu A.
+HUD_OBJECTIVE_HOLD_PIER_A,Giữ khu Cầu tàu A đến khi thuyền cập bến.
+HUD_OBJECTIVE_BOARD_BOAT,Lên thuyền ở Cầu tàu A.
+HUD_OBJECTIVE_RECOVER_MANIFEST,Thu hồi Manifest R-17 ở bàn dispatch A.
+WORLD_INTERACT_DISPATCH_DESK,Bàn dispatch
+CARD_MANIFEST_R17_NAME,Manifest Hàng Hóa R-17
+CARD_MANIFEST_R17_FOOTPRINT,1x1 · không xếp chồng
+CARD_MANIFEST_R17_USE,Đầu mối contract · chưa xác thực · extract A
+CARD_MANIFEST_R17_CLAIM,Claim: Nhà Hắc Thuế
+CARD_MANIFEST_R17_RARITY,Lớp thẩm định: Xanh lá
+CARD_MANIFEST_R17_LORE,"Mã tuyến còn thật, chỉ người ký đã biến mất khỏi bản sao."
+CARD_MANIFEST_R17_STATE_NOT_EXTRACTED,Vật chứng · chưa extract
+CARD_ACTION_PICK_AND_PLACE,Nhặt và xếp
+CARD_ACTION_SKIP,Bỏ qua
+CARD_ACTION_CLOSE,Đóng
+INVENTORY_SEAL_LABEL_SEALED,đã niêm
+INVENTORY_SEAL_LABEL_SEALED_NOT_EXTRACTED,đã niêm — chưa extract
+PROMPT_SAFEBOX_SEAL_HINT,Niêm phong tránh mất vĩnh viễn; vẫn phải extract để giữ giấy phép.
+PROMPT_ROUTE_EXTRACT_NOW,Rút ngay ở A
+PROMPT_ROUTE_GO_MARKET,Đi qua Chợ Ngập để kiếm thêm.
+BEACON_E0_STATE_LABEL,Chưa gọi được thuyền
+BEACON_E0_STATE_REASON,Cần mang Manifest R-17.
+BEACON_E1_STATE_LABEL,Gọi được thuyền
+EXTRACT_E1_BUTTON_CALL,Gọi thuyền
+EXTRACT_CONFIRM_TITLE,Gọi thuyền ở Cầu tàu A?
+EXTRACT_CONFIRM_BODY,Địch từ hướng Chợ Ngập sẽ kéo tới. Giữ khu {seconds} giây rồi lên thuyền.
+EXTRACT_CONFIRM_ACCEPT,Gọi
+EXTRACT_CONFIRM_CANCEL,Hủy
+EXTRACT_S7_CALL_ACCEPTED,Đã gọi thuyền.
+EXTRACT_S8_HOLD_TIMER,Giữ khu: còn {seconds} giây
+EXTRACT_S8_LANE_ALERT,Địch tới từ hướng Chợ Ngập!
+EXTRACT_S9_BOAT_READY,Thuyền đã cập bến.
+EXTRACT_S9_BUTTON_BOARD,Lên thuyền
+SUMMARY_GROUP_KEPT,Đã giữ
+SUMMARY_GROUP_LOST,Đã mất
+SUMMARY_GROUP_EVIDENCE,Vật chứng
+SUMMARY_GROUP_NEXT,Tiếp theo
+SUMMARY_SUCCESS_TITLE,Giấy phép được giữ
+SUMMARY_SUCCESS_KEPT_LICENCE,Contract 1 hoàn thành · giấy phép còn hiệu lực.
+SUMMARY_SUCCESS_KEPT_CELLS,Ô ba lô đã dùng: {used}/{total}
+SUMMARY_SUCCESS_LOST_LEFT_BEHIND,Không mang tới Cầu tàu A.
+SUMMARY_SUCCESS_EVIDENCE_MANIFEST,Manifest Hàng Hóa R-17 · đã bàn giao · chỉ là đầu mối.
+SUMMARY_SUCCESS_EVIDENCE_LIMIT,Chưa đủ để minh oan gia tộc.
+SUMMARY_SUCCESS_EVIDENCE_LEAD,Lead: Mã R-17 chỉ về Kho K-7.
+SUMMARY_SUCCESS_MENTOR_LINE,Giấy phép vẫn còn. Mã R-17 chỉ về Kho K-7 — đi chậm thôi.
+SUMMARY_NEXT_CONTRACT2_TITLE,Contract 2 · Kho K-7
+SUMMARY_NEXT_CONTRACT2_TAG,Chưa có trong vertical slice
+SUMMARY_BUTTON_HUB,Về hub
+SUMMARY_DEATH_TITLE,Phù Hiệu Hồi Hương đã kích hoạt
+SUMMARY_DEATH_KEPT_SEALED,Đồ đã niêm (không phải vật chứng) được giữ.
+SUMMARY_DEATH_LOST_UNSEALED,Đồ không niêm phong đã mất.
+SUMMARY_DEATH_EVIDENCE_AT_DESK,Manifest R-17 vẫn ở bàn dispatch A. Contract 1 còn hiệu lực.
+SUMMARY_DEATH_EVIDENCE_UNRECOVERED,"Manifest R-17 · chưa thu hồi. Không về hub, kể cả khi đã niêm."
+SUMMARY_DEATH_NOT_EXTRACTED,Chưa extract · giấy phép chưa được giữ.
+SUMMARY_DEATH_BUTTON_PREPARE,Chuẩn bị lại
+SUMMARY_DEATH_BUTTON_RECOVERY,Xem Recovery Contract
+RECOVERY_HEADER_TITLE,Recovery Contract
+RECOVERY_BODY_LOCATION,Manifest R-17 chưa thu hồi · vị trí: bàn dispatch A.
+RECOVERY_BODY_RULE,"Tự lấy lại và xếp hợp lệ, rồi gọi, giữ khu và lên thuyền ở Cầu tàu A."
+RECOVERY_BODY_KIT,Có kit thu hồi cơ bản; không cần mua lại đồ.
+RECOVERY_BUTTON_BRIEFING,Vào briefing
