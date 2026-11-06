@@ -53,6 +53,11 @@ func _input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"ui_cancel"):
 		request_hub()
 		get_viewport().set_input_as_handled()
+	if event.is_action_pressed(&"ui_accept"):
+		var hub := get_node_or_null("HubButton") as Button
+		if hub != null and get_viewport().gui_get_focus_owner() == hub:
+			request_hub()
+			get_viewport().set_input_as_handled()
 
 
 func _build() -> void:
@@ -69,21 +74,11 @@ func _build() -> void:
 	title.size = Vector2(544, 56)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	add_child(title)
-	var left := VBoxContainer.new()
-	left.name = "LeftGroups"
-	left.position = Vector2(32, 112)
-	left.size = Vector2(592, 464)
-	left.add_theme_constant_override("separation", 12)
-	add_child(left)
+	var left := _group_scroll("LeftScroll", "LeftGroups", Vector2(32, 112))
 	_add_group(left, "KeptGroup", &"SUMMARY_GROUP_KEPT", _kept_lines())
 	if not summary.lost.is_empty():
 		_add_group(left, "LostGroup", &"SUMMARY_GROUP_LOST", _lost_lines())
-	var right := VBoxContainer.new()
-	right.name = "RightGroups"
-	right.position = Vector2(656, 112)
-	right.size = Vector2(592, 464)
-	right.add_theme_constant_override("separation", 12)
-	add_child(right)
+	var right := _group_scroll("RightScroll", "RightGroups", Vector2(656, 112))
 	_add_group(right, "EvidenceGroup", &"SUMMARY_GROUP_EVIDENCE", _evidence_lines())
 	_add_next_group(right)
 	var mentor_speaker := _label("MentorSpeaker", &"BRIEFING_MENTOR_SPEAKER", 20)
@@ -103,7 +98,24 @@ func _build() -> void:
 	var hub := _button("HubButton", &"SUMMARY_BUTTON_HUB", Vector2(968, 600), Vector2(280, 96))
 	hub.pressed.connect(_on_hub_pressed)
 	add_child(hub)
+	hub.grab_focus()
 	_opened_at_msec = Time.get_ticks_msec()
+
+
+func _group_scroll(scroll_name: String, groups_name: String, at: Vector2) -> VBoxContainer:
+	var scroll := ScrollContainer.new()
+	scroll.name = scroll_name
+	scroll.position = at
+	scroll.size = Vector2(592, 464)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	add_child(scroll)
+	var groups := VBoxContainer.new()
+	groups.name = groups_name
+	groups.custom_minimum_size = Vector2(592, 0)
+	groups.add_theme_constant_override("separation", 12)
+	scroll.add_child(groups)
+	return groups
 
 
 func _add_group(parent: Container, node_name: String, title_key: StringName, lines: Array[String]) -> void:
