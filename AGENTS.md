@@ -27,6 +27,8 @@ Mobile 2.5D action-extraction game, offline-first. This repo holds the **design 
 - Comments in `.tscn`/`.tres` start with `;`, never `#`: a `#` line silently drops the property after it (a
   Marker3D lost its `position` this way). Prefer comments in the `.gd` script.
 - New non-resource data files must be covered by the export presets' `include_filter` (currently `config/*.cfg`).
+- No Git LFS (user decision 2026-11-06): keep every binary asset ≤ 5 MB and commit only what the game uses;
+  revisit when the repo passes ~100 MB. Third-party art is **CC0 only** (Kenney, KayKit) — the repo is public.
 
 ## Visual rules (anything that is seen on screen)
 
