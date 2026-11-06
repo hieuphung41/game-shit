@@ -37,7 +37,7 @@ thêm **ảnh cận** `lookdev_detail.png` (nếu có) để soi các dấu hi�
 | 10 | Chất khắc gỗ | Thấy đủ WC-01 hạt giấy, WC-02 vệt đục, WC-03 nét mực, WC-04 khối lệch tay không, và đặt cạnh mục tiêu đã duyệt có giống cùng một game không? | |
 
 Chấm tiêu chí 10: **0** = thiếu từ hai dấu hiệu WC trở lên (nhìn như toon 3D sạch); **1** = thiếu một dấu hiệu, hoặc
-đủ cả bốn nhưng ART_BIBLE còn `proposed`; **2** = đủ cả bốn và khớp mục tiêu đã được user duyệt. Ghi rõ dấu hiệu
+đủ cả bốn nhưng ART_BIBLE còn `proposed`; **2** = đủ cả bốn và khớp mục tiêu đã được user duyệt (ảnh trong [`docs/art/targets/`](../targets/)). Ghi rõ dấu hiệu
 nào thiếu và ở ảnh nào.
 
 **Đạt:** không mục CẤM nào, tổng ≥ 16/20 và không tiêu chí nào 0 điểm. Khi ART_BIBLE còn `proposed`, tổng tối đa là 19/20.

@@ -1,6 +1,8 @@
 # Art Bible — "Khắc gỗ & sơn bạc màu"
 
-**Trạng thái:** `proposed` (2026-11-05), chờ user duyệt qua scene look-dev trên staging. Đây là **hợp đồng hình ảnh**
+**Trạng thái:** `approved` — user duyệt 2026-11-06 qua look-dev và khu A trên staging. **Mục tiêu đã duyệt** (ảnh để so
+"cùng một gia đình", rubric tiêu chí 10): [khu A](targets/zone_a_2026-11-06.png), [look-dev](targets/lookdev_2026-11-06.png),
+[look-dev cận](targets/lookdev_detail_2026-11-06.png). Đây là **hợp đồng hình ảnh**
 mà mọi người và mọi agent làm hình phải tuân theo. Nó cụ thể hoá [art-direction.md](../art-direction.md) thành
 luật đo được; khi hai tài liệu khác nhau về *ý đồ*, art-direction.md thắng; về *thông số*, file này thắng.
 
@@ -19,7 +21,7 @@ Vì sao hướng này: nó đọc tốt trên màn điện thoại (mảng phẳ
 
 ## 2. Khung kỹ thuật (khoá)
 
-| Hạng mục | Giá trị `proposed` |
+| Hạng mục | Giá trị |
 |---|---|
 | Engine / renderer | Godot 4.7.2, GL Compatibility (web staging + Android tầm thấp) |
 | Camera | `Camera3D` orthographic, pitch −30°, yaw 45°, không xoay; zoom chỉ theo art-direction §2 |

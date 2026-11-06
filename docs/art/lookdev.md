@@ -1,6 +1,6 @@
 # Look-dev — thư viện vật liệu và cảnh kiểm
 
-Trạng thái: `proposed`. Cảnh này là mục tiêu kiểm đầu tiên cho hướng **khắc gỗ và sơn bạc màu**,
+Trạng thái: `approved` (2026-11-06). Cảnh này là mục tiêu kiểm đầu tiên cho hướng **khắc gỗ và sơn bạc màu**,
 không phải một khu playable.
 
 ## Dùng lại thư viện
