@@ -72,10 +72,10 @@ func close() -> void:
 		closed.emit(mode == Mode.VIEW)
 
 
-func _gui_input(event: InputEvent) -> void:
+func _input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"ui_cancel") and not _input_guard_active():
 		closed.emit(mode == Mode.VIEW)
-		accept_event()
+		get_viewport().set_input_as_handled()
 
 
 func _build() -> void:
@@ -267,8 +267,14 @@ func _grid_for(kind: StringName) -> InventoryGrid:
 
 
 func _on_item_pressed(uid: int) -> void:
-	if not _input_guard_active():
-		select_item(uid)
+	if _input_guard_active():
+		return
+	if mode == Mode.PICKUP:
+		var found := _find_item(uid)
+		if not found.is_empty():
+			tap_cell(found.grid.grid_kind, found.item.anchor)
+		return
+	select_item(uid)
 
 
 func _on_cell_pressed(target: StringName, anchor: Vector2i) -> void:

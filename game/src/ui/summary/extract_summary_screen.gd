@@ -49,10 +49,10 @@ func show_scene_load_error() -> void:
 		status.text = tr("UI_ERROR_SCENE_LOAD")
 
 
-func _gui_input(event: InputEvent) -> void:
+func _input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"ui_cancel"):
 		request_hub()
-		accept_event()
+		get_viewport().set_input_as_handled()
 
 
 func _build() -> void:
@@ -159,11 +159,17 @@ func _lost_lines() -> Array[String]:
 
 
 func _evidence_lines() -> Array[String]:
-	return [
-		tr("SUMMARY_SUCCESS_EVIDENCE_MANIFEST"),
-		tr("SUMMARY_SUCCESS_EVIDENCE_LIMIT"),
-		tr("SUMMARY_SUCCESS_EVIDENCE_LEAD"),
-	]
+	var lines: Array[String] = []
+	for def_id: StringName in summary.evidence:
+		if def_id == &"manifest_r17":
+			lines.append(tr("SUMMARY_SUCCESS_EVIDENCE_MANIFEST"))
+			lines.append(tr("SUMMARY_SUCCESS_EVIDENCE_LIMIT"))
+			lines.append(tr("SUMMARY_SUCCESS_EVIDENCE_LEAD"))
+			continue
+		var definition := registry.get_def(def_id) if registry != null else null
+		if definition != null:
+			lines.append(definition.localized_display_name())
+	return lines
 
 
 func _item_name(def_id: StringName) -> String:

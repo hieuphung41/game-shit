@@ -32,10 +32,10 @@ func skip() -> void:
 		skipped.emit()
 
 
-func _gui_input(event: InputEvent) -> void:
+func _input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"ui_cancel") and not _input_guard_active():
 		closed.emit()
-		accept_event()
+		get_viewport().set_input_as_handled()
 
 
 func _build() -> void:
