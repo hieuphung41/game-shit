@@ -7,6 +7,8 @@ metallic = 0.0
 roughness = 0.9
 specular_mode = 2
 diffuse_mode = 3
-emission_enabled = true
-emission = Color(0.898039, 0.282353, 0.176471, 1)
-emission_energy_multiplier = 0.3
+shading_mode = 0
+; The telegraph core is an opaque, hard-edged palette chip.  In GL Compatibility
+; additive emission pushes its measured red above the locked signal_danger lane.
+; The unshaded face remains readable while keeping the probe on #E5482D.
+emission_enabled = false

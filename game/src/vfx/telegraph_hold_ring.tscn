@@ -1,0 +1,31 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/vfx/telegraph_hold_ring.gd" id="1_script"]
+[ext_resource type="Material" path="res://art/materials/signal_danger.tres" id="2_signal"]
+
+[sub_resource type="TorusMesh" id="TorusMesh_ring"]
+inner_radius = 2.445
+outer_radius = 2.555
+rings = 8
+ring_segments = 48
+
+[sub_resource type="BoxMesh" id="BoxMesh_wedge"]
+size = Vector3(0.01, 0.01, 0.01)
+
+[node name="TelegraphHoldRing" type="Node3D"]
+script = ExtResource("1_script")
+metadata/visual_role = "signal_danger_floor_telegraph"
+
+[node name="SolidRing" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.02, 0)
+mesh = SubResource("TorusMesh_ring")
+material_override = ExtResource("2_signal")
+
+[node name="DashedRing" type="Node3D" parent="."]
+
+[node name="InwardTicks" type="Node3D" parent="."]
+
+[node name="StrikeWedge" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_wedge")
+material_override = ExtResource("2_signal")
+visible = false

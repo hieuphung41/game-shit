@@ -1,0 +1,24 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/vfx/telegraph_charge_lane.gd" id="1_script"]
+[ext_resource type="Material" path="res://art/materials/signal_danger.tres" id="2_signal"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_edge"]
+size = Vector3(0.18, 0.025, 9)
+
+[sub_resource type="BoxMesh" id="BoxMesh_chevron"]
+size = Vector3(0.58, 0.025, 0.11)
+
+[node name="TelegraphChargeLane" type="Node3D"]
+script = ExtResource("1_script")
+metadata/visual_role = "signal_danger_floor_telegraph"
+
+[node name="LeftEdge" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_edge")
+material_override = ExtResource("2_signal")
+
+[node name="RightEdge" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_edge")
+material_override = ExtResource("2_signal")
+
+[node name="Chevrons" type="Node3D" parent="."]

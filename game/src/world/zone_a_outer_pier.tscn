@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3]
+[gd_scene load_steps=31 format=3]
 
 [ext_resource type="Environment" path="res://art/env_default.tres" id="1_environment"]
 [ext_resource type="Material" path="res://art/materials/env_wood.tres" id="2_wood"]
@@ -16,6 +16,7 @@
 [ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/barrel.glb" id="14_kenney_barrel"]
 [ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/platform-planks.glb" id="15_kenney_planks"]
 [ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/structure-platform-dock.glb" id="16_kenney_dock"]
+[ext_resource type="PackedScene" path="res://src/world/zone_b_flooded_market.tscn" id="17_zone_b"]
 
 [sub_resource type="ShaderMaterial" id="InkPriority"]
 resource_name = "ink_outline_priority_055"
@@ -266,6 +267,10 @@ scale = Vector3(0.7, 0.7, 0.7)
 position = Vector3(5.3, 0, -2.45)
 rotation_degrees = Vector3(0, -8, 0)
 metadata/greybox_role = "route_to_zone_b_placeholder"
+
+[node name="ZoneBFloodedMarket" parent="." instance=ExtResource("17_zone_b")]
+position = Vector3(7, 0, -2.45)
+metadata/placement_contract = "TASK-81 B root: world (7.0, 0.0, -2.45), no rotation."
 
 [node name="RopeGuide" type="MeshInstance3D" parent="RouteToB"]
 position = Vector3(0, 0.34, 1.0)
