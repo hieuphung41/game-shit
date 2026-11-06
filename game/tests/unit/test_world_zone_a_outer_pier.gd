@@ -73,7 +73,7 @@ func test_zone_a_lookdev_capture_uses_the_game_camera_and_visible_prt_probes(t) 
 		t.eq(background_probe.get_meta("expected_hex"), "#4E6570", "Zone A background probe locks sea_bluegrey")
 	var shadow_probe := world.get_node_or_null("ProbeZoneADeckShadow") as Marker3D
 	if shadow_probe != null:
-		t.eq(shadow_probe.get_meta("surface_path"), "ExtractPierA", "Zone A shadow probe samples the visible extract floor")
+		t.eq(shadow_probe.get_meta("surface_path"), "ExtractPierA/DockPlatform/structure-platform-dock", "Zone A shadow probe samples the visible Kenney extract floor")
 	var capture_script := load("res://src/lookdev/zone_a_lookdev_capture.gd") as Script
 	if capture_script != null:
 		t.ok("zone_a_game.png" in capture_script.source_code, "Zone A capture writes the full gameplay frame")
@@ -93,13 +93,13 @@ func test_zone_a_priority_fixtures_keep_phone_readable_ink_and_sparse_gouges(t) 
 	await t.tree.process_frame
 	var desk := world.get_node_or_null("DispatchDesk/DeskTop") as MeshInstance3D
 	var desk_material := desk.material_override as ShaderMaterial if desk != null else null
-	var deck := world.get_node_or_null("PierDeck") as MeshInstance3D
+	var deck := world.get_node_or_null("PierDeck/Planks21/platform-planks") as MeshInstance3D
 	var deck_material := deck.material_override as ShaderMaterial if deck != null else null
 	t.ok(deck_material != null, "The broad pier deck uses a printed world material")
 	if deck_material != null:
 		t.eq(deck_material.get_shader_parameter("paper_grain_enabled"), true, "Pier deck keeps world-space paper grain")
-		t.eq(deck_material.get_shader_parameter("paper_grain_strength"), 0.05, "Pier deck visibly modulates its broad lit face by five percent")
-		t.eq(deck_material.get_shader_parameter("paper_fiber_scale"), 8.0, "Pier deck uses broad fibres readable at game scale")
+		t.eq(deck_material.get_shader_parameter("paper_grain_strength"), 0.04, "Pier deck inherits the library's four percent paper grain")
+		t.eq(deck_material.get_shader_parameter("paper_fiber_scale"), 14.0, "Pier deck uses the library's world-space fibre scale")
 	t.ok(desk_material != null, "Dispatch desk uses the matte toon material")
 	if desk_material != null:
 		t.eq(desk_material.get_shader_parameter("paper_grain_enabled"), true, "Dispatch desk keeps world-space paper grain")
@@ -153,6 +153,37 @@ func test_zone_a_priority_fixture_transforms_remain_locked_for_task_75(t) -> boo
 	if extract_pier != null:
 		t.eq(extract_pier.position, Vector3(-4.75, 0.0, -5.1), "ExtractPierA keeps the TASK-75 position")
 		t.eq(extract_pier.rotation_degrees, Vector3.ZERO, "ExtractPierA keeps the TASK-75 rotation")
+	world.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func test_zone_a_uses_the_four_approved_kenney_models_with_library_materials(t) -> bool:
+	var scene := load(SCENE_PATH) as PackedScene
+	if not t.ok(scene != null, "Zone A scene loads for approved Kenney model checks"):
+		return true
+	var world := scene.instantiate() as Node3D
+	t.tree.root.add_child(world)
+	await t.tree.process_frame
+	var replacements: Dictionary = {
+		"PierDeck": "platform-planks",
+		"ExtractPierA": "structure-platform-dock",
+		"CrateStack": "crate",
+		"MooringBarrels": "barrel",
+	}
+	for root_path: String in replacements:
+		var replacement_root := world.get_node_or_null(root_path) as Node3D
+		if not t.ok(replacement_root != null, "%s keeps its replacement root" % root_path):
+			continue
+		var expected_mesh_name: String = replacements[root_path]
+		var imported_meshes := replacement_root.find_children(expected_mesh_name, "MeshInstance3D", true, false)
+		t.ok(not imported_meshes.is_empty(), "%s contains the %s Kenney mesh" % [root_path, expected_mesh_name])
+		for node: Node in imported_meshes:
+			var mesh := node as MeshInstance3D
+			t.ok(mesh.material_override is ShaderMaterial, "%s overrides imported material with a matte library shader" % mesh.get_path())
+	t.ok(world.get_node_or_null("PierDeck") is not MeshInstance3D, "PierDeck BoxMesh greybox is replaced by Kenney plank modules")
+	t.ok(world.get_node_or_null("ExtractPierA") is not MeshInstance3D, "ExtractPierA BoxMesh greybox is replaced by the Kenney dock")
+	t.eq(world.find_children("*", "CollisionObject3D", true, false).size(), 0, "Kenney visual replacements preserve Zone A's collision-free greybox state")
 	world.queue_free()
 	await t.tree.process_frame
 	return true

@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=3]
+[gd_scene load_steps=30 format=3]
 
 [ext_resource type="Environment" path="res://art/env_default.tres" id="1_environment"]
 [ext_resource type="Material" path="res://art/materials/env_wood.tres" id="2_wood"]
@@ -11,6 +11,11 @@
 [ext_resource type="Script" path="res://src/lookdev/zone_a_lookdev_capture.gd" id="9_lookdev_capture"]
 [ext_resource type="Shader" path="res://art/shaders/toon_matte.gdshader" id="10_toon"]
 [ext_resource type="Shader" path="res://art/shaders/ink_outline.gdshader" id="11_ink"]
+[ext_resource type="Script" path="res://src/lookdev/third_party_lookdev_material.gd" id="12_third_party_material"]
+[ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/crate.glb" id="13_kenney_crate"]
+[ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/barrel.glb" id="14_kenney_barrel"]
+[ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/platform-planks.glb" id="15_kenney_planks"]
+[ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/structure-platform-dock.glb" id="16_kenney_dock"]
 
 [sub_resource type="ShaderMaterial" id="InkPriority"]
 resource_name = "ink_outline_priority_055"
@@ -65,12 +70,6 @@ shader_parameter/paper_fiber_scale = 14.0
 shader_parameter/paper_speckle_density = 7.0
 shader_parameter/hatch_enabled = false
 
-[sub_resource type="BoxMesh" id="DeckMesh"]
-size = Vector3(14, 0.18, 10)
-
-[sub_resource type="BoxMesh" id="PierMesh"]
-size = Vector3(4.5, 0.18, 6)
-
 [sub_resource type="BoxMesh" id="DeskTopMesh"]
 size = Vector3(1.7, 0.16, 0.82)
 
@@ -101,7 +100,7 @@ height = 0.72
 radial_segments = 8
 rings = 2
 
-[sub_resource type="BoxMesh" id="RouteMesh"]
+[sub_resource type="BoxMesh" id="RopeGuideMesh"]
 size = Vector3(4.8, 0.14, 2.5)
 
 [sub_resource type="BoxMesh" id="CraneArmMesh"]
@@ -146,14 +145,102 @@ position = Vector3(0, -0.12, -1.0)
 mesh = SubResource("WaterMesh")
 material_override = ExtResource("8_water")
 
-[node name="PierDeck" type="MeshInstance3D" parent="."]
-mesh = SubResource("DeckMesh")
-material_override = SubResource("WoodBroadPrint")
+[node name="PierDeck" type="Node3D" parent="."]
+script = ExtResource("12_third_party_material")
+library_material = ExtResource("2_wood")
 
-[node name="ExtractPierA" type="MeshInstance3D" parent="."]
+[node name="Planks00" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(-5.67, -0.338, -4.05)
+
+[node name="Planks01" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(-3.78, -0.338, -4.05)
+
+[node name="Planks02" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(-1.89, -0.338, -4.05)
+
+[node name="Planks03" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(0, -0.338, -4.05)
+
+[node name="Planks04" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(1.89, -0.338, -4.05)
+
+[node name="Planks05" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(3.78, -0.338, -4.05)
+
+[node name="Planks06" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(5.67, -0.338, -4.05)
+
+[node name="Planks10" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(-5.67, -0.338, -1.35)
+
+[node name="Planks11" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(-3.78, -0.338, -1.35)
+
+[node name="Planks12" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(-1.89, -0.338, -1.35)
+
+[node name="Planks13" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(0, -0.338, -1.35)
+
+[node name="Planks14" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(1.89, -0.338, -1.35)
+
+[node name="Planks15" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(3.78, -0.338, -1.35)
+
+[node name="Planks16" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(5.67, -0.338, -1.35)
+
+[node name="Planks20" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(-5.67, -0.338, 1.35)
+
+[node name="Planks21" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(-3.78, -0.338, 1.35)
+
+[node name="Planks22" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(-1.89, -0.338, 1.35)
+
+[node name="Planks23" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(0, -0.338, 1.35)
+
+[node name="Planks24" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(1.89, -0.338, 1.35)
+
+[node name="Planks25" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(3.78, -0.338, 1.35)
+
+[node name="Planks26" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(5.67, -0.338, 1.35)
+
+[node name="Planks30" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(-5.67, -0.338, 4.05)
+
+[node name="Planks31" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(-3.78, -0.338, 4.05)
+
+[node name="Planks32" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(-1.89, -0.338, 4.05)
+
+[node name="Planks33" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(0, -0.338, 4.05)
+
+[node name="Planks34" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(1.89, -0.338, 4.05)
+
+[node name="Planks35" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(3.78, -0.338, 4.05)
+
+[node name="Planks36" parent="PierDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(5.67, -0.338, 4.05)
+
+[node name="ExtractPierA" type="Node3D" parent="."]
 position = Vector3(-4.75, 0, -5.1)
-mesh = SubResource("PierMesh")
-material_override = SubResource("WoodBroadPrint")
+script = ExtResource("12_third_party_material")
+library_material = ExtResource("3_wood_dark")
+
+[node name="DockPlatform" parent="ExtractPierA" instance=ExtResource("16_kenney_dock")]
+position = Vector3(0, -2.272, 0)
+scale = Vector3(1.8, 1.8, 1.8)
 
 [node name="DispatchDesk" type="Node3D" parent="."]
 position = Vector3(1.45, 0, 1.55)
@@ -228,20 +315,63 @@ rotation_degrees = Vector3(0, 0, 2)
 mesh = SubResource("ShortPostMesh")
 material_override = ExtResource("2_wood")
 
+[node name="MooringBarrels" type="Node3D" parent="."]
+position = Vector3(-6.1, 0.09, 3.5)
+rotation_degrees = Vector3(0, -4, 0)
+script = ExtResource("12_third_party_material")
+library_material = ExtResource("3_wood_dark")
+
+[node name="BarrelNear" parent="MooringBarrels" instance=ExtResource("14_kenney_barrel")]
+position = Vector3(-0.46, 0, 0.06)
+rotation_degrees = Vector3(0, 3, 0)
+scale = Vector3(0.7, 0.7, 0.7)
+
+[node name="BarrelFar" parent="MooringBarrels" instance=ExtResource("14_kenney_barrel")]
+position = Vector3(0.32, 0, -0.18)
+rotation_degrees = Vector3(0, -3, 0)
+scale = Vector3(0.7, 0.7, 0.7)
+
 [node name="RouteToB" type="Node3D" parent="."]
 position = Vector3(5.3, 0, -2.45)
 rotation_degrees = Vector3(0, -8, 0)
 metadata/greybox_role = "route_to_zone_b_placeholder"
 
-[node name="WalkableDeck" type="MeshInstance3D" parent="RouteToB"]
-mesh = SubResource("RouteMesh")
-material_override = SubResource("WoodBroadPrint")
+[node name="WalkableDeck" type="Node3D" parent="RouteToB"]
+script = ExtResource("12_third_party_material")
+library_material = ExtResource("2_wood")
+
+[node name="PlanksWest" parent="RouteToB/WalkableDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(-1.61, -0.274, 0)
+scale = Vector3(0.85, 0.85, 0.85)
+
+[node name="PlanksCentre" parent="RouteToB/WalkableDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(0, -0.274, 0)
+scale = Vector3(0.85, 0.85, 0.85)
+
+[node name="PlanksEast" parent="RouteToB/WalkableDeck" instance=ExtResource("15_kenney_planks")]
+position = Vector3(1.61, -0.274, 0)
+scale = Vector3(0.85, 0.85, 0.85)
 
 [node name="RopeGuide" type="MeshInstance3D" parent="RouteToB"]
 position = Vector3(0, 0.34, 1.0)
 rotation_degrees = Vector3(0, 90, 0)
-mesh = SubResource("RouteMesh")
+mesh = SubResource("RopeGuideMesh")
 material_override = ExtResource("4_rope")
+
+[node name="CrateStack" type="Node3D" parent="."]
+position = Vector3(5.8, 0.09, 3.8)
+rotation_degrees = Vector3(0, 3, 0)
+script = ExtResource("12_third_party_material")
+library_material = ExtResource("2_wood")
+
+[node name="CrateBottom" parent="CrateStack" instance=ExtResource("13_kenney_crate")]
+rotation_degrees = Vector3(0, -3, 0)
+scale = Vector3(0.55, 0.55, 0.55)
+
+[node name="CrateTop" parent="CrateStack" instance=ExtResource("13_kenney_crate")]
+position = Vector3(0.08, 0.424, -0.04)
+rotation_degrees = Vector3(0, 4, 0)
+scale = Vector3(0.55, 0.55, 0.55)
 
 [node name="SilhouetteC" type="Node3D" parent="."]
 position = Vector3(4.6, 2.2, -9.8)
@@ -281,14 +411,14 @@ metadata/expected_hex = "#4E6570"
 metadata/tolerance = 5.0
 
 [node name="ProbeZoneADeckLight" type="Marker3D" parent="." groups=["zone_a_lookdev_probe"]]
-position = Vector3(3.3, 0.095, 2.8)
+position = Vector3(-4.0, 0.095, 2.0)
 metadata/role = "lit_face"
-metadata/surface_path = "PierDeck"
+metadata/surface_path = "PierDeck/Planks21/platform-planks"
 metadata/expected_hex = "#7B5B40"
 metadata/tolerance = 10.0
 
 [node name="ProbeZoneADeckShadow" type="Marker3D" parent="." groups=["zone_a_lookdev_probe"]]
-position = Vector3(-4.58, 0.095, -3.6)
+position = Vector3(-2.86, -0.22986, -6.78)
 metadata/role = "shadow"
-metadata/surface_path = "ExtractPierA"
+metadata/surface_path = "ExtractPierA/DockPlatform/structure-platform-dock"
 metadata/tolerance = 12.0
