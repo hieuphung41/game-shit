@@ -106,6 +106,9 @@ func test_zone_a_priority_fixtures_keep_phone_readable_ink_and_sparse_gouges(t) 
 		t.eq(desk_material.get_shader_parameter("paper_grain_strength"), 0.05, "Dispatch desk keeps the five percent printed modulation")
 		t.eq(desk_material.get_shader_parameter("hatch_enabled"), true, "Dispatch desk carries sparse shadow gouges")
 		t.eq(desk_material.get_shader_parameter("hatch_density"), 2.6, "Dispatch desk gouges remain spaced for a phone frame")
+		t.eq(desk_material.get_shader_parameter("hatch_line_width"), 0.2, "Dispatch desk keeps its hand cuts narrow enough to read as long strokes")
+		t.eq(desk_material.get_shader_parameter("hatch_irregularity"), 1.0, "Dispatch desk opts into irregular hand-cut gouges")
+		t.eq(desk_material.get_shader_parameter("hatch_dash_frequency"), 0.33, "Dispatch desk uses long gouge strokes, not dot cadence")
 		t.ok(desk_material.next_pass is ShaderMaterial, "Dispatch desk uses the priority ink outline")
 	var tax_wall := world.get_node_or_null("SilhouetteE/TaxWall") as MeshInstance3D
 	var tax_wall_material := tax_wall.material_override as ShaderMaterial if tax_wall != null else null
@@ -115,11 +118,41 @@ func test_zone_a_priority_fixtures_keep_phone_readable_ink_and_sparse_gouges(t) 
 		t.eq(tax_wall_material.get_shader_parameter("hatch_enabled"), true, "Tax wall restricts pale gouges to its indigo shadow")
 		var gouge_colour := tax_wall_material.get_shader_parameter("hatch_gouge_colour") as Color
 		t.eq(gouge_colour.to_html(false).to_upper(), "ECE3CF", "Tax wall gouges lift only the dark shadow band with paper colour")
+		t.eq(tax_wall_material.get_shader_parameter("hatch_line_width"), 0.2, "Tax wall cuts remain narrow against their long run")
+		t.eq(tax_wall_material.get_shader_parameter("hatch_irregularity"), 1.0, "Tax wall uses independent chisel cuts, not repeated hatch rows")
+		t.eq(tax_wall_material.get_shader_parameter("hatch_dash_frequency"), 0.33, "Tax wall gouges stay long at game scale")
 	t.ok(world.get_node_or_null("SilhouetteE/TaxWall/TaxWallEave") is MeshInstance3D, "Tax wall eave casts the broad shadow band for gouges")
 	var beacon_stem := world.get_node_or_null("BeaconA/BeaconStem") as MeshInstance3D
 	var beacon_lantern := world.get_node_or_null("BeaconA/BeaconLantern") as MeshInstance3D
 	t.ok(beacon_stem != null and beacon_stem.material_override is ShaderMaterial, "Beacon stem uses matte inked world material")
 	t.ok(beacon_lantern != null and beacon_lantern.material_overlay is ShaderMaterial, "Beacon signal keeps its priority ink silhouette")
+	world.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func test_zone_a_priority_fixture_transforms_remain_locked_for_task_75(t) -> bool:
+	var scene := load(SCENE_PATH) as PackedScene
+	if not t.ok(scene != null, "Zone A scene loads for priority-fixture transform locks"):
+		return true
+	var world := scene.instantiate() as Node3D
+	t.tree.root.add_child(world)
+	await t.tree.process_frame
+	var dispatch_desk := world.get_node_or_null("DispatchDesk") as Node3D
+	var beacon := world.get_node_or_null("BeaconA") as Node3D
+	var extract_pier := world.get_node_or_null("ExtractPierA") as Node3D
+	t.ok(dispatch_desk != null, "DispatchDesk remains named for TASK-75")
+	t.ok(beacon != null, "BeaconA remains named for TASK-75")
+	t.ok(extract_pier != null, "ExtractPierA remains named for TASK-75")
+	if dispatch_desk != null:
+		t.eq(dispatch_desk.position, Vector3(1.45, 0.0, 1.55), "DispatchDesk keeps the TASK-75 position")
+		t.eq(Vector3(roundf(dispatch_desk.rotation_degrees.x), roundf(dispatch_desk.rotation_degrees.y), roundf(dispatch_desk.rotation_degrees.z)), Vector3(0.0, -3.0, 0.0), "DispatchDesk keeps the TASK-75 rotation")
+	if beacon != null:
+		t.eq(beacon.position, Vector3(-5.25, 0.0, -5.2), "BeaconA keeps the TASK-75 position")
+		t.eq(Vector3(roundf(beacon.rotation_degrees.x), roundf(beacon.rotation_degrees.y), roundf(beacon.rotation_degrees.z)), Vector3(0.0, 3.0, -2.0), "BeaconA keeps the TASK-75 rotation")
+	if extract_pier != null:
+		t.eq(extract_pier.position, Vector3(-4.75, 0.0, -5.1), "ExtractPierA keeps the TASK-75 position")
+		t.eq(extract_pier.rotation_degrees, Vector3.ZERO, "ExtractPierA keeps the TASK-75 rotation")
 	world.queue_free()
 	await t.tree.process_frame
 	return true
