@@ -32,6 +32,7 @@ func test_retriever_scene_has_character_body_and_one_hand_touch_joystick(t) -> b
 		return true
 	var retriever := scene.instantiate()
 	t.ok(retriever is CharacterBody3D, "Retriever uses CharacterBody3D")
+	t.eq(retriever.get_meta("greybox_status", ""), "placeholder", "Retriever is explicitly marked as a greybox placeholder")
 	t.ok(retriever.get_node_or_null("CollisionShape3D") is CollisionShape3D, "Retriever has a collision shape")
 	var body := retriever.get_node_or_null("Body") as MeshInstance3D
 	var body_material := body.material_override as ShaderMaterial if body != null else null
@@ -65,13 +66,26 @@ func test_retriever_follow_keeps_isometric_rotation_and_beacon_in_frame_at_dispa
 	var camera := world.get_node_or_null("CameraIsometric") as Camera3D
 	var dispatch := world.get_node_or_null("DispatchDesk") as Node3D
 	var beacon := world.get_node_or_null("BeaconA") as Node3D
-	if camera != null and dispatch != null:
-		retriever.global_position = dispatch.global_position + Vector3(0.0, 0.95, 0.0)
-		await t.tree.physics_frame
-		t.eq(roundi(camera.rotation_degrees.x), -30, "camera follow keeps fixed isometric pitch")
-		t.eq(roundi(camera.rotation_degrees.y), 45, "camera follow keeps fixed isometric yaw")
-	if camera != null and beacon != null:
-		t.ok(camera.is_position_in_frustum(beacon.global_position), "beacon A remains visible from dispatch")
+	if not t.ok(camera != null, "Zone A requires CameraIsometric"):
+		world.queue_free()
+		return true
+	if not t.ok(dispatch != null, "Zone A requires DispatchDesk"):
+		world.queue_free()
+		return true
+	if not t.ok(beacon != null, "Zone A requires BeaconA"):
+		world.queue_free()
+		return true
+	var expected_offset := camera.global_position - retriever.global_position
+	retriever.global_position = dispatch.global_position + Vector3(0.0, 0.95, 0.0)
+	await t.tree.physics_frame
+	await t.tree.process_frame
+	t.ok(
+		camera.global_position.is_equal_approx(retriever.global_position + expected_offset),
+		"camera follows the Retriever by its original offset"
+	)
+	t.eq(roundi(camera.rotation_degrees.x), -30, "camera follow keeps fixed isometric pitch")
+	t.eq(roundi(camera.rotation_degrees.y), 45, "camera follow keeps fixed isometric yaw")
+	t.ok(camera.is_position_in_frustum(beacon.global_position), "beacon A remains visible from dispatch")
 	world.queue_free()
 	await t.tree.process_frame
 	return true
@@ -88,19 +102,32 @@ func test_boot_offers_outer_pier_entry(t) -> bool:
 	var scene := load(BOOT_SCENE_PATH) as PackedScene
 	if not t.ok(scene != null, "boot scene loads"):
 		return true
+	var original_channel := AppEnv.channel
+	t.eq(AppEnv.load_for("staging"), OK, "staging configuration loads")
 	var boot := scene.instantiate()
 	t.tree.root.add_child(boot)
 	await t.tree.process_frame
 	var enter_button := boot.get_node_or_null("EnterOuterPierButton") as Button
+	var env_badge := boot.get_node_or_null("EnvBadge") as Label
 	t.ok(enter_button != null, "boot includes the outer-pier entry button")
+	t.ok(env_badge != null and env_badge.visible, "staging keeps the environment badge visible")
+	if env_badge != null:
+		t.eq(env_badge.text, "STAGING", "staging badge identifies the build channel")
 	if enter_button != null:
 		t.eq(enter_button.text, "Vào Bến Ngoài (thử nghiệm)", "entry uses the approved Vietnamese label")
 		enter_button.grab_focus()
 		t.ok(enter_button.has_focus(), "desktop keyboard can focus the entry button")
 		t.ok(enter_button.pressed.is_connected(Callable(boot, &"_on_enter_outer_pier_pressed")), "entry button is connected to the Zone A transition")
-	var world := boot.call("build_outer_pier_world") as Node3D
-	t.ok(world.get_node_or_null("Retriever") is CharacterBody3D, "boot transition prepares Zone A with the Retriever")
-	world.queue_free()
-	boot.queue_free()
+		enter_button.pressed.emit()
+		await t.tree.process_frame
+		var world := t.tree.current_scene as Node3D
+		t.ok(world != null, "entry button changes to a current Zone A scene")
+		if world != null:
+			t.eq(world.scene_file_path, WORLD_SCENE_PATH, "entry button changes to Zone A")
+			t.ok(world.get_node_or_null("Retriever") is CharacterBody3D, "Zone A contains the Retriever after entry")
+			world.queue_free()
+	if is_instance_valid(boot):
+		boot.queue_free()
 	await t.tree.process_frame
+	AppEnv.load_for(original_channel)
 	return true
