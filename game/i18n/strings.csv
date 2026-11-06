@@ -11,12 +11,28 @@ LOADOUT_LABEL_BACKPACK,Ba lô
 LOADOUT_LABEL_SLING_POUCH,Túi đeo chéo
 LOADOUT_LABEL_NOTARY_BOX,Hộp Công Chứng
 LOADOUT_SUMMARY_DEFAULT_KIT,Vũ khí + khiên · vật hồi phục ở túi đeo chéo · ba lô 3x4 · Hộp 2x2 có một vật hồi phục đã niêm.
+BRIEFING_BUTTON_EDIT_LOADOUT,Sắp lại đồ
+BRIEFING_BUTTON_BACK,Quay lại
+UI_LOADING,Đang tải…
+UI_ERROR_SCENE_LOAD,Không mở được màn tiếp theo. Chạm lại để thử.
+LOADOUT_TITLE,Sắp lại đồ mang theo
+LOADOUT_HINT_SELECT,"Chạm một món, rồi chạm ô có dấu vừa."
+LOADOUT_BUTTON_DONE,Xong
+LOADOUT_BUTTON_CANCEL,Hủy
+LOADOUT_CONFIRM_GEAR_TITLE,Đổi đồ mang vào run?
+LOADOUT_CONFIRM_GEAR_BODY,Cách xếp cũ trong ba lô và túi đeo chéo sẽ thay đổi. Xem lại trước khi vào cảng.
+LOADOUT_CONFIRM_GEAR_ACCEPT,Đổi đồ
+LOADOUT_CONFIRM_NO_WEAPON_TITLE,Vào cảng không vũ khí?
+LOADOUT_CONFIRM_NO_WEAPON_BODY,"Bạn sẽ vào Cảng Hắc Thuế tay không. Vẫn đi được, nhưng khó tự vệ."
+ITEM_STARTER_REMEDY_NAME,Cuộn Băng Muối
 HUD_OBJECTIVE_TAKE_MANIFEST,Lấy Manifest R-17 ở bàn dispatch A.
 HUD_OBJECTIVE_CROSS_TAX_POST,Qua trạm thuế.
 HUD_OBJECTIVE_DELIVER_PIER_A,Đưa Manifest ra Cầu tàu A.
 HUD_OBJECTIVE_HOLD_PIER_A,Giữ khu Cầu tàu A đến khi thuyền cập bến.
 HUD_OBJECTIVE_BOARD_BOAT,Lên thuyền ở Cầu tàu A.
 HUD_OBJECTIVE_RECOVER_MANIFEST,Thu hồi Manifest R-17 ở bàn dispatch A.
+HUD_OBJECTIVE_PICK_UP_MANIFEST,Nhặt lại Manifest R-17 dưới đất.
+HUD_BUTTON_INVENTORY,Đồ mang theo
 WORLD_INTERACT_DISPATCH_DESK,Bàn dispatch
 CARD_MANIFEST_R17_NAME,Manifest Hàng Hóa R-17
 CARD_MANIFEST_R17_FOOTPRINT,1x1 · không xếp chồng
@@ -30,19 +46,47 @@ CARD_ACTION_SKIP,Bỏ qua
 CARD_ACTION_CLOSE,Đóng
 INVENTORY_SEAL_LABEL_SEALED,đã niêm
 INVENTORY_SEAL_LABEL_SEALED_NOT_EXTRACTED,đã niêm — chưa extract
+INVENTORY_PANEL_TITLE,Đồ mang theo
+INVENTORY_PICKUP_HINT,Chạm ô ba lô hoặc Hộp để xếp Manifest; vào Hộp là niêm phong.
+INVENTORY_PICKUP_SOURCE_DESK,Còn ở bàn dispatch
+INVENTORY_REASON_OK,vừa
+INVENTORY_REASON_ITEM_NOT_FOUND,không tìm thấy món
+INVENTORY_REASON_WRONG_SOURCE,rút ra trước
+INVENTORY_REASON_WRONG_TARGET,sai loại
+INVENTORY_REASON_SWAP_NOT_ALLOWED,đổi từng món
+INVENTORY_REASON_NOT_SEALABLE,không niêm phong được
+INVENTORY_REASON_NOT_ROTATABLE,không xoay
+INVENTORY_REASON_OUT_OF_BOUNDS,không vừa
+INVENTORY_REASON_CELLS_OCCUPIED,thiếu ô
+INVENTORY_REASON_STACK_INCOMPATIBLE,không xếp chồng
+INVENTORY_REASON_STACK_FULL,chồng đã đầy
+INVENTORY_REASON_SORT_NO_FIT,không sắp được
+INVENTORY_REASON_CROSS_GRID_LOCKED,Lúc chuẩn bị chỉ sắp lại trong cùng một ngăn.
+INVENTORY_REASON_WITHDRAW_LOCKED,Chưa rút được đồ đã niêm ra khỏi Hộp Công Chứng.
+INVENTORY_CONFIRM_DROP_TITLE,Bỏ món này xuống?
+INVENTORY_CONFIRM_DROP_BODY,Món này nằm lại dưới đất chỗ bạn đứng. Không nhặt lại trước khi extract thì mất.
+INVENTORY_CONFIRM_DROP_EVIDENCE_BODY,Manifest R-17 nằm lại dưới đất. Chưa nhặt lại thì không gọi được thuyền.
+INVENTORY_CONFIRM_DROP_ACCEPT,Bỏ xuống
+INVENTORY_CONFIRM_WITHDRAW_TITLE,Rút khỏi Hộp Công Chứng?
+INVENTORY_CONFIRM_WITHDRAW_BODY,"Món này hết niêm phong: nếu Phù Hiệu Hồi Hương kích hoạt, nó sẽ mất."
+INVENTORY_CONFIRM_WITHDRAW_ACCEPT,Rút ra
+CONFIRM_BUTTON_CANCEL,Hủy
 PROMPT_SAFEBOX_SEAL_HINT,Niêm phong tránh mất vĩnh viễn; vẫn phải extract để giữ giấy phép.
 PROMPT_ROUTE_EXTRACT_NOW,Rút ngay ở A
 PROMPT_ROUTE_GO_MARKET,Đi qua Chợ Ngập để kiếm thêm.
 BEACON_E0_STATE_LABEL,Chưa gọi được thuyền
 BEACON_E0_STATE_REASON,Cần mang Manifest R-17.
 BEACON_E1_STATE_LABEL,Gọi được thuyền
+BEACON_E1_OUT_OF_ZONE_REASON,Vào vòng đèn phao ở Cầu tàu A để gọi thuyền.
 EXTRACT_E1_BUTTON_CALL,Gọi thuyền
 EXTRACT_CONFIRM_TITLE,Gọi thuyền ở Cầu tàu A?
 EXTRACT_CONFIRM_BODY,Địch từ hướng Chợ Ngập sẽ kéo tới. Giữ khu {seconds} giây rồi lên thuyền.
 EXTRACT_CONFIRM_ACCEPT,Gọi
 EXTRACT_CONFIRM_CANCEL,Hủy
+EXTRACT_CONFIRM_CLOSED_LEFT_ZONE,Đã hủy gọi thuyền vì bạn rời vòng đèn phao.
 EXTRACT_S7_CALL_ACCEPTED,Đã gọi thuyền.
 EXTRACT_S8_HOLD_TIMER,Giữ khu: còn {seconds} giây
+EXTRACT_S8_HOLD_PAUSED,Đồng hồ dừng: quay lại vòng đèn phao để chạy tiếp.
 EXTRACT_S8_LANE_ALERT,Địch tới từ hướng Chợ Ngập!
 EXTRACT_S9_BOAT_READY,Thuyền đã cập bến.
 EXTRACT_S9_BUTTON_BOARD,Lên thuyền
