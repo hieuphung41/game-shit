@@ -1,0 +1,88 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://src/characters/character_model.gd" id="1_model"]
+[ext_resource type="PackedScene" path="res://assets/third_party/kenney-animated-characters-protagonists/tax_guard.glb" id="2_asset"]
+[ext_resource type="Material" path="res://art/materials/character_tax_guard.tres" id="3_body"]
+[ext_resource type="Script" path="res://src/lookdev/third_party_lookdev_material.gd" id="5_material"]
+
+[sub_resource type="CylinderMesh" id="ShieldMesh"]
+top_radius = 0.46
+bottom_radius = 0.46
+height = 0.10
+radial_segments = 6
+rings = 1
+
+[sub_resource type="BoxMesh" id="ShieldGripMesh"]
+size = Vector3(0.13, 0.48, 0.10)
+
+[sub_resource type="BoxMesh" id="BodyMesh"]
+size = Vector3(0.50, 0.80, 0.30)
+
+[sub_resource type="SphereMesh" id="HeadMesh"]
+radius = 0.20
+height = 0.40
+radial_segments = 8
+rings = 4
+
+[sub_resource type="BoxMesh" id="LegMesh"]
+size = Vector3(0.16, 0.50, 0.18)
+
+[sub_resource type="Animation" id="IdleAnimation"]
+resource_name = "idle"
+length = 1.0
+loop_mode = 1
+
+[sub_resource type="Animation" id="RunAnimation"]
+resource_name = "run"
+length = 0.68
+loop_mode = 1
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary"]
+_data = {"idle": SubResource("IdleAnimation"), "run": SubResource("RunAnimation")}
+
+[node name="TaxGuardModel" type="Node3D"]
+script = ExtResource("1_model")
+state_clips = {&"alert": &"idle", &"block": &"idle", &"down": &"idle", &"hit": &"idle", &"idle": &"idle", &"recover": &"idle", &"strike": &"idle", &"walk": &"run", &"windup": &"idle"}
+metadata/source_pack = "kenney-animated-characters-protagonists"
+metadata/source_animation_clips = "idle, run"
+
+[node name="CharacterAsset" type="Node3D" parent="."]
+scale = Vector3(0.01, 0.01, 0.01)
+script = ExtResource("5_material")
+library_material = ExtResource("3_body")
+
+[node name="Model" parent="CharacterAsset" instance=ExtResource("2_asset")]
+
+[node name="SilhouetteBody" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.88, 0)
+mesh = SubResource("BodyMesh")
+material_override = ExtResource("3_body")
+
+[node name="SilhouetteHead" type="MeshInstance3D" parent="."]
+position = Vector3(0, 1.48, 0)
+mesh = SubResource("HeadMesh")
+material_override = ExtResource("3_body")
+
+[node name="LeftLeg" type="MeshInstance3D" parent="."]
+position = Vector3(-0.15, 0.25, 0)
+mesh = SubResource("LegMesh")
+material_override = ExtResource("3_body")
+
+[node name="RightLeg" type="MeshInstance3D" parent="."]
+position = Vector3(0.15, 0.25, 0)
+mesh = SubResource("LegMesh")
+material_override = ExtResource("3_body")
+
+[node name="Shield" type="MeshInstance3D" parent="."]
+position = Vector3(0.38, 0.94, 0.24)
+rotation_degrees = Vector3(90, 0, 0)
+mesh = SubResource("ShieldMesh")
+material_override = ExtResource("3_body")
+
+[node name="ShieldGrip" type="MeshInstance3D" parent="."]
+position = Vector3(0.38, 0.94, 0.17)
+mesh = SubResource("ShieldGripMesh")
+material_override = ExtResource("3_body")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {"": SubResource("AnimationLibrary")}

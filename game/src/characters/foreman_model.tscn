@@ -1,0 +1,95 @@
+[gd_scene load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://src/characters/character_model.gd" id="1_model"]
+[ext_resource type="PackedScene" path="res://assets/third_party/kenney-animated-characters-protagonists/foreman.glb" id="2_asset"]
+[ext_resource type="Material" path="res://art/materials/character_foreman.tres" id="3_body"]
+[ext_resource type="Material" path="res://art/materials/character_tax_guard.tres" id="4_iron"]
+[ext_resource type="Script" path="res://src/lookdev/third_party_lookdev_material.gd" id="5_material"]
+
+[sub_resource type="BoxMesh" id="ShoulderMesh"]
+size = Vector3(1.02, 0.30, 0.42)
+
+[sub_resource type="BoxMesh" id="HammerHandleMesh"]
+size = Vector3(0.12, 0.80, 0.12)
+
+[sub_resource type="BoxMesh" id="HammerHeadMesh"]
+size = Vector3(0.52, 0.18, 0.20)
+
+[sub_resource type="BoxMesh" id="BodyMesh"]
+size = Vector3(0.66, 0.88, 0.38)
+
+[sub_resource type="SphereMesh" id="HeadMesh"]
+radius = 0.22
+height = 0.44
+radial_segments = 8
+rings = 4
+
+[sub_resource type="BoxMesh" id="LegMesh"]
+size = Vector3(0.18, 0.50, 0.22)
+
+[sub_resource type="Animation" id="IdleAnimation"]
+resource_name = "idle"
+length = 1.0
+loop_mode = 1
+
+[sub_resource type="Animation" id="RunAnimation"]
+resource_name = "run"
+length = 0.68
+loop_mode = 1
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary"]
+_data = {"idle": SubResource("IdleAnimation"), "run": SubResource("RunAnimation")}
+
+[node name="ForemanModel" type="Node3D"]
+script = ExtResource("1_model")
+state_clips = {&"alert": &"idle", &"charge": &"run", &"down": &"idle", &"hit": &"idle", &"idle": &"idle", &"recover": &"idle", &"stagger": &"idle", &"walk": &"run", &"windup": &"idle"}
+metadata/source_pack = "kenney-animated-characters-protagonists"
+metadata/source_animation_clips = "idle, run"
+
+[node name="CharacterAsset" type="Node3D" parent="."]
+scale = Vector3(0.01, 0.01, 0.01)
+script = ExtResource("5_material")
+library_material = ExtResource("3_body")
+
+[node name="Model" parent="CharacterAsset" instance=ExtResource("2_asset")]
+
+[node name="SilhouetteBody" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.92, 0)
+mesh = SubResource("BodyMesh")
+material_override = ExtResource("3_body")
+
+[node name="SilhouetteHead" type="MeshInstance3D" parent="."]
+position = Vector3(0, 1.54, 0)
+mesh = SubResource("HeadMesh")
+material_override = ExtResource("3_body")
+
+[node name="LeftLeg" type="MeshInstance3D" parent="."]
+position = Vector3(-0.19, 0.25, 0)
+mesh = SubResource("LegMesh")
+material_override = ExtResource("3_body")
+
+[node name="RightLeg" type="MeshInstance3D" parent="."]
+position = Vector3(0.19, 0.25, 0)
+mesh = SubResource("LegMesh")
+material_override = ExtResource("3_body")
+
+[node name="ShoulderLoad" type="MeshInstance3D" parent="."]
+position = Vector3(0, 1.34, 0.02)
+rotation_degrees = Vector3(0, 0, -4)
+mesh = SubResource("ShoulderMesh")
+material_override = ExtResource("3_body")
+
+[node name="HammerHandle" type="MeshInstance3D" parent="."]
+position = Vector3(-0.44, 0.57, 0.12)
+rotation_degrees = Vector3(0, 0, -18)
+mesh = SubResource("HammerHandleMesh")
+material_override = ExtResource("3_body")
+
+[node name="HammerHead" type="MeshInstance3D" parent="."]
+position = Vector3(-0.57, 0.93, 0.12)
+rotation_degrees = Vector3(0, 0, -18)
+mesh = SubResource("HammerHeadMesh")
+material_override = ExtResource("4_iron")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {"": SubResource("AnimationLibrary")}

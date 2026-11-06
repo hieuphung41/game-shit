@@ -12,6 +12,7 @@
     "source.license": "e.g. CC0-1.0, QAL-1.0, project",
     "source.prompt_card": "docs/art/prompts/<id>.md (required for generated)",
     "source.normalized": "true once quantized/cleaned per ART_BIBLE §8 (required for generated)",
+    "file_size_bytes": "size of the checked-in binary asset in bytes",
     "verification.rubric_score": "0-20 from docs/art/templates/review-rubric.md",
     "verification.approved_by": "reviewer agent or person"
   },
@@ -79,6 +80,96 @@
         "license": "CC0-1.0",
         "normalized": true
       },
+      "verification": {
+        "rubric_score": 16,
+        "approved_by": "technical-artist self-review; art-director pending"
+      }
+    },
+    {
+      "id": "kenney-animated-characters-protagonists-retriever",
+      "path": "game/assets/third_party/kenney-animated-characters-protagonists/retriever.glb",
+      "role": "Rig CC0 cho Người Thu Hồi; scene thay vật liệu nguồn bằng character_retriever.",
+      "lane": "env",
+      "status": "in_review",
+      "source": {
+        "kind": "third_party",
+        "url_or_tool": "https://kenney.nl/assets/animated-characters-protagonists (downloaded 2026-11-06; converted from FBX with FBX2glTF 0.9.7-p1)",
+        "license": "CC0-1.0",
+        "normalized": true
+      },
+      "file_size_bytes": 104972,
+      "verification": {
+        "rubric_score": 16,
+        "approved_by": "technical-artist self-review; art-director pending"
+      }
+    },
+    {
+      "id": "kenney-animated-characters-protagonists-tax-guard",
+      "path": "game/assets/third_party/kenney-animated-characters-protagonists/tax_guard.glb",
+      "role": "Rig CC0 cho Vệ binh thuế khiên nhẹ; scene thêm khiên silhouette và thay vật liệu nguồn.",
+      "lane": "env",
+      "status": "in_review",
+      "source": {
+        "kind": "third_party",
+        "url_or_tool": "https://kenney.nl/assets/animated-characters-protagonists (downloaded 2026-11-06; converted from FBX with FBX2glTF 0.9.7-p1)",
+        "license": "CC0-1.0",
+        "normalized": true
+      },
+      "file_size_bytes": 104972,
+      "verification": {
+        "rubric_score": 16,
+        "approved_by": "technical-artist self-review; art-director pending"
+      }
+    },
+    {
+      "id": "kenney-animated-characters-protagonists-foreman",
+      "path": "game/assets/third_party/kenney-animated-characters-protagonists/foreman.glb",
+      "role": "Rig CC0 cho Đốc công; scene thêm tải vai và búa silhouette, thay vật liệu nguồn.",
+      "lane": "env",
+      "status": "in_review",
+      "source": {
+        "kind": "third_party",
+        "url_or_tool": "https://kenney.nl/assets/animated-characters-protagonists (downloaded 2026-11-06; converted from FBX with FBX2glTF 0.9.7-p1)",
+        "license": "CC0-1.0",
+        "normalized": true
+      },
+      "file_size_bytes": 104972,
+      "verification": {
+        "rubric_score": 16,
+        "approved_by": "technical-artist self-review; art-director pending"
+      }
+    },
+    {
+      "id": "kenney-animated-characters-protagonists-idle",
+      "path": "game/assets/third_party/kenney-animated-characters-protagonists/source_idle.glb",
+      "role": "Clip nguồn idle CC0 để ghi nhận mapping fallback của ba scene nhân vật.",
+      "lane": "env",
+      "status": "in_review",
+      "source": {
+        "kind": "third_party",
+        "url_or_tool": "https://kenney.nl/assets/animated-characters-protagonists (downloaded 2026-11-06; converted from FBX with FBX2glTF 0.9.7-p1)",
+        "license": "CC0-1.0",
+        "normalized": true
+      },
+      "file_size_bytes": 35740,
+      "verification": {
+        "rubric_score": 16,
+        "approved_by": "technical-artist self-review; art-director pending"
+      }
+    },
+    {
+      "id": "kenney-animated-characters-protagonists-run",
+      "path": "game/assets/third_party/kenney-animated-characters-protagonists/source_run.glb",
+      "role": "Clip nguồn run CC0 để ghi nhận mapping fallback của ba scene nhân vật.",
+      "lane": "env",
+      "status": "in_review",
+      "source": {
+        "kind": "third_party",
+        "url_or_tool": "https://kenney.nl/assets/animated-characters-protagonists (downloaded 2026-11-06; converted from FBX with FBX2glTF 0.9.7-p1)",
+        "license": "CC0-1.0",
+        "normalized": true
+      },
+      "file_size_bytes": 39832,
       "verification": {
         "rubric_score": 16,
         "approved_by": "technical-artist self-review; art-director pending"

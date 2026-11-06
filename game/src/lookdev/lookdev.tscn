@@ -1,4 +1,4 @@
-[gd_scene load_steps=54 format=3]
+[gd_scene load_steps=57 format=3]
 
 [ext_resource type="Script" path="res://src/lookdev/lookdev.gd" id="1_script"]
 [ext_resource type="Environment" path="res://art/env_default.tres" id="2_environment"]
@@ -20,6 +20,9 @@
 [ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/barrel.glb" id="18_kenney_barrel"]
 [ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/platform-planks.glb" id="19_kenney_planks"]
 [ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/structure-platform-dock.glb" id="20_kenney_dock"]
+[ext_resource type="PackedScene" path="res://src/characters/retriever_model.tscn" id="21_retriever_model"]
+[ext_resource type="PackedScene" path="res://src/characters/tax_guard_model.tscn" id="22_tax_guard_model"]
+[ext_resource type="PackedScene" path="res://src/characters/foreman_model.tscn" id="23_foreman_model"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_floor"]
 size = Vector3(15, 0.16, 12)
@@ -359,6 +362,18 @@ library_material = ExtResource("4_wood_dark")
 
 [node name="Source" parent="KenneyDock" instance=ExtResource("20_kenney_dock")]
 
+[node name="RetrieverModel" parent="." instance=ExtResource("21_retriever_model")]
+position = Vector3(-3.0, 0, 2.8)
+rotation_degrees = Vector3(0, 24, 0)
+
+[node name="TaxGuardModel" parent="." instance=ExtResource("22_tax_guard_model")]
+position = Vector3(0.1, 0, 2.2)
+rotation_degrees = Vector3(0, 45, 0)
+
+[node name="ForemanModel" parent="." instance=ExtResource("23_foreman_model")]
+position = Vector3(3.0, 0, 2.8)
+rotation_degrees = Vector3(0, 45, 0)
+
 [node name="TaxStall" type="Node3D" parent="."]
 position = Vector3(2.65, 0, -1.65)
 rotation_degrees = Vector3(0, 3, 0)
@@ -425,6 +440,7 @@ mesh = SubResource("BoxMesh_paper")
 material_override = SubResource("ShaderMaterial_toon_paper")
 
 [node name="RetrieverStandin" type="MeshInstance3D" parent="."]
+visible = false
 position = Vector3(-1.05, 0.85, 1.2)
 mesh = SubResource("CapsuleMesh_retriever")
 material_override = SubResource("ShaderMaterial_toon_canvas_priority")
