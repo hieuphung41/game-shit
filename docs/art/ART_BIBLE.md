@@ -71,7 +71,8 @@ Cấu trúc sáng tối (value): ba dải trong thế giới. Tối (mực/bóng
 | MAT-06 | Không normal map và không detail map trên prop (tránh vi chi tiết li ti) | có (texture tên `*_normal*`) |
 | MAT-07 | Shader tự viết chỉ nằm ở `game/art/shaders/`; shader spatial phải có `specular_disabled`, `specular_toon` hoặc `unshaded` | có |
 | LGT-01 | Một `DirectionalLight3D` chính, cố định hướng trên-trái (khớp camera §2), màu ấm `lamp_warm` nhạt; đèn phụ chỉ là đèn thực tế trong cảnh | review |
-| LGT-02 | Fog độ sâu/độ cao ngả màu `paper` để tách lớp | review |
+| LGT-02 | Không dùng fog của `Environment` với camera orthographic: trên GL Compatibility nó biến nền thành đen và chỉ nhuộm đều cả cảnh, không tách lớp (đo ở TASK-20261105-66). Tách lớp bằng value (§3) và nét mực | review |
+| PRT-01 | **Màu in = màu palette.** Mặt sáng ra đúng màu palette của vật liệu (ΔE76 ≤ 10, phần lệch chỉ do hạt giấy); mặt tối và bóng đổ là màu chàm chung (key block) hoặc màu vật liệu trộn về `shadow_indigo`, luôn tối hơn mặt sáng; nền đúng màu khai báo. Ánh sáng chỉ cho hướng và bóng, không nhuộm màu. Kiểm bằng probe của `tools/lookdev_capture.sh` (`build/lookdev/probe.json`) | có (probe) |
 | ENV-01 | Cấm glow/bloom (trừ khi chỉ bắt vào vật liệu signal), DOF, SSAO, SSR, SSIL, SDFGI, lens flare, chromatic aberration, vignette | có (WorldEnvironment/CameraAttributes) |
 | ENV-02 | Tonemap `linear` để màu palette ra đúng; không auto-exposure | có |
 | OUT-01 | Nét mực `ink` cho nhân vật, vật tương tác và landmark; độ dày cố định theo khoảng cách, không đổi giữa các asset cùng hạng (xem WC-03) | review |
@@ -86,7 +87,7 @@ game ở 100%), không chỉ tồn tại trong tham số.
 | Mã | Dấu hiệu | Đủ khi | Không được thành |
 |---|---|---|---|
 | WC-01 | Hạt giấy dó | Sợi và đốm giấy world-space/triplanar, biên độ khoảng ±3–5% độ sáng, bật mặc định trên mọi vật liệu `env_*`; thấy ở ảnh cận, gần như biến mất ở ảnh cỡ điện thoại; đứng yên khi camera di chuyển | noise trắng đều, lớp phủ màn hình, vân ảnh chụp |
-| WC-02 | Vệt đục | Nét gạch song song mảnh màu `shadow_indigo` hoặc `ink`, **chỉ** trong dải bóng và sát ranh sáng/tối của mặt lớn (tường, mái, thân quầy, khối sàn cao), hướng cố định theo thế giới, thưa | gạch trên mặt sáng, trên vật nhỏ < 0.5 m, trên vùng sàn dành cho telegraph; hoa văn dày đặc (AI-03) |
+| WC-02 | Vệt đục | Nét đục song song, **chỉ** trong dải bóng và sát ranh sáng/tối của mặt lớn (tường, mái, thân quầy, khối sàn cao), hướng cố định theo thế giới, thưa. In nổi: chỗ đục không ăn mực, nên trên vật liệu tối (value < ~35%) nét đục là **nét sáng màu giấy**; trên vật liệu sáng là nét tối `shadow_indigo`/`ink`. Mép nét cứng, đầu nét vót, dài ngắn không đều | gạch trên mặt sáng, trên vật nhỏ < 0.5 m, trên vùng sàn dành cho telegraph; hoa văn dày đặc (AI-03); nét tối chìm mất trên gỗ tối; mép mờ kiểu quét cọ (AI-02) |
 | WC-03 | Nét mực đọc được | Viền `ink` dày ≥ 2 px ở ảnh 1280×720 và vẫn thấy ở ảnh 640×360 trên nhân vật, vật tương tác, landmark; ba hạng độ dày: tương tác/nhân vật > landmark > prop thường; sàn không viền | nét mảnh mất khi thu nhỏ; độ dày khác nhau giữa hai asset cùng hạng |
 | WC-04 | Khối lệch tay | Đồ thủ công và kiến trúc nghiêng 2–5° (mái, quầy, cọc, chồng thùng), nhịp cọc không đều, cạnh trên không thẳng tắp tuyệt đối (§4) | hộp vuông vức đặt thẳng trục; méo vô lý (AI-08) |
 
@@ -136,7 +137,7 @@ game ở 100%), không chỉ tồn tại trong tham số.
 | Tự làm trong repo (code, primitive, vẽ tay) | của dự án | ưu tiên |
 | Kenney (kenney.nl) | CC0 1.0 | ví dụ Pirate Kit; vẫn phải qua remap palette và vật liệu |
 | KayKit (Kay Lousberg) bản free | CC0 1.0 | tô bằng một texture gradient atlas, nên thay atlas bằng palette là xong |
-| Quaternius | Quaternius Asset License v1.0: không cần ghi công, **cấm phát tán lại asset thô** | chỉ dùng khi repo còn private; cần duyệt lại nếu public |
+| Quaternius | Quaternius Asset License v1.0: không cần ghi công, **cấm phát tán lại asset thô** | **không dùng**: repo đã public (2026-11-06), asset thô sẽ bị phát tán lại |
 | Ảnh sinh (AI) | theo điều khoản công cụ | chỉ theo §8 |
 | Ảnh chụp, texture photogrammetry | — | **cấm** (lệch phong cách, AI-03) |
 
@@ -150,7 +151,8 @@ dòng tương ứng trong manifest.
 2. **Nguồn:** chọn tự dựng, bộ CC0 (§9) hoặc ảnh sinh (§8, kèm prompt card).
 3. **Dựng và chuẩn hoá:** vật liệu từ thư viện, texture về palette, scale/pivot đúng.
 4. **Tự kiểm:** `tools/check.sh` (gồm `check_art.py`) phải xanh.
-5. **Look-dev:** chụp ba ảnh (góc game, thang xám, cỡ điện thoại) và tự chấm [rubric](templates/review-rubric.md).
+5. **Look-dev:** chụp ba ảnh (góc game, thang xám, cỡ điện thoại) cùng ảnh cận, chạy probe màu (PRT-01) và tự chấm
+   [rubric](templates/review-rubric.md).
 6. **Ghi manifest:** nguồn, giấy phép, làn màu, prompt card, điểm rubric.
 7. **Review độc lập:** art director chấm lại bằng rubric. Một mục CẤM là trượt.
 
