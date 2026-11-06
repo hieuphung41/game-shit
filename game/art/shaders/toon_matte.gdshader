@@ -2,7 +2,9 @@ shader_type spatial;
 render_mode diffuse_toon, specular_disabled;
 
 uniform vec4 albedo_color : source_color = vec4(0.482353, 0.356863, 0.25098, 1.0);
-uniform vec3 shadow_indigo : source_color = vec3(0.172549, 0.192157, 0.258824);
+// In GL Compatibility, source_color uniforms read raw sRGB values in light().
+// Convert shadow colours there before comparing them with linear ALBEDO.
+uniform vec4 shadow_indigo : source_color = vec4(0.172549, 0.192157, 0.258824, 1.0);
 uniform bool paper_grain_enabled = true;
 uniform float paper_grain_strength : hint_range(0.0, 0.06) = 0.04;
 uniform float paper_fiber_scale : hint_range(4.0, 28.0) = 14.0;
@@ -25,6 +27,12 @@ varying float hatch_mark;
 
 float hash21(vec2 value) {
 	return fract(sin(dot(value, vec2(127.1, 311.7))) * 43758.5453123);
+}
+
+vec3 srgb_to_linear(vec3 colour) {
+	vec3 lower = colour / 12.92;
+	vec3 upper = pow((colour + 0.055) / 1.055, vec3(2.4));
+	return mix(lower, upper, step(vec3(0.04045), colour));
 }
 
 float fiber_plane(vec2 plane, float scale) {
@@ -81,13 +89,19 @@ void fragment() {
 }
 
 void light() {
-	// Keep the dark step as the palette's indigo instead of multiplying it into
-	// black. ATTENUATION carries the directional shadow map result on GL
-	// Compatibility; the normal test keeps the lit edge hard and readable.
+	// Godot combines DIFFUSE_LIGHT with ALBEDO after light().  A lit face therefore
+	// needs a unit multiplier, not its albedo a second time.  The directional
+	// light supplies only a stable direction and shadow map: its tint and energy
+	// must not recolour printed palette ink.
 	float faces_light = step(0.20, dot(normalize(NORMAL), normalize(LIGHT)));
 	float receives_light = step(0.01, ATTENUATION);
 	float lit = faces_light * receives_light;
 	float shadow_hatch = hatch_mark * (1.0 - lit) * hatch_strength;
-	vec3 shadow_colour = mix(shadow_indigo, hatch_gouge_colour, shadow_hatch);
-	DIFFUSE_LIGHT += mix(shadow_colour, ALBEDO * LIGHT_COLOR.rgb, lit);
+	// ALBEDO is already linear. GL Compatibility exposes these source colours as
+	// raw sRGB in light(), so linearise both before deriving the multiplier.
+	vec3 linear_shadow_indigo = srgb_to_linear(shadow_indigo.rgb);
+	vec3 linear_hatch_gouge = srgb_to_linear(hatch_gouge_colour);
+	vec3 shadow_colour = mix(linear_shadow_indigo, linear_hatch_gouge, shadow_hatch);
+	vec3 shadow_multiplier = shadow_colour / max(ALBEDO, vec3(0.02));
+	DIFFUSE_LIGHT += mix(shadow_multiplier, vec3(1.0), lit);
 }

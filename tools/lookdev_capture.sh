@@ -36,4 +36,6 @@ for image in lookdev_game.png lookdev_gray.png lookdev_phone.png lookdev_detail.
 	fi
 done
 
+python3 "$ROOT/tools/lookdev_probe.py" "$OUT_DIR/probe-raw.json" "$OUT_DIR/probe.json"
+
 echo "lookdev captures written to $OUT_DIR"

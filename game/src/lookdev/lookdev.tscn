@@ -261,7 +261,7 @@ environment = ExtResource("2_environment")
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 rotation_degrees = Vector3(-48, -34, 0)
 light_color = Color(0.913725, 0.760784, 0.498039, 1)
-light_energy = 1.15
+light_energy = 0.8
 shadow_enabled = true
 directional_shadow_max_distance = 35.0
 
@@ -373,12 +373,6 @@ position = Vector3(0, 2.38, 0)
 mesh = SubResource("CylinderMesh_beacon")
 material_override = SubResource("ShaderMaterial_toon_beacon")
 
-[node name="BeaconLight" type="OmniLight3D" parent="Beacon"]
-position = Vector3(0, 2.35, 0)
-light_color = Color(0.321569, 0.713725, 0.917647, 1)
-light_energy = 0.35
-omni_range = 3.0
-
 [node name="DispatchTable" type="Node3D" parent="."]
 position = Vector3(1.45, 0, 1.8)
 rotation_degrees = Vector3(0, -3, 0)
@@ -410,17 +404,17 @@ material_override = SubResource("ShaderMaterial_toon_rope")
 mesh = SubResource("SphereMesh_lamp")
 material_override = SubResource("ShaderMaterial_toon_lamp")
 
-[node name="LampLight" type="OmniLight3D" parent="HangingLamp"]
-light_color = Color(0.913725, 0.760784, 0.498039, 1)
-light_energy = 0.3
-omni_range = 2.5
-
 [node name="PaletteStrip" type="Node3D" parent="."]
 position = Vector3(-2.0, 0.22, 2.75)
 
 [node name="Wood" type="MeshInstance3D" parent="PaletteStrip"]
 mesh = SubResource("BoxMesh_swatch")
 material_override = SubResource("ShaderMaterial_toon_wood")
+
+[node name="WoodDark" type="MeshInstance3D" parent="PaletteStrip"]
+position = Vector3(-0.5, 0, 0)
+mesh = SubResource("BoxMesh_swatch")
+material_override = SubResource("ShaderMaterial_toon_wood_dark")
 
 [node name="Stone" type="MeshInstance3D" parent="PaletteStrip"]
 position = Vector3(0.5, 0, 0)
@@ -451,3 +445,55 @@ material_override = SubResource("ShaderMaterial_toon_beacon")
 position = Vector3(3, 0, 0)
 mesh = SubResource("BoxMesh_swatch")
 material_override = SubResource("ShaderMaterial_toon_lamp")
+
+[node name="Paper" type="MeshInstance3D" parent="PaletteStrip"]
+position = Vector3(3.5, 0, 0)
+mesh = SubResource("BoxMesh_swatch")
+material_override = SubResource("ShaderMaterial_toon_paper")
+
+[node name="ProbeBackground" type="Marker3D" parent="." groups=["lookdev_probe"]]
+position = Vector3(0, 5, -4)
+metadata/expected_hex = "#4E6570"
+metadata/tolerance = 5.0
+metadata/role = "background"
+
+[node name="ProbeWood" type="Marker3D" parent="." groups=["lookdev_probe"]]
+position = Vector3(-2, 0.435, 2.75)
+metadata/expected_hex = "#7B5B40"
+metadata/tolerance = 10.0
+metadata/role = "lit_palette"
+metadata/surface_path = "PaletteStrip/Wood"
+
+[node name="ProbeWoodDark" type="Marker3D" parent="." groups=["lookdev_probe"]]
+position = Vector3(-2.5, 0.435, 2.75)
+metadata/expected_hex = "#4A3426"
+metadata/tolerance = 10.0
+metadata/role = "lit_palette"
+metadata/surface_path = "PaletteStrip/WoodDark"
+
+[node name="ProbeStone" type="Marker3D" parent="." groups=["lookdev_probe"]]
+position = Vector3(-1.5, 0.435, 2.75)
+metadata/expected_hex = "#7A756C"
+metadata/tolerance = 10.0
+metadata/role = "lit_palette"
+metadata/surface_path = "PaletteStrip/Stone"
+
+[node name="ProbeCanvas" type="Marker3D" parent="." groups=["lookdev_probe"]]
+position = Vector3(-1, 0.435, 2.75)
+metadata/expected_hex = "#7B2F27"
+metadata/tolerance = 10.0
+metadata/role = "lit_palette"
+metadata/surface_path = "PaletteStrip/Canvas"
+
+[node name="ProbePaper" type="Marker3D" parent="." groups=["lookdev_probe"]]
+position = Vector3(1.5, 0.435, 2.75)
+metadata/expected_hex = "#D8CDB4"
+metadata/tolerance = 10.0
+metadata/role = "lit_palette"
+metadata/surface_path = "PaletteStrip/Paper"
+
+[node name="ProbeFloorShadow" type="Marker3D" parent="." groups=["lookdev_probe"]]
+position = Vector3(4.85, 0.005, -3.5)
+metadata/tolerance = 12.0
+metadata/role = "shadow_shader"
+metadata/surface_path = "Floor"
