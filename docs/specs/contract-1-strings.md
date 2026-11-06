@@ -278,8 +278,14 @@ S11/S12 (S04).
 
 | Key | Màn hình / state | Tối đa | Dài | Nguồn / ghi chú |
 |---|---|---:|---:|---|
-| `COMBAT_STUB_HP_ZERO` | O6 dòng duy nhất | 72 | 71 | Run kết thúc, không món nào được giữ. Ghi "kể cả đồ đã niêm" vì stub không gọi `resolve_death()`: luật niêm của S04 chưa chạy. |
+| `COMBAT_STUB_HP_ZERO` | O6 dòng duy nhất | 72 | 69 | Run kết thúc; nói đây là giới hạn của **bản thử** (chưa có cứu hộ và thu hồi), không phải luật thế giới. Không nhắc giữ/mất đồ, kể cả đồ đã niêm: lời hứa của Hộp Công Chứng (`inventory-and-loadout.md`) giữ nguyên. "cứu hộ", "thu hồi" viết thường, chỉ tính năng chưa có; không gọi tên Phù Hiệu Hồi Hương hay Recovery Contract. TASK-92. |
 | `COMBAT_STUB_BUTTON_BOOT` | O6 nút, khóa 2.5 s đầu | 24 | 10 | Về Boot. |
+
+### Thay đổi TASK-92
+
+- Chỉ sửa giá trị `COMBAT_STUB_HP_ZERO`; câu cũ ("…không giữ món nào, kể cả đồ đã niêm") dạy người chơi một luật sai,
+  trái lời hứa của Hộp Công Chứng. Câu mới chỉ nói bản thử chưa có cứu hộ và thu hồi. Tên key giữ nguyên;
+  `COMBAT_STUB_BUTTON_BOOT` không mâu thuẫn nên giữ nguyên.
 
 ### Thay đổi TASK-84
 
