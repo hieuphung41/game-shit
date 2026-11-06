@@ -137,7 +137,7 @@ game ở 100%), không chỉ tồn tại trong tham số.
 | Tự làm trong repo (code, primitive, vẽ tay) | của dự án | ưu tiên |
 | Kenney (kenney.nl) | CC0 1.0 | ví dụ Pirate Kit; vẫn phải qua remap palette và vật liệu |
 | KayKit (Kay Lousberg) bản free | CC0 1.0 | tô bằng một texture gradient atlas, nên thay atlas bằng palette là xong |
-| Quaternius | Quaternius Asset License v1.0: không cần ghi công, **cấm phát tán lại asset thô** | chỉ dùng khi repo còn private; cần duyệt lại nếu public |
+| Quaternius | Quaternius Asset License v1.0: không cần ghi công, **cấm phát tán lại asset thô** | **không dùng**: repo đã public (2026-11-06), asset thô sẽ bị phát tán lại |
 | Ảnh sinh (AI) | theo điều khoản công cụ | chỉ theo §8 |
 | Ảnh chụp, texture photogrammetry | — | **cấm** (lệch phong cách, AI-03) |
 
