@@ -15,6 +15,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 AppEnv="*res://src/autoload/app_env.gd"
+RunSession="*res://src/flow/run_session.gd"
 
 [display]
 

@@ -1,9 +1,7 @@
 extends Control
-## Placeholder boot screen: title plus build/channel label.
-## Replaced by the vertical-slice flow (briefing → run) in later sprints.
+## Entry point for the S02 loop. The button starts S1 briefing, not Zone A.
 
-const OUTER_PIER_SCENE := preload("res://src/world/zone_a_outer_pier.tscn")
-const RETRIEVER_SCENE := preload("res://src/player/retriever.tscn")
+const BRIEFING_FLOW_SCENE := "res://src/flow/briefing_flow.tscn"
 
 @onready var _env_badge: Label = $EnvBadge
 @onready var _build_label: Label = $BuildLabel
@@ -18,11 +16,5 @@ func _ready() -> void:
 
 
 func _on_enter_outer_pier_pressed() -> void:
-	get_tree().change_scene_to_node(build_outer_pier_world())
-
-
-func build_outer_pier_world() -> Node3D:
-	var world := OUTER_PIER_SCENE.instantiate() as Node3D
-	var retriever := RETRIEVER_SCENE.instantiate() as CharacterBody3D
-	world.add_child(retriever)
-	return world
+	RunSession.begin_briefing()
+	get_tree().change_scene_to_file(BRIEFING_FLOW_SCENE)

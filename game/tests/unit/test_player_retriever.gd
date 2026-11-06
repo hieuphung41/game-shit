@@ -120,14 +120,36 @@ func test_boot_offers_outer_pier_entry(t) -> bool:
 		t.ok(enter_button.pressed.is_connected(Callable(boot, &"_on_enter_outer_pier_pressed")), "entry button is connected to the Zone A transition")
 		enter_button.pressed.emit()
 		await t.tree.process_frame
-		var world := t.tree.current_scene as Node3D
-		t.ok(world != null, "entry button changes to a current Zone A scene")
-		if world != null:
-			t.eq(world.scene_file_path, WORLD_SCENE_PATH, "entry button changes to Zone A")
-			t.ok(world.get_node_or_null("Retriever") is CharacterBody3D, "Zone A contains the Retriever after entry")
-			world.queue_free()
+		var briefing_flow := t.tree.current_scene as BriefingFlow
+		t.ok(briefing_flow != null, "entry button changes to the briefing flow")
+		if briefing_flow != null:
+			t.ok(briefing_flow.get_node_or_null("Briefing") is BriefingScreen, "briefing is shown before Zone A")
+			var briefing := briefing_flow.get_node_or_null("Briefing") as BriefingScreen
+			var enter := _button_with_text(briefing, "BRIEFING_BUTTON_ENTER")
+			t.ok(enter != null and not enter.disabled, "briefing entry remains interactive after Boot creates the session")
+			var edit_loadout := _button_with_text(briefing, "BRIEFING_BUTTON_EDIT_LOADOUT")
+			t.ok(edit_loadout != null and not edit_loadout.disabled, "briefing includes an interactive loadout button")
+			if edit_loadout != null:
+				briefing._opened_at_msec = -1000
+				edit_loadout.pressed.emit()
+				await t.tree.process_frame
+				var loadout := briefing_flow.get_node_or_null("Loadout") as LoadoutScreen
+				var done := _button_with_text(loadout, "LOADOUT_BUTTON_DONE")
+				t.ok(done != null and not done.disabled, "loadout opens with its completion button")
+			briefing_flow.queue_free()
 	if is_instance_valid(boot):
 		boot.queue_free()
 	await t.tree.process_frame
+	RunSession.clear()
 	AppEnv.load_for(original_channel)
 	return true
+
+
+func _button_with_text(parent: Control, key: String) -> Button:
+	if parent == null:
+		return null
+	for child in parent.get_children():
+		var button := child as Button
+		if button != null and button.text == tr(key):
+			return button
+	return null
