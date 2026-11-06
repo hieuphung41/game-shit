@@ -1,4 +1,4 @@
-[gd_scene load_steps=35 format=3]
+[gd_scene load_steps=38 format=3]
 
 [ext_resource type="Script" path="res://src/lookdev/zone_b_lookdev_capture.gd" id="1_capture"]
 [ext_resource type="Material" path="res://art/materials/env_wood.tres" id="2_wood"]
@@ -89,15 +89,15 @@ shader = ExtResource("14_toon")
 shader_parameter/albedo_color = Color(0.290196, 0.203922, 0.14902, 1)
 shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
 shader_parameter/paper_grain_enabled = true
-shader_parameter/paper_grain_strength = 0.055
-shader_parameter/paper_fiber_scale = 12.0
-shader_parameter/paper_speckle_density = 9.0
+shader_parameter/paper_grain_strength = 0.06
+shader_parameter/paper_fiber_scale = 7.0
+shader_parameter/paper_speckle_density = 5.0
 shader_parameter/hatch_enabled = true
-shader_parameter/hatch_density = 2.6
-shader_parameter/hatch_line_width = 0.22
+shader_parameter/hatch_density = 2.0
+shader_parameter/hatch_line_width = 0.28
 shader_parameter/hatch_strength = 0.9
 shader_parameter/hatch_irregularity = 1.0
-shader_parameter/hatch_dash_frequency = 0.55
+shader_parameter/hatch_dash_frequency = 0.42
 shader_parameter/hatch_gouge_colour = Color(0.92549, 0.890196, 0.811765, 1)
 
 [sub_resource type="ShaderMaterial" id="BAwningWoodcut"]
@@ -106,34 +106,43 @@ shader = ExtResource("14_toon")
 shader_parameter/albedo_color = Color(0.482353, 0.184314, 0.152941, 1)
 shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
 shader_parameter/paper_grain_enabled = true
-shader_parameter/paper_grain_strength = 0.055
-shader_parameter/paper_fiber_scale = 12.0
-shader_parameter/paper_speckle_density = 9.0
+shader_parameter/paper_grain_strength = 0.06
+shader_parameter/paper_fiber_scale = 7.0
+shader_parameter/paper_speckle_density = 5.0
 shader_parameter/hatch_enabled = true
-shader_parameter/hatch_density = 3.4
-shader_parameter/hatch_line_width = 0.16
-shader_parameter/hatch_strength = 0.82
+shader_parameter/hatch_density = 2.4
+shader_parameter/hatch_line_width = 0.24
+shader_parameter/hatch_strength = 0.9
 shader_parameter/hatch_irregularity = 1.0
-shader_parameter/hatch_dash_frequency = 0.62
+shader_parameter/hatch_dash_frequency = 0.46
 shader_parameter/hatch_gouge_colour = Color(0.92549, 0.890196, 0.811765, 1)
 
 [sub_resource type="BoxMesh" id="BlockedGateSlatMesh"]
-size = Vector3(0.14, 1.8, 0.12)
+size = Vector3(0.2, 2.4, 0.16)
 
 [sub_resource type="BoxMesh" id="BlockedGateRailMesh"]
-size = Vector3(2.7, 0.14, 0.12)
+size = Vector3(4.4, 0.22, 0.16)
 
 [sub_resource type="BoxMesh" id="BlockedGateChainMesh"]
-size = Vector3(2.65, 0.08, 0.08)
+size = Vector3(4.0, 0.18, 0.14)
+
+[sub_resource type="BoxMesh" id="BlockedGatePostMesh"]
+size = Vector3(0.3, 3.0, 0.22)
 
 [sub_resource type="CylinderMesh" id="BlockedGateSealMesh"]
-top_radius = 0.25
-bottom_radius = 0.25
-height = 0.06
+top_radius = 0.38
+bottom_radius = 0.38
+height = 0.1
 radial_segments = 8
 
+[sub_resource type="BoxMesh" id="BlockedGateSealRibbonMesh"]
+size = Vector3(0.8, 1.12, 0.08)
+
+[sub_resource type="BoxMesh" id="DistantWarehouseMesh"]
+size = Vector3(6.4, 4.0, 0.8)
+
 [sub_resource type="PlaneMesh" id="MissingPlankWaterMesh"]
-size = Vector2(2.5, 1.5)
+size = Vector2(4.6, 2.0)
 
 [sub_resource type="BoxMesh" id="CacheMesh"]
 size = Vector3(0.7, 0.7, 1.0)
@@ -381,81 +390,120 @@ collision_layer = 2
 metadata/greybox_role = "blocked_route_d_placeholder"
 
 [node name="FrameTop" type="MeshInstance3D" parent="BlockedRouteD"]
-position = Vector3(0, 0.83, 0)
+position = Vector3(0, 1.15, 0)
 mesh = SubResource("BlockedGateRailMesh")
 material_override = ExtResource("3_wood_dark")
 material_overlay = SubResource("InkLandmark")
 
 [node name="FrameBottom" type="MeshInstance3D" parent="BlockedRouteD"]
-position = Vector3(0, -0.83, 0)
+position = Vector3(0, -1.15, 0)
 mesh = SubResource("BlockedGateRailMesh")
 material_override = ExtResource("3_wood_dark")
 material_overlay = SubResource("InkLandmark")
 
+[node name="FramePostWest" type="MeshInstance3D" parent="BlockedRouteD"]
+position = Vector3(-2.05, 0, 0)
+mesh = SubResource("BlockedGatePostMesh")
+material_override = ExtResource("3_wood_dark")
+material_overlay = SubResource("InkLandmark")
+
+[node name="FramePostEast" type="MeshInstance3D" parent="BlockedRouteD"]
+position = Vector3(2.05, 0, 0)
+mesh = SubResource("BlockedGatePostMesh")
+material_override = ExtResource("3_wood_dark")
+material_overlay = SubResource("InkLandmark")
+
 [node name="SlatWest" type="MeshInstance3D" parent="BlockedRouteD"]
-position = Vector3(-1.08, 0, 0)
+position = Vector3(-1.28, 0, 0)
 mesh = SubResource("BlockedGateSlatMesh")
 material_override = ExtResource("3_wood_dark")
 material_overlay = SubResource("InkProp")
 
 [node name="Slat01" type="MeshInstance3D" parent="BlockedRouteD"]
-position = Vector3(-0.77, 0, 0)
+position = Vector3(-0.86, 0, 0)
 mesh = SubResource("BlockedGateSlatMesh")
 material_override = ExtResource("3_wood_dark")
 material_overlay = SubResource("InkProp")
 
 [node name="Slat02" type="MeshInstance3D" parent="BlockedRouteD"]
-position = Vector3(-0.45, 0, 0)
+position = Vector3(-0.43, 0, 0)
 mesh = SubResource("BlockedGateSlatMesh")
 material_override = ExtResource("3_wood_dark")
 material_overlay = SubResource("InkProp")
 
 [node name="Slat03" type="MeshInstance3D" parent="BlockedRouteD"]
-position = Vector3(-0.12, 0, 0)
+position = Vector3(0, 0, 0)
 mesh = SubResource("BlockedGateSlatMesh")
 material_override = ExtResource("3_wood_dark")
 material_overlay = SubResource("InkProp")
 
 [node name="Slat04" type="MeshInstance3D" parent="BlockedRouteD"]
-position = Vector3(0.21, 0, 0)
+position = Vector3(0.43, 0, 0)
 mesh = SubResource("BlockedGateSlatMesh")
 material_override = ExtResource("3_wood_dark")
 material_overlay = SubResource("InkProp")
 
 [node name="Slat05" type="MeshInstance3D" parent="BlockedRouteD"]
-position = Vector3(0.54, 0, 0)
+position = Vector3(0.86, 0, 0)
 mesh = SubResource("BlockedGateSlatMesh")
 material_override = ExtResource("3_wood_dark")
 material_overlay = SubResource("InkProp")
 
 [node name="Slat06" type="MeshInstance3D" parent="BlockedRouteD"]
-position = Vector3(0.87, 0, 0)
+position = Vector3(1.28, 0, 0)
 mesh = SubResource("BlockedGateSlatMesh")
 material_override = ExtResource("3_wood_dark")
 material_overlay = SubResource("InkProp")
 
 [node name="Chain" type="MeshInstance3D" parent="BlockedRouteD"]
-position = Vector3(0, 0, -0.09)
-rotation_degrees = Vector3(0, 0, -32)
+position = Vector3(0, 0, -0.13)
+rotation_degrees = Vector3(0, 0, -26)
 mesh = SubResource("BlockedGateChainMesh")
 material_override = ExtResource("6_iron")
 material_overlay = SubResource("InkProp")
 
+[node name="ChainCross" type="MeshInstance3D" parent="BlockedRouteD"]
+position = Vector3(0, 0, -0.15)
+rotation_degrees = Vector3(0, 0, 26)
+mesh = SubResource("BlockedGateChainMesh")
+material_override = ExtResource("6_iron")
+material_overlay = SubResource("InkProp")
+
+[node name="TaxSealNotice" type="MeshInstance3D" parent="BlockedRouteD"]
+position = Vector3(0.3, -0.02, -0.19)
+mesh = SubResource("BlockedGateSealRibbonMesh")
+material_override = ExtResource("15_paper")
+material_overlay = SubResource("InkLandmark")
+
 [node name="TaxSeal" type="MeshInstance3D" parent="BlockedRouteD"]
-position = Vector3(0.48, 0.19, -0.11)
+position = Vector3(0.3, 0.18, -0.25)
 rotation_degrees = Vector3(90, 0, 0)
 mesh = SubResource("BlockedGateSealMesh")
+material_override = ExtResource("4_canvas_red")
+material_overlay = SubResource("InkLandmark")
+
+[node name="TaxSealRibbon" type="MeshInstance3D" parent="BlockedRouteD"]
+position = Vector3(0.3, -0.1, -0.235)
+mesh = SubResource("BlockedGateSealRibbonMesh")
 material_override = ExtResource("15_paper")
-material_overlay = SubResource("InkProp")
+material_overlay = SubResource("InkLandmark")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="BlockedRouteD"]
 shape = SubResource("BlockedGateShape")
 
 [node name="MissingPlankWaterGapD" type="MeshInstance3D" parent="."]
-position = Vector3(4.75, 0.01, -33.25)
+position = Vector3(4.75, 0.01, -33.45)
 mesh = SubResource("MissingPlankWaterMesh")
 material_override = ExtResource("9_water")
 metadata/greybox_role = "route_d_missing_plank_water_gap_1_5m"
+
+[node name="DistantWarehouseSilhouetteD" type="MeshInstance3D" parent="."]
+position = Vector3(4.75, 2.0, -35.25)
+rotation_degrees = Vector3(0, -3, 0)
+mesh = SubResource("DistantWarehouseMesh")
+material_override = SubResource("BFacadeWoodcut")
+material_overlay = SubResource("InkLandmark")
+metadata/greybox_role = "route_d_distant_warehouse_silhouette_placeholder"
 
 [node name="PatrolReturnPath" type="Node3D" parent="."]
 
@@ -512,17 +560,19 @@ position = Vector3(-12.6, 0.09, 0.05)
 position = Vector3(-0.7, 0, -1.95)
 
 [node name="ProbeZoneBFloorLit" type="Marker3D" parent="." groups=["zone_b_lookdev_probe"]]
-position = Vector3(5.5, 0.095, -28)
+position = Vector3(4.5, 0.095, -28)
 metadata/role = "lit_face"
 metadata/surface_path = "FloorB"
 metadata/expected_hex = "#7B5B40"
 metadata/tolerance = 10.0
+metadata/placement = "producer-approved visible floor surface"
 
 [node name="ProbeZoneBFloorShadow" type="Marker3D" parent="." groups=["zone_b_lookdev_probe"]]
-position = Vector3(1.6, 0.095, -27.5)
+position = Vector3(3.3, 0.095, -2.8)
 metadata/role = "shadow"
 metadata/surface_path = "FloorB"
 metadata/tolerance = 12.0
+metadata/placement = "producer-approved visible cast-shadow surface"
 
 [node name="ProbeZoneBLaneFloor" type="Marker3D" parent="." groups=["zone_b_lookdev_probe"]]
 position = Vector3(4.5, 0.095, -18)
@@ -536,7 +586,7 @@ position = Vector3(3.7, 0.15, -18)
 metadata/role = "signal_danger"
 metadata/surface_path = "ChargeLaneTelegraph/LeftEdge"
 metadata/expected_hex = "#E5482D"
-metadata/tolerance = 12.0
+metadata/tolerance = 5.0
 
 [node name="ProbeZoneBAwning" type="Marker3D" parent="." groups=["zone_b_lookdev_probe"]]
 position = Vector3(0.6, 2.6, -14)

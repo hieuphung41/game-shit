@@ -80,8 +80,9 @@ và một vạch lane charge đông cứng ở `progress = 0.6` chỉ để ki�
 - `game-shit/build/lookdev/zone_b_game.png` — 1280×720, màu.
 - `game-shit/build/lookdev/zone_b_gray.png` — 1280×720, thang xám để đối chiếu hình vòng/vạch/chevron.
 - `game-shit/build/lookdev/zone_b_phone.png` — 640×360, giảm bằng nearest-neighbour.
-- `game-shit/build/lookdev/zone_b_probe.json` — nền, sàn sáng, sàn bóng, lane yên và mái đỏ son B; mọi điểm
-  ngoài nền ray-check mesh gần camera nhất nên điểm bị che làm gate lỗi.
+- `game-shit/build/lookdev/zone_b_probe.json` — nền, sàn sáng, sàn bóng, lane yên, **lõi danger của vạch charge** và
+  mái đỏ son B; mọi điểm ngoài nền ray-check mesh gần camera nhất nên điểm bị che làm gate lỗi. Hai probe sàn B đặt
+  trên mặt nhìn thấy (một mặt sáng, một bóng thật) theo quyết định Producer, không ép vào toạ độ gợi ý của spec.
 
 `zone_b_flooded_market.tscn` là greybox placeholder tự dựng từ primitive và vật liệu thư viện; không có file dưới
 `game/assets/`, vì vậy manifest asset không cần dòng mới cho TASK-20261106-85.

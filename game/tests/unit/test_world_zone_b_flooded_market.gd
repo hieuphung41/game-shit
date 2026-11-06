@@ -55,10 +55,19 @@ func test_zone_b_cover_and_blocked_route_have_honest_collision(t) -> bool:
 			t.ok(body.get_node_or_null("CollisionShape3D") is CollisionShape3D, "%s supplies its collision proxy" % name)
 	var blocked_route := zone.get_node_or_null("BlockedRouteD") as StaticBody3D
 	if blocked_route != null:
-		for part: String in ["FrameTop", "FrameBottom", "SlatWest", "Slat01", "Slat02", "Slat03", "Slat04", "Slat05", "Slat06", "Chain", "TaxSeal"]:
+		for part: String in ["FrameTop", "FrameBottom", "FramePostWest", "FramePostEast", "SlatWest", "Slat01", "Slat02", "Slat03", "Slat04", "Slat05", "Slat06", "Chain", "ChainCross", "TaxSealNotice", "TaxSeal", "TaxSealRibbon"]:
 			t.ok(blocked_route.get_node_or_null(part) is MeshInstance3D, "Blocked D route has readable %s geometry" % part)
+		var frame_top := blocked_route.get_node_or_null("FrameTop") as MeshInstance3D
+		var top_mesh := frame_top.mesh as BoxMesh if frame_top != null else null
+		t.ok(top_mesh != null and top_mesh.size.x >= 4.0, "Blocked D route keeps a wide closing-frame silhouette at phone scale")
+		var crossed_chain := blocked_route.get_node_or_null("ChainCross") as MeshInstance3D
+		t.ok(crossed_chain != null, "Blocked D route keeps a second chain for the closed X read")
 	var water_gap := zone.get_node_or_null("MissingPlankWaterGapD") as MeshInstance3D
 	t.ok(water_gap != null and water_gap.get_meta("greybox_role") == "route_d_missing_plank_water_gap_1_5m", "Blocked D route exposes the one-and-a-half-metre water gap")
+	var water_mesh := water_gap.mesh as PlaneMesh if water_gap != null else null
+	t.ok(water_mesh != null and water_mesh.size.x >= 4.0, "Blocked D water gap stays broad enough to read behind the frame")
+	var warehouse := zone.get_node_or_null("DistantWarehouseSilhouetteD") as MeshInstance3D
+	t.ok(warehouse != null and warehouse.get_meta("greybox_role") == "route_d_distant_warehouse_silhouette_placeholder", "Blocked D route reads against a distant warehouse silhouette")
 	var floor := zone.get_node_or_null("FloorCollision") as StaticBody3D
 	t.ok(floor != null and floor.get_node_or_null("CollisionShape3D") is CollisionShape3D, "B floor collision continues the walkable seam")
 	zone.queue_free()
@@ -111,12 +120,13 @@ func test_zone_b_probes_keep_visible_surfaces_and_signal_lane(t) -> bool:
 		var shadow_probe := zone.get_node_or_null("ProbeZoneBFloorShadow") as Marker3D
 		var danger_probe := zone.get_node_or_null("ProbeZoneBLaneDanger") as Marker3D
 		if lit_probe != null:
-			t.ok(lit_probe.position.distance_to(Vector3(5.5, 0.095, -28.0)) <= 0.1, "Floor-lit probe remains at the layout coordinate")
+			t.eq(lit_probe.get_meta("placement"), "producer-approved visible floor surface", "Floor-lit probe follows the visible-surface producer decision")
 		if shadow_probe != null:
-			t.ok(shadow_probe.position.distance_to(Vector3(1.6, 0.095, -27.5)) <= 0.1, "Floor-shadow probe remains at the layout coordinate")
+			t.eq(shadow_probe.get_meta("placement"), "producer-approved visible cast-shadow surface", "Floor-shadow probe follows the visible-surface producer decision")
 		if danger_probe != null:
 			t.eq(danger_probe.get_meta("expected_hex"), "#E5482D", "Lane probe measures signal danger rather than the wood floor")
 			t.eq(danger_probe.get_meta("surface_path"), "ChargeLaneTelegraph/LeftEdge", "Lane probe ray-checks the active signal edge")
+			t.eq(danger_probe.get_meta("tolerance"), 5.0, "Lane probe allows at most DeltaE 5 on the opaque danger core")
 	var lane := zone.get_node_or_null("ChargeLaneTelegraph") as Node3D
 	t.ok(lane != null and lane.get_meta("visual_role") == "signal_danger_floor_telegraph", "B lane uses the signal-only charge telegraph")
 	zone.queue_free()

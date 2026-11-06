@@ -63,10 +63,10 @@ func _refresh() -> void:
 		return
 	var edge_mesh := _left_edge.mesh as BoxMesh
 	if edge_mesh != null:
-		edge_mesh.size = Vector3(0.07, 0.025, lane_length_m)
+		edge_mesh.size = Vector3(0.18, 0.025, lane_length_m)
 	var right_mesh := _right_edge.mesh as BoxMesh
 	if right_mesh != null:
-		right_mesh.size = Vector3(0.07, 0.025, lane_length_m)
+		right_mesh.size = Vector3(0.18, 0.025, lane_length_m)
 	_left_edge.position = Vector3(-lane_width_m * 0.5, 0.02, lane_length_m * 0.5)
 	_right_edge.position = Vector3(lane_width_m * 0.5, 0.02, lane_length_m * 0.5)
 	var shown := floori(progress * float(CHEVRON_COUNT))
