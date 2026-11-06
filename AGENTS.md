@@ -24,6 +24,8 @@ Mobile 2.5D action-extraction game, offline-first. This repo holds the **design 
 - 2.5D = 3D scene with a fixed isometric orthographic `Camera3D` (see `docs/art-direction.md`).
 - Write to `user://` only (`AppEnv.save_dir()` namespaces saves per channel); `res://` is read-only in exports.
 - Commit `*.uid` and `*.import` files; never commit `.godot/`, `build/`, keystores or `game/config/build_info.cfg`.
+- Comments in `.tscn`/`.tres` start with `;`, never `#`: a `#` line silently drops the property after it (a
+  Marker3D lost its `position` this way). Prefer comments in the `.gd` script.
 - New non-resource data files must be covered by the export presets' `include_filter` (currently `config/*.cfg`).
 
 ## Visual rules (anything that is seen on screen)

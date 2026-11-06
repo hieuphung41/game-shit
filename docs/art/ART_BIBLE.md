@@ -156,6 +156,9 @@ dòng tương ứng trong manifest.
 6. **Ghi manifest:** nguồn, giấy phép, làn màu, prompt card, điểm rubric.
 7. **Review độc lập:** art director chấm lại bằng rubric. Một mục CẤM là trượt.
 
+Ngoại lệ: **placeholder greybox** (hình khối cơ bản dùng vật liệu thư viện, đặt tên hoặc gắn cờ rõ là placeholder)
+không cần brief ở bước 1. Nó vẫn phải theo palette, vật liệu thư viện và look-dev; asset thật thay nó thì đi đủ 7 bước.
+
 ## 11. Định nghĩa "đạt"
 
 Không mục AI-xx nào, `check_art.py` xanh, rubric ≥ 16/20 và không tiêu chí nào 0 điểm, đọc được ở ảnh cỡ điện thoại
