@@ -492,6 +492,19 @@ metadata/tolerance = 10.0
 metadata/role = "lit_palette"
 metadata/surface_path = "PaletteStrip/Paper"
 
+[node name="ProbeWaterLit" type="Marker3D" parent="." groups=["lookdev_probe"]]
+position = Vector3(0, 0.435, 2.75)
+metadata/expected_hex = "#2E524D"
+metadata/tolerance = 10.0
+metadata/role = "lit_palette"
+metadata/surface_path = "PaletteStrip/Water"
+
+[node name="ProbeWaterShadow" type="Marker3D" parent="." groups=["lookdev_probe"]]
+position = Vector3(-3.42, 0.018, -4.5)
+metadata/tolerance = 12.0
+metadata/role = "shadow_shader"
+metadata/surface_path = "WaterPatch"
+
 [node name="ProbeFloorShadow" type="Marker3D" parent="." groups=["lookdev_probe"]]
 position = Vector3(4.85, 0.005, -3.5)
 metadata/tolerance = 12.0

@@ -10,8 +10,7 @@ const ENV_MATERIAL_PATHS := [
 	"res://art/materials/env_rope.tres",
 	"res://art/materials/env_paper.tres",
 ]
-const SIGNAL_AND_WET_MATERIAL_PATHS := [
-	"res://art/materials/water_wet.tres",
+const SPECIAL_STANDARD_MATERIAL_PATHS := [
 	"res://art/materials/signal_beacon.tres",
 	"res://art/materials/signal_danger.tres",
 	"res://art/materials/light_lamp_warm.tres",
@@ -33,14 +32,19 @@ func test_art_material_library_is_matte(t) -> bool:
 		t.eq(material.get_shader_parameter("paper_grain_strength"), GRAIN_STRENGTH, "%s keeps visible 4 percent grain" % path)
 		t.ok(material.get_shader_parameter("hatch_enabled") is bool, "%s exposes the hatch toggle" % path)
 		t.ok(float(material.get_shader_parameter("hatch_density")) >= 2.0, "%s exposes hatch density" % path)
-	for path: String in SIGNAL_AND_WET_MATERIAL_PATHS:
+	var water := load("res://art/materials/water_wet.tres") as ShaderMaterial
+	if t.ok(water != null, "water_wet loads as a printed ShaderMaterial"):
+		t.ok(water.shader != null, "water_wet uses the printed-water shader")
+		t.eq(water.get_shader_parameter("albedo_color"), Color(0.180392, 0.321569, 0.301961, 1), "water_wet keeps the water palette colour")
+		t.eq(water.get_shader_parameter("shadow_indigo"), Color(0.172549, 0.192157, 0.258824, 1), "water_wet shares the indigo shadow block")
+		t.ok(float(water.get_shader_parameter("wet_specular_strength")) <= 0.15, "water_wet keeps its only toon specular low")
+	for path: String in SPECIAL_STANDARD_MATERIAL_PATHS:
 		var special_material := load(path) as StandardMaterial3D
 		if not t.ok(special_material != null, "%s loads" % path):
 			continue
 		t.eq(special_material.metallic, 0.0, "%s has no metallic" % path)
-		t.ok(special_material.roughness >= 0.85 or path.ends_with("water_wet.tres"), "%s is matte" % path)
-		var expected_specular := BaseMaterial3D.SPECULAR_TOON if path.ends_with("water_wet.tres") else BaseMaterial3D.SPECULAR_DISABLED
-		t.eq(special_material.specular_mode, expected_specular, "%s has allowed specular mode" % path)
+		t.ok(special_material.roughness >= 0.85, "%s is matte" % path)
+		t.eq(special_material.specular_mode, BaseMaterial3D.SPECULAR_DISABLED, "%s disables specular" % path)
 	return true
 
 
@@ -66,6 +70,16 @@ func test_toon_shader_exposes_triplanar_paper_and_shadow_hatch(t) -> bool:
 	t.ok("DIFFUSE_LIGHT += mix(shadow_multiplier, vec3(1.0), lit);" in code, "GL Compatibility keeps lit palette ink at a unit albedo multiplier")
 	t.ok("shadow_colour / max(ALBEDO, vec3(0.02))" in code, "shadow multiplier resolves to the shader's indigo or gouge ink")
 	t.ok("ALBEDO * LIGHT_COLOR" not in code, "directional lamp colour cannot recolour printed palette ink")
+	t.ok("smoothstep(hatch_line_width" not in code, "gouge edges are no longer smoothstep-feathered")
+	t.ok("float stroke_half_width" in code and "1.0 - step(stroke_half_width" in code, "gouges use hard cut edges")
+	t.ok("distance_to_tip" in code and "dash_start" in code and "dash_end" in code, "gouges have uneven tapered ends")
+	var water_shader := load("res://art/shaders/water_print.gdshader") as Shader
+	if water_shader != null:
+		t.ok("specular_toon" in water_shader.code, "water keeps the allowed low toon specular mode")
+		t.ok("srgb_to_linear(shadow_indigo.rgb)" in water_shader.code, "water linearises its indigo shadow uniform")
+		t.ok("DIFFUSE_LIGHT += mix(shadow_multiplier, vec3(1.0), lit);" in water_shader.code, "water shares PRT-01's un-tinted palette light rule")
+		t.ok("SPECULAR_LIGHT += vec3(wet_glint);" in water_shader.code, "water's only wet toon glint remains explicitly low")
+		t.ok("ALBEDO * LIGHT_COLOR" not in water_shader.code, "water ignores directional light tint")
 	var outline_shader := load("res://art/shaders/ink_outline.gdshader") as Shader
 	if outline_shader != null:
 		t.ok("hint_range(0.03, 0.07)" in outline_shader.code, "ink width accepts the three outline ranks")
@@ -103,13 +117,14 @@ func test_lookdev_scene_has_fixed_isometric_camera(t) -> bool:
 		t.eq(roundi(camera.rotation_degrees.y), 45, "camera yaw is 45 degrees")
 	t.ok(lookdev.get_node_or_null("DirectionalLight3D") is DirectionalLight3D, "look-dev has main directional light")
 	t.eq(lookdev.find_children("*", "OmniLight3D", true, false).size(), 0, "beacon and lamp use emission without env-lighting pools")
-	t.eq(lookdev.get_tree().get_nodes_in_group("lookdev_probe").size(), 7, "named projected colour probes cover background, palette faces, and shadow")
+	t.eq(lookdev.get_tree().get_nodes_in_group("lookdev_probe").size(), 9, "named projected colour probes cover background, palette faces, water, and shadows")
 	for expected_probe: Dictionary in [
 		{"name": "ProbeWood", "hex": "#7B5B40"},
 		{"name": "ProbeWoodDark", "hex": "#4A3426"},
 		{"name": "ProbeStone", "hex": "#7A756C"},
 		{"name": "ProbeCanvas", "hex": "#7B2F27"},
 		{"name": "ProbePaper", "hex": "#D8CDB4"},
+		{"name": "ProbeWaterLit", "hex": "#2E524D"},
 	]:
 		var probe := lookdev.get_node_or_null(str(expected_probe["name"])) as Marker3D
 		if not t.ok(probe != null, "%s exists" % expected_probe["name"]):
@@ -120,8 +135,13 @@ func test_lookdev_scene_has_fixed_isometric_camera(t) -> bool:
 		t.eq(shadow_probe.get_meta("surface_path"), "Floor", "floor-shadow probe targets the visible floor rather than a roof")
 		t.eq(str(shadow_probe.get_meta("expected_hex", "")), "", "floor-shadow expectation comes from its shader parameters")
 		t.eq(shadow_probe.position, Vector3(4.85, 0.005, -3.5), "floor-shadow probe sits in the visible tax-stall cast shadow, outside the roof silhouette")
+	var water_shadow_probe := lookdev.get_node_or_null("ProbeWaterShadow") as Marker3D
+	if water_shadow_probe != null:
+		t.eq(water_shadow_probe.get_meta("surface_path"), "WaterPatch", "water-shadow probe targets the visible WaterPatch")
+		t.eq(str(water_shadow_probe.get_meta("expected_hex", "")), "", "water-shadow expectation comes from its printed-water shader")
+		t.eq(water_shadow_probe.position, Vector3(-3.42, 0.018, -4.5), "water-shadow probe sits in the visible beacon-stem cast shadow on water")
 	if camera != null:
-		for probe_name: String in ["ProbeBackground", "ProbeWood", "ProbeWoodDark", "ProbeStone", "ProbeCanvas", "ProbePaper", "ProbeFloorShadow"]:
+		for probe_name: String in ["ProbeBackground", "ProbeWood", "ProbeWoodDark", "ProbeStone", "ProbeCanvas", "ProbePaper", "ProbeWaterLit", "ProbeWaterShadow", "ProbeFloorShadow"]:
 			var projected_probe := lookdev.get_node_or_null(probe_name) as Marker3D
 			if projected_probe != null:
 				t.ok(lookdev._probe_surface_is_visible(camera, projected_probe), "%s is not occluded before its intended sample surface" % probe_name)

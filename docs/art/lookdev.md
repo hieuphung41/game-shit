@@ -21,7 +21,9 @@ không phải một khu playable.
   (dao động sáng ±4%), fibre scale `14` và speckle density `7`: chỉ thấy rõ ở ảnh cận, không là lớp phủ màn hình.
 - Vệt đục là nét song song đứt đoạn theo trục thế giới, chỉ shader đặt vào dải bóng. Cargo 2×2 và thân quầy dùng
   density `2.6`, line width `0.22`, strength `0.90`: hàng vệt thưa, nét rộng và đoạn đứt dài để mực tách riêng
-  khỏi hạt giấy ở ảnh điện thoại. `hatch_gouge_colour` mặc định là `ink` cho gỗ sáng; mặt `env_wood_dark` dưới
+  khỏi hạt giấy ở ảnh điện thoại. Mép được cắt bằng `step` (không feather `smoothstep`), còn hai đầu thu hẹp theo
+  hình học và có điểm bắt đầu/kết thúc lệch theo từng hàng: ảnh cận phải thấy chuyển màu không quá 1 px như nhát đục.
+  `hatch_gouge_colour` mặc định là `ink` cho gỗ sáng; mặt `env_wood_dark` dưới
   khoảng 35% value dùng `paper_light` để các vệt đục sáng còn tách được trong dải bóng chàm. Mái dùng density
   `5.5`, mặc định width `0.052`, strength `0.31`. Tắt cho vật dưới 0.5 m và toàn bộ sàn telegraph.
 - `ink_outline.gdshader` dùng mực `ink` theo ba hạng vật lý: `0.055 m` cho Người Thu Hồi/vật tương tác,
@@ -37,6 +39,11 @@ không phải một khu playable.
   lấy đúng `background_color` của resource làm clear color của viewport để PNG giữ mã palette đã khai báo.
 - Beacon và đèn treo đọc bằng emission của `signal_beacon` và `light_lamp_warm`; look-dev không dùng
   `OmniLight3D`, nên không có quầng sáng tròn trên sàn, mái hoặc cargo.
+- `water_wet` dùng `art/shaders/water_print.gdshader`, không còn là `StandardMaterial3D`: đây vẫn là ngoại lệ ướt
+  duy nhất có `specular_toon` thấp (`0.08`, roughness `0.88`), nhưng trong `light()` dùng đúng multiplier PRT-01
+  của `toon_matte`. Vì vậy nước sáng ra `water`, còn bóng ra `shadow_indigo`, không cần bật ambient và không thành
+  bề mặt nhựa. `ProbeWaterShadow` nằm ở `(-3.42, 0.018, -4.5)`: đoạn WaterPatch hở camera dưới bóng của thân cọc
+  beacon; đây là dải bóng nhìn thấy được cạnh cargo, không phải vùng nước sáng sát nó.
 
 ## Chụp và tự kiểm
 
@@ -57,7 +64,8 @@ Lệnh dùng GL Compatibility (`opengl3`), `$DISPLAY` hoặc `xvfb-run`, và ph�
   `lookdev.gd` chiếu từng `Marker3D` nhóm `lookdev_probe` qua `Camera3D`, ray tới mesh `surface_path` đầu tiên,
   rồi mới lấy mẫu pixel tại toạ độ đó; một điểm bị che ghi `occluded` và làm probe lỗi.
   `tools/lookdev_probe.py` in bảng `vật liệu · màu đo · màu mong đợi · ΔE76`, ghi file này và trả lỗi
-  nếu quá ngưỡng (nền ≤ 5, mặt sáng ≤ 10, bóng ≤ 12).
+  nếu quá ngưỡng (nền ≤ 5, mặt sáng ≤ 10, bóng ≤ 12). `ProbeWaterLit` và `ProbeWaterShadow` kiểm riêng vật liệu
+  không dùng `toon_matte`; hai probe đều có kiểm mesh che khuất như các probe còn lại.
 
 Thêm điểm probe cho asset mới: thêm một `Marker3D` có tên mô tả vào `lookdev.tscn`, đặt nó nhô 0.005 m
 trên mặt nhìn thấy, gán nhóm `lookdev_probe`, và metadata `surface_path`, `tolerance`, `role`. Probe mặt sáng

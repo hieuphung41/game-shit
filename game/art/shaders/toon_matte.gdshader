@@ -60,11 +60,18 @@ float hatch_plane(vec2 plane, float density) {
 	// camera or collapse into a flat shadow fill. Low density keeps each row
 	// readable as a separate chisel pass rather than a texture fill.
 	float across = (plane.x + plane.y * 0.32) * density;
-	float line = 1.0 - smoothstep(hatch_line_width * 0.28, hatch_line_width, abs(fract(across) - 0.5));
 	float along = (plane.y - plane.x * 0.32) * density;
-	// A long, interrupted dash survives the phone downsample; short hash cells
-	// previously read as paper grain instead of individually cut strokes.
-	float dash = step(0.38, hash21(floor(vec2(along * 0.82, across))));
+	// Every stroke uses a hard binary edge.  Its two ends narrow geometrically
+	// (not by alpha feathering), creating a cut-chisel tip at each uneven dash.
+	float dash_phase = fract(along * 0.82);
+	float row = floor(across);
+	float dash_start = mix(0.06, 0.22, hash21(vec2(row, row + 17.0)));
+	float dash_end = mix(0.66, 0.94, hash21(vec2(row + 31.0, row)));
+	float dash = step(dash_start, dash_phase) * (1.0 - step(dash_end, dash_phase));
+	float distance_to_tip = min(dash_phase - dash_start, dash_end - dash_phase);
+	float tip = clamp(distance_to_tip / 0.16, 0.0, 1.0);
+	float stroke_half_width = hatch_line_width * mix(0.12, 1.0, tip);
+	float line = 1.0 - step(stroke_half_width, abs(fract(across) - 0.5));
 	return line * dash;
 }
 
