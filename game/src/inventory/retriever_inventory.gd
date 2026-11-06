@@ -218,6 +218,28 @@ func commit_drop(uid: int) -> InventoryResult:
 	return result
 
 
+func preview_consume(uid: int) -> InventoryResult:
+	var found := _find(uid)
+	if found.is_empty():
+		return InventoryResult.failure(InventoryReason.Value.ITEM_NOT_FOUND, uid)
+	var item: ItemInstance = found.item
+	if found.grid.grid_kind != SLING_POUCH or item.definition.item_category != ItemDef.Category.CONSUMABLE:
+		return InventoryResult.failure(InventoryReason.Value.WRONG_SOURCE, uid)
+	return InventoryResult.success()
+
+
+func commit_consume(uid: int) -> InventoryResult:
+	var result := preview_consume(uid)
+	if not result.ok:
+		return result
+	var item := sling_pouch.items.get(uid) as ItemInstance
+	item.quantity -= 1
+	if item.quantity == 0:
+		sling_pouch.remove(uid)
+		item_removed.emit(uid, SLING_POUCH)
+	return result
+
+
 func preview_sort() -> InventoryResult:
 	var ordered: Array[ItemInstance] = []
 	for item: ItemInstance in backpack.items.values():

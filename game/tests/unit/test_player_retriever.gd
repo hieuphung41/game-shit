@@ -34,6 +34,7 @@ func test_retriever_scene_has_character_body_and_one_hand_touch_joystick(t) -> b
 	t.ok(retriever is CharacterBody3D, "Retriever uses CharacterBody3D")
 	t.eq(retriever.get_meta("greybox_status", ""), "placeholder", "Retriever is explicitly marked as a greybox placeholder")
 	t.ok(retriever.get_node_or_null("CollisionShape3D") is CollisionShape3D, "Retriever has a collision shape")
+	t.ok(retriever.get_node_or_null("Visual") is Node3D, "Retriever exposes the Visual animation slot")
 	var body := retriever.get_node_or_null("Body") as MeshInstance3D
 	var body_material := body.material_override as ShaderMaterial if body != null else null
 	t.ok(body_material != null and body_material.next_pass is ShaderMaterial, "Retriever material includes the required ink outline pass")
@@ -51,6 +52,50 @@ func test_wasd_actions_keep_the_desktop_secondary_control(t) -> bool:
 	t.ok(_action_has_physical_key(&"move_up", KEY_W), "move_up is bound to physical W")
 	t.ok(_action_has_physical_key(&"move_down", KEY_S), "move_down is bound to physical S")
 	return true
+
+
+func test_combat_actions_have_required_keyboard_and_gamepad_bindings(t) -> bool:
+	t.ok(_action_has_physical_key(&"combat_attack", KEY_J), "combat_attack is bound to physical J")
+	t.ok(_action_has_physical_key(&"combat_dodge", KEY_SPACE), "combat_dodge is bound to physical Space")
+	t.ok(_action_has_physical_key(&"combat_guard", KEY_K), "combat_guard is bound to physical K")
+	t.ok(_action_has_physical_key(&"use_remedy", KEY_Q), "use_remedy is bound to physical Q")
+	t.ok(_action_has_joy_button(&"combat_attack", JOY_BUTTON_X), "combat_attack has X")
+	t.ok(_action_has_joy_button(&"combat_dodge", JOY_BUTTON_A), "combat_dodge has A")
+	t.ok(_action_has_joy_button(&"combat_guard", JOY_BUTTON_RIGHT_SHOULDER), "combat_guard has RB")
+	t.ok(_action_has_joy_button(&"use_remedy", JOY_BUTTON_Y), "use_remedy has Y")
+	return true
+
+
+func test_outer_pier_overlay_bridge_cancels_guard_and_remedy(t) -> bool:
+	var retriever := (load(PLAYER_SCENE_PATH) as PackedScene).instantiate() as RetrieverController
+	var bridge := OuterPierRun.new()
+	t.tree.root.add_child(retriever)
+	await t.tree.process_frame
+	bridge._retriever = retriever
+	retriever.press_combat_action(&"combat_guard")
+	retriever.combat.tick(0.10)
+	bridge._set_retriever_overlay_open(true)
+	t.eq(retriever.combat.state, RetrieverCombat.STATE_FREE, "opening an overlay through the run lowers guard")
+	bridge._set_retriever_overlay_open(false)
+	var inventory := _combat_inventory()
+	retriever.set_inventory(inventory)
+	retriever.combat.health.damage(20)
+	retriever.press_combat_action(&"use_remedy")
+	t.eq(retriever.combat.state, RetrieverCombat.STATE_USING_REMEDY, "remedy channel starts before overlay opens")
+	bridge._set_retriever_overlay_open(true)
+	t.eq(retriever.combat.state, RetrieverCombat.STATE_FREE, "opening an overlay through the run cancels remedy")
+	t.ok(inventory.sling_pouch.items.has(1), "cancelled remedy remains in the sling pouch")
+	retriever.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func _combat_inventory() -> RetrieverInventory:
+	var registry := ItemRegistry.new()
+	registry.add(SlingRemedyDefinition.new())
+	var inventory := RetrieverInventory.new(registry)
+	inventory.load_snapshot({"backpack": [], "notary_box": [], "sling_pouch": [{"uid": 1, "def_id": &"sling_remedy", "quantity": 1, "anchor": Vector2i.ZERO, "rotated": false}]})
+	return inventory
 
 
 func test_retriever_follow_keeps_isometric_rotation_and_beacon_in_frame_at_dispatch(t) -> bool:
@@ -94,6 +139,13 @@ func test_retriever_follow_keeps_isometric_rotation_and_beacon_in_frame_at_dispa
 func _action_has_physical_key(action: StringName, expected_key: Key) -> bool:
 	for event in InputMap.action_get_events(action):
 		if event is InputEventKey and event.physical_keycode == expected_key:
+			return true
+	return false
+
+
+func _action_has_joy_button(action: StringName, expected_button: JoyButton) -> bool:
+	for event in InputMap.action_get_events(action):
+		if event is InputEventJoypadButton and event.button_index == expected_button:
 			return true
 	return false
 
