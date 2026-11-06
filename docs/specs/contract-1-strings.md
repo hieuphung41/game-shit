@@ -11,7 +11,7 @@ nguyên văn từ tài liệu nguồn đều `proposed`. Tài liệu này không
 |---|---|
 | File | `game/i18n/strings.csv`, UTF-8 (không BOM), header `keys,vi`; chỉ cột tiếng Việt. Godot import thành `strings.vi.translation` (gitignored). |
 | Key | `SCREEN_CONTEXT_PURPOSE` viết hoa, ổn định: đổi chữ thì giữ key; đổi nghĩa thì thêm key mới. |
-| Gọi trong code | `tr("KEY")`; chuỗi có placeholder dùng `tr("KEY").format({"seconds": 20})`. Placeholder: `{seconds}`, `{used}`, `{total}`. |
+| Gọi trong code | `tr("KEY")`; chuỗi có placeholder dùng `tr("KEY").format({"seconds": 20})`. Placeholder: `{seconds}`, `{used}`, `{total}`; S03 thêm `{hp}`, `{max_hp}`, `{quantity}`, `{free}`, `{w}`, `{h}`, `{item}` (TASK-84). |
 | Danh sách động | Tên item trong `Đã giữ` / `Đã mất` lấy từ tên item, không ghép câu trong code. |
 | Đếm ký tự | Ký tự Unicode NFC, tính cả khoảng trắng và dấu câu; placeholder tính theo giá trị đã điền. |
 | Đăng ký locale | CSV đã import được, nhưng chưa thêm vào `internationalization/locale/translations` của `project.godot` (ngoài phạm vi card này). |
@@ -28,6 +28,12 @@ nguyên văn từ tài liệu nguồn đều `proposed`. Tài liệu này không
 | Dòng card item | 64 | `CARD_MANIFEST_R17_*` |
 | Dòng summary, trạng thái, prompt, gợi ý | 72 | `SUMMARY_*` (trừ nhóm/nút), `EXTRACT_S*`, `EXTRACT_CONFIRM_CLOSED_*`, `BEACON_*_REASON`, `PROMPT_SAFEBOX_*`, `RECOVERY_BODY_*`, `UI_ERROR_*`, `*_HINT*`, `INVENTORY_REASON_CROSS_GRID_LOCKED`, `INVENTORY_REASON_WITHDRAW_LOCKED` |
 | Briefing / thoại / thân O5 | 80–110 | xem cột giới hạn từng key; mọi `*_CONFIRM_*_BODY` tối đa 90 |
+| Nhãn nút combat (S03) | 10 | `HUD_BUTTON_ATTACK`, `HUD_BUTTON_DODGE`, `HUD_BUTTON_GUARD`, `HUD_BUTTON_REMEDY` (nút 112 px; `HUD_BUTTON_INVENTORY` vẫn 24) |
+| Số/hậu tố ngắn (S03) | 6–12 | `CARD_QUANTITY_SUFFIX` 6, `INVENTORY_FOOTPRINT_CHIP` 8, `HUD_HEALTH_VALUE` 12 |
+| Tag ngắn (S03) | 16 | `HUD_HEALTH_LOW`, `CARD_TAG_*`, `CARD_FIT_*` |
+| Dòng HUD cảnh báo (S03) | 24 | `HUD_ALERT_*`, `HUD_DANGER_*`, `ENEMY_*_NAME`, `WORLD_INTERACT_*` |
+| Dòng card loot B (S03) | 24 / 32 / 64 | `CARD_<ID>_NAME`, `_FOOTPRINT` 24 · `_CLAIM`, `_RARITY` 32 · `_USE`, `_LORE` 64 (`<ID>` ≠ `MANIFEST_R17`) |
+| Toast/prompt S03 | 72 | `PROMPT_COMBAT_*`, `PROMPT_LOOT_*`, `COMBAT_*` (trừ nút), `CACHE_CLOSED_*`, `CARD_PLACED_CONFIRM_*`, `INVENTORY_PREVIEW_*` |
 
 ## 2. Key → màn hình / state
 
@@ -176,6 +182,112 @@ không có affordance bỏ item, rút đồ niêm hay đổi gear ([UX vòng A](
 | `LOADOUT_CONFIRM_NO_WEAPON_BODY` | O5 vào run không vũ khí, hậu quả | 90 | — |
 | `CONFIRM_BUTTON_CANCEL` | Nút `Hủy` chung của các O5 S04 | 24 | Không dùng lại `EXTRACT_CONFIRM_CANCEL` để key extract chỉ mang một nghĩa. |
 
+### S03 — Khu B: HUD combat, cảnh báo, card loot cache B, lưới, stub HP 0 `proposed`
+
+Trả mọi key ở [UX khu B](zone-b-ux-spec.md) §8. Ui-programmer (TASK-89) và gameplay-engineer (TASK-90) chỉ gọi `tr(key)`.
+Cột **Dài** là số ký tự đếm theo §1 (placeholder đã điền bằng giá trị dài nhất trong slice, ghi ở ghi chú). Mọi câu là
+`proposed`, trừ câu ghi "nguyên văn".
+
+**HUD combat, máu, thuốc** ([UX khu B](zone-b-ux-spec.md) §5.1, [combat](combat-slice-spec.md) §3–§4)
+
+| Key | Màn hình / state | Tối đa | Dài | Nguồn / ghi chú |
+|---|---|---:|---:|---|
+| `HUD_BUTTON_ATTACK` | C1 | 10 | 4 | `Đánh`. |
+| `HUD_BUTTON_DODGE` | C2 | 10 | 2 | `Né`. |
+| `HUD_BUTTON_GUARD` | C3 | 10 | 9 | `Giữ khiên`: chữ nói luôn đây là thao tác giữ (UX khu B §2.3). |
+| `HUD_BUTTON_REMEDY` | C4 (+ badge số) | 10 | 10 | `Dùng thuốc`; không ghi tên gói để vừa 10. |
+| `HUD_HEALTH_VALUE` | H2 số | 12 | 7 | `{hp}/{max_hp}`, đo với `100/100`. |
+| `HUD_HEALTH_LOW` | H2 tag khi máu ≤ 30% | 16 | 8 | Đi cùng icon nứt (cue ngoài màu). |
+| `COMBAT_REMEDY_REFUSED_NO_REMEDY` | R4' toast, `no_remedy` | 72 | 26 | Gọi đúng tên ngăn `túi đeo chéo`. |
+| `COMBAT_REMEDY_REFUSED_HP_FULL` | R4' toast, `hp_full` | 72 | 34 | Không tiêu thuốc. |
+| `COMBAT_REMEDY_INTERRUPTED` | R4' toast, kênh bị ngắt | 72 | 44 | Nói rõ thuốc **chưa mất** (combat §3.5.3). |
+
+**Objective B** — dùng lại key S02, không thêm key: `HUD_OBJECTIVE_CROSS_TAX_POST` (`Qua trạm thuế.`, nguyên văn Beat 3)
+khi encounter B đang diễn ra; `HUD_OBJECTIVE_DELIVER_PIER_A` (`Đưa Manifest ra Cầu tàu A.`, nguyên văn Beat 6) sau đó.
+Thứ tự theo UX khu B §5.1.1.
+
+**Cảnh báo, prompt vai địch, nguy hiểm khi overlay mở** (UX khu B §5.2, §5.6)
+
+| Key | Màn hình / state | Tối đa | Dài | Nguồn / ghi chú |
+|---|---|---:|---:|---|
+| `HUD_ALERT_LANE_B` | H5, `lane_alert_started` → `boat_ready` | 24 | 20 | Câu báo địch lane B lúc hold; cùng mũi tên H5. `EXTRACT_S8_LANE_ALERT` (S02) vẫn là toast R4' một lần. |
+| `HUD_ALERT_PATROL_B` | H5, `patrol_cue_started` | 24 | 21 | Patrol là `tax_guard` nên gọi `Vệ binh`; `lối A` = `SeamAB` (layout B). |
+| `HUD_DANGER_NEAR` | D1 dòng 1 | 24 | 13 | — |
+| `HUD_DANGER_WINDUP` | D1 dòng 1 khi `windup_started` | 24 | 16 | — |
+| `HUD_DANGER_CLOSE_HINT` | D1 dòng 2 | 24 | 21 | D1 là nút: chạm = đóng như hủy. |
+| `PROMPT_COMBAT_TAX_GUARD_FIRST_SEEN` | R4', `role_first_seen(tax_guard)` | 72 | 67 | Quạt sàn = `guard_hold_ring` khi windup; khiên không chặn ở hông/sau, và ở `strike`/`recover` (combat §5.2). |
+| `PROMPT_COMBAT_FOREMAN_FIRST_SEEN` | R4', `role_first_seen(foreman)` | 72 | 68 | Vạch sàn = `charge_lane_stripe`; foreman không charge người ngoài lane (combat §5.3). |
+| `ENEMY_TAX_GUARD_NAME` | Không hiện ở S03 (không nhãn trên đầu địch); để dùng thống nhất | 24 | 23 | Tên vai trong combat §1. Glossary: §3. |
+| `ENEMY_FOREMAN_NAME` | như trên | 24 | 8 | Tên vai trong combat §1 và vertical slice Beat 3. Glossary: §3. |
+
+**Cache B: tương tác, card O2B, toast** (UX khu B §5.4, [loot B](zone-b-loot-spec.md) §7)
+
+| Key | Màn hình / state | Tối đa | Dài | Nguồn / ghi chú |
+|---|---|---:|---:|---|
+| `WORLD_INTERACT_CACHE_B` | R5' trong 1.5 m quanh `CacheB` | 24 | 17 | Cache là rương tịch thu của trạm (loot B §3.1). |
+| `PROMPT_LOOT_COLOR_NOT_VALUE` | R4', lần đầu mở card | 72 | 60 | Nguyên văn Beat 4. |
+| `CACHE_CLOSED_LEFT_RANGE` | R4' toast, ra ngoài tầm | 72 | 63 | Nói món chưa nhặt vẫn còn (loot B §6.2). |
+| `CARD_PLACED_CONFIRM_BACKPACK` | R4' toast sau `commit_pickup` vào ba lô | 72 | 36 | `{item}` = tên item; đo với `Manifest Hàng Hóa R-17` (22). |
+| `CARD_PLACED_CONFIRM_NOTARY_BOX` | R4' toast sau niêm vào Hộp | 72 | 53 | Như trên; nói "đã niêm". |
+| `CARD_QUANTITY_SUFFIX` | chip, dòng 1, ô lưới | 6 | 2 | `×{quantity}`, đo với `×3` (`stack_max` 3). |
+| `CARD_TAG_ROTATABLE` | card dòng 2a | 16 | 9 | — |
+| `CARD_TAG_STACKABLE` | card dòng 2a | 16 | 14 | — |
+| `CARD_TAG_SEALABLE` | card dòng 2a | 16 | 9 | — |
+| `CARD_BACKPACK_FREE` | card dòng 2b | 24 | 17 | `Ba lô trống {free}/{total}`, đo với `12/12`. |
+| `CARD_FIT_BACKPACK_FITS` | card dòng 2b, `fits` | 16 | 9 | Đi cùng icon ô + tích. |
+| `CARD_FIT_BACKPACK_ROTATED_ONLY` | card dòng 2b, `fits_rotated_only` | 16 | 12 | — |
+| `CARD_FIT_BACKPACK_NO_FIT` | card dòng 2b, `no_fit` | 16 | 15 | — |
+| `CARD_FIT_NOTARY_BOX_FITS` | card dòng 2b, Hộp `fits` | 16 | 7 | — |
+| `CARD_FIT_NOTARY_BOX_NO_FIT` | card dòng 2b, Hộp `no_fit` | 16 | 16 | Sổ Kho khi Manifest đã niêm. |
+| `CARD_FIT_NOTARY_BOX_NOT_SEALABLE` | card dòng 2b, `not_sealable` | 16 | 15 | Không món cache B nào dùng; để sẵn. |
+
+**Hai món cache B** — thứ tự `NAME → FOOTPRINT → USE → CLAIM → RARITY → LORE` như card Manifest. Tên giữ nguyên
+catalogue; lore là **một dòng nguyên văn** từ [item catalogue](../items/black-tax-port-items.md). `USE` nói giá trị
+tương quan, không số tiền, không nói lớp cao hơn là đáng giá hơn (loot B §7.3).
+
+| Key | Màn hình / state | Tối đa | Dài | Nguồn / ghi chú |
+|---|---|---:|---:|---|
+| `ITEM_SCRAPED_TAX_COIN_NAME` | ô lưới, dải S, toast, S10 | 24 | 17 | `Đồng Thuế Cạo Mặt`, items #14. |
+| `CARD_SCRAPED_TAX_COIN_NAME` | O2B dòng 1 | 24 | 17 | Cùng chữ. |
+| `CARD_SCRAPED_TAX_COIN_FOOTPRINT` | O2B dòng 2a | 24 | 9 | `1x1 · 1 ô`; xếp chồng nằm ở tag. |
+| `CARD_SCRAPED_TAX_COIN_USE` | O2B dòng 3 | 64 | 28 | "Valuable gọn" (#14) + đáng giữ theo ô. |
+| `CARD_SCRAPED_TAX_COIN_CLAIM` | O2B dòng 4 | 32 | 19 | Phe theo glossary. |
+| `CARD_SCRAPED_TAX_COIN_RARITY` | O2B dòng 5 | 32 | 28 | Xanh lá, bậc 2/6 bằng chữ. |
+| `CARD_SCRAPED_TAX_COIN_LORE` | O2B dòng 6 | 64 | 62 | Nguyên văn #14. |
+| `ITEM_WATERLOGGED_STOCK_LEDGER_NAME` | ô lưới, dải S, toast, S10 | 24 | 16 | `Sổ Kho Ngấm Nước`, items #16. |
+| `CARD_WATERLOGGED_STOCK_LEDGER_NAME` | O2B dòng 1 | 24 | 16 | Cùng chữ. |
+| `CARD_WATERLOGGED_STOCK_LEDGER_FOOTPRINT` | O2B dòng 2a | 24 | 9 | `1x2 · 2 ô`; xoay nằm ở tag. |
+| `CARD_WATERLOGGED_STOCK_LEDGER_USE` | O2B dòng 3 | 64 | 48 | "Tài sản đăng ký gọn vừa … không main evidence" (#16). |
+| `CARD_WATERLOGGED_STOCK_LEDGER_CLAIM` | O2B dòng 4 | 32 | 19 | Claim chính là Hắc Thuế (loot B §4). |
+| `CARD_WATERLOGGED_STOCK_LEDGER_RARITY` | O2B dòng 5 | 32 | 31 | Xanh dương, bậc 3/6 bằng chữ. |
+| `CARD_WATERLOGGED_STOCK_LEDGER_LORE` | O2B dòng 6 | 64 | 59 | Nguyên văn #16. |
+
+**Lưới O3B** (UX khu B §4, §5.5)
+
+| Key | Màn hình / state | Tối đa | Dài | Nguồn / ghi chú |
+|---|---|---:|---:|---|
+| `INVENTORY_PICKUP_SOURCE_CACHE` | dải S tag, `pickup` | 24 | 22 | Món chưa rời rương tới khi commit. |
+| `INVENTORY_PICKUP_HINT_ITEM` | dải S dòng 2, `pickup` | 72 | 52 | Bản chung của `INVENTORY_PICKUP_HINT` (S02, riêng Manifest). |
+| `INVENTORY_PREVIEW_FITS_BACKPACK` | dải S dòng 2, ngón đè ô hợp lệ ở ba lô | 72 | 32 | — |
+| `INVENTORY_PREVIEW_FITS_NOTARY_BOX` | dải S dòng 2, ngón đè ô hợp lệ ở Hộp | 72 | 55 | Báo trước khóa rút (`WITHDRAW_LOCKED`). |
+| `INVENTORY_BUTTON_ROTATE` | nút `Xoay` | 24 | 4 | — |
+| `INVENTORY_FOOTPRINT_CHIP` | chip footprint | 8 | 3 | `{w}×{h}`, đo với `1×2`. Khác `INVENTORY_SELECTED_ITEM` (S02, `{width}`/`{height}`). |
+
+**Stub HP 0 — O6** (UX khu B §5.7, combat §4.4). Không dùng chữ "chết", Phù Hiệu Hồi Hương hay Recovery: đây không phải
+S11/S12 (S04).
+
+| Key | Màn hình / state | Tối đa | Dài | Nguồn / ghi chú |
+|---|---|---:|---:|---|
+| `COMBAT_STUB_HP_ZERO` | O6 dòng duy nhất | 72 | 71 | Run kết thúc, không món nào được giữ. Ghi "kể cả đồ đã niêm" vì stub không gọi `resolve_death()`: luật niêm của S04 chưa chạy. |
+| `COMBAT_STUB_BUTTON_BOOT` | O6 nút, khóa 2.5 s đầu | 24 | 10 | Về Boot. |
+
+### Thay đổi TASK-84
+
+- 56 key mới ở mục S03 (append cuối CSV); 122 key cũ giữ nguyên tên **và** nội dung.
+- §1: thêm placeholder S03 và sáu dòng giới hạn S03. `CARD_<ID>_*` của món cache B dùng giới hạn riêng (24/32/64), không
+  dùng dòng 64 chung của `CARD_MANIFEST_R17_*`.
+- Không cần key objective mới cho B; không có chữ trên đầu địch ở S03.
+
 ### Thay đổi TASK-71
 
 - 44 key mới (30 key S02 ghi `TASK-71`, 14 key S04 ở bảng trên); 75 key cũ giữ nguyên tên **và** nội dung.
@@ -190,6 +302,17 @@ Các chữ dưới đây có trong chuỗi in-game nhưng chưa có dòng trong 
 |---|---|---|
 | `Cuộn Băng Muối` (`ITEM_STARTER_REMEDY_NAME`) | TASK-71, tên mới cho `starter_remedy` (inventory spec §8.3 "tên cuối chưa chốt") | **Chờ Producer duyệt** làm tên item. Chưa chốt vật hồi phục ở túi đeo chéo có cùng `def_id` không (UX Q4); nếu khác, cần tên riêng. |
 | `bàn dispatch`, `trạm thuế`, `kit thu hồi`, `vòng đèn phao`, `Đồ mang theo` | vertical-slice Beat 1/3, §4.3; UX vòng A §5.3, §5.7 | Mô tả, không phải tên riêng. |
+
+**Đề xuất glossary S03 (TASK-84) `proposed`** — chưa sửa `memory/glossary.md`; Producer duyệt rồi mới thêm.
+
+| Tiếng Việt | English | code | Nguồn | Ghi chú |
+|---|---|---|---|---|
+| Vệ binh thuế khiên nhẹ | Light-shield Tax Guard | `tax_guard` | [combat](combat-slice-spec.md) §1; `ENEMY_TAX_GUARD_NAME` | Vai địch; patrol B là cùng vai, chữ HUD gọi tắt `Vệ binh`. |
+| Đốc công | Foreman | `foreman` | combat §1; vertical slice Beat 3; `ENEMY_FOREMAN_NAME` | Vai địch charge theo lane. |
+| Đồng Thuế Cạo Mặt | Scraped Tax Coin | `scraped_tax_coin` | items #14; [loot B](zone-b-loot-spec.md) §4 | Món cache B. |
+| Sổ Kho Ngấm Nước | Waterlogged Stock Ledger | `waterlogged_stock_ledger` | items #16; loot B §4 | Món cache B; không phải vật chứng. |
+| rương tịch thu (cache B) | confiscation chest | `cache_b` | loot B §3.1; `WORLD_INTERACT_CACHE_B` | Mô tả vật thể, không phải tên riêng. |
+| Gói Băng Muối | sling remedy | `sling_remedy` | combat §1; `ITEM_SLING_REMEDY_NAME` (đã có trong CSV) | HUD S03 chỉ gọi là `thuốc`; tên chưa có dòng glossary. |
 
 Đã vào glossary ngày 2026-11-06 (bỏ khỏi danh sách chờ): `Người Thu Hồi già`, `Kho K-7`, `Contract 2`,
 `Recovery Contract`, `chưa thu hồi`.
