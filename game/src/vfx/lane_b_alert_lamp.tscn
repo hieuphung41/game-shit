@@ -1,0 +1,47 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://src/vfx/lane_b_alert_lamp.gd" id="1_script"]
+[ext_resource type="Material" path="res://art/materials/signal_danger.tres" id="2_signal"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_shutter"]
+size = Vector3(0.56, 0.22, 0.08)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_stem"]
+top_radius = 0.09
+bottom_radius = 0.12
+height = 2.4
+radial_segments = 8
+
+[sub_resource type="BoxMesh" id="BoxMesh_arrow"]
+size = Vector3(0.18, 0.02, 0.82)
+
+[node name="LaneBAlertLamp" type="Node3D"]
+script = ExtResource("1_script")
+metadata/visual_role = "signal_danger_lane_alert"
+
+[node name="Stem" type="MeshInstance3D" parent="."]
+position = Vector3(0, 1.2, 0)
+mesh = SubResource("CylinderMesh_stem")
+material_override = ExtResource("2_signal")
+
+[node name="Shutters" type="Node3D" parent="."]
+
+[node name="Shutter1" type="MeshInstance3D" parent="Shutters"]
+position = Vector3(0, 2.45, 0)
+mesh = SubResource("BoxMesh_shutter")
+material_override = ExtResource("2_signal")
+
+[node name="Shutter2" type="MeshInstance3D" parent="Shutters"]
+position = Vector3(0, 2.76, 0)
+mesh = SubResource("BoxMesh_shutter")
+material_override = ExtResource("2_signal")
+
+[node name="Shutter3" type="MeshInstance3D" parent="Shutters"]
+position = Vector3(0, 3.07, 0)
+mesh = SubResource("BoxMesh_shutter")
+material_override = ExtResource("2_signal")
+
+[node name="FloorArrow" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.03, -0.65)
+mesh = SubResource("BoxMesh_arrow")
+material_override = ExtResource("2_signal")

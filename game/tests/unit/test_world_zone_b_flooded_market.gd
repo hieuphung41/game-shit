@@ -1,0 +1,124 @@
+extends RefCounted
+
+const SCENE_PATH := "res://src/world/zone_b_flooded_market.tscn"
+const PROBE_GROUP := &"zone_b_lookdev_probe"
+
+
+func test_zone_b_has_spec_markers_at_local_coordinates(t) -> bool:
+	var scene := load(SCENE_PATH) as PackedScene
+	if not t.ok(scene != null, "Zone B scene loads"):
+		return true
+	var zone := scene.instantiate() as Node3D
+	t.tree.root.add_child(zone)
+	await t.tree.process_frame
+	var expected := {
+		"SeamAB": Vector3(0.0, 0.09, 0.0),
+		"BEntry": Vector3(3.0, 0.09, -1.0),
+		"GuardPost": Vector3(4.5, 0.09, -7.5),
+		"WithdrawPointGuard": Vector3(1.5, 0.09, -9.75),
+		"ForemanChargeLane/end_a": Vector3(4.5, 0.09, -22.5),
+		"ForemanChargeLane/end_b": Vector3(4.5, 0.09, -13.5),
+		"WithdrawPointForeman": Vector3(0.5, 0.09, -23.25),
+		"PatrolReturnPath/P0": Vector3(7.0, 0.09, 1.0),
+		"PatrolReturnPath/P1": Vector3(3.0, 0.09, -6.0),
+		"PatrolReturnPath/P2": Vector3(3.0, 0.09, -19.0),
+		"HoldLaneBSpawn": Vector3(7.0, 0.09, -24.5),
+		"HoldLaneBPath/H1": Vector3(3.5, 0.09, -8.0),
+		"HoldLaneBPath/H2": Vector3(2.0, 0.09, 0.0),
+		"HoldLaneBPath/H3": Vector3(-0.8, 0.09, 0.0),
+		"HoldLaneBPath/HG1": Vector3(-3.0, 0.09, -1.85),
+		"HoldGuardPost": Vector3(-8.85, 0.09, -2.0),
+		"HoldChargeLane/end_a": Vector3(-3.2, 0.09, 0.05),
+		"HoldChargeLane/end_b": Vector3(-12.6, 0.09, 0.05),
+		"LaneBAlertLamp": Vector3(-0.7, 0.0, -1.95),
+	}
+	for node_path: String in expected:
+		var node := zone.get_node_or_null(node_path) as Node3D
+		if t.ok(node != null, "%s exists" % node_path):
+			t.ok(node.position.distance_to(expected[node_path]) <= 0.1, "%s remains within 0.1 m of TASK-81" % node_path)
+	zone.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func test_zone_b_cover_and_blocked_route_have_honest_collision(t) -> bool:
+	var scene := load(SCENE_PATH) as PackedScene
+	if not t.ok(scene != null, "Zone B scene loads for collision checks"):
+		return true
+	var zone := scene.instantiate() as Node3D
+	t.tree.root.add_child(zone)
+	await t.tree.process_frame
+	for name: String in ["CoverB1", "CoverB2", "CoverB3", "CoverB4", "BlockedRouteD"]:
+		var body := zone.get_node_or_null(name) as StaticBody3D
+		t.ok(body != null, "%s is a solid world body" % name)
+		if body != null:
+			t.ok(body.get_node_or_null("CollisionShape3D") is CollisionShape3D, "%s supplies its collision proxy" % name)
+	var blocked_route := zone.get_node_or_null("BlockedRouteD") as StaticBody3D
+	if blocked_route != null:
+		for part: String in ["FrameTop", "FrameBottom", "SlatWest", "Slat01", "Slat02", "Slat03", "Slat04", "Slat05", "Slat06", "Chain", "TaxSeal"]:
+			t.ok(blocked_route.get_node_or_null(part) is MeshInstance3D, "Blocked D route has readable %s geometry" % part)
+	var water_gap := zone.get_node_or_null("MissingPlankWaterGapD") as MeshInstance3D
+	t.ok(water_gap != null and water_gap.get_meta("greybox_role") == "route_d_missing_plank_water_gap_1_5m", "Blocked D route exposes the one-and-a-half-metre water gap")
+	var floor := zone.get_node_or_null("FloorCollision") as StaticBody3D
+	t.ok(floor != null and floor.get_node_or_null("CollisionShape3D") is CollisionShape3D, "B floor collision continues the walkable seam")
+	zone.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func test_zone_b_is_instanced_from_a_at_the_locked_offset(t) -> bool:
+	var a_scene := load("res://src/world/zone_a_outer_pier.tscn") as PackedScene
+	if not t.ok(a_scene != null, "Zone A scene loads with the B seam"):
+		return true
+	var world := a_scene.instantiate() as Node3D
+	t.tree.root.add_child(world)
+	await t.tree.process_frame
+	var zone_b := world.get_node_or_null("ZoneBFloodedMarket") as Node3D
+	t.ok(zone_b != null, "Zone A instances Zone B for a no-load transition")
+	if zone_b != null:
+		t.eq(zone_b.position, Vector3(7.0, 0.0, -2.45), "B root preserves the documented A-to-B offset")
+		t.eq(zone_b.rotation_degrees, Vector3.ZERO, "B root remains unrotated at the seam")
+		var seam := zone_b.get_node_or_null("SeamAB") as Marker3D
+		if seam != null:
+			t.ok(seam.global_position.distance_to(Vector3(7.0, 0.09, -2.45)) <= 0.1, "SeamAB meets A's east deck edge")
+	world.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func test_zone_b_probes_keep_visible_surfaces_and_signal_lane(t) -> bool:
+	var scene := load(SCENE_PATH) as PackedScene
+	if not t.ok(scene != null, "Zone B scene loads for probe checks"):
+		return true
+	var zone := scene.instantiate() as Node3D
+	t.tree.root.add_child(zone)
+	await t.tree.process_frame
+	var names := ["ProbeZoneBFloorLit", "ProbeZoneBFloorShadow", "ProbeZoneBLaneFloor", "ProbeZoneBLaneDanger", "ProbeZoneBAwning", "ProbeZoneBBackground"]
+	t.eq(t.tree.get_nodes_in_group(PROBE_GROUP).size(), names.size(), "Zone B owns its six look-dev probes")
+	for name: String in names:
+		var probe := zone.get_node_or_null(name) as Marker3D
+		t.ok(probe != null and probe.is_in_group(PROBE_GROUP), "%s is isolated in the B probe group" % name)
+	zone.call("_prepare_capture_camera")
+	await t.tree.process_frame
+	var camera := zone.get_node_or_null("CameraIsometric") as Camera3D
+	t.ok(camera != null and camera.current, "B look-dev capture creates the documented current game camera")
+	if camera != null:
+		for name: String in ["ProbeZoneBFloorLit", "ProbeZoneBFloorShadow", "ProbeZoneBLaneFloor", "ProbeZoneBLaneDanger", "ProbeZoneBAwning"]:
+			var probe := zone.get_node_or_null(name) as Marker3D
+			if probe != null:
+				t.ok(bool(zone.call("_probe_surface_is_visible", camera, probe)), "%s is not hidden by a nearer mesh" % name)
+		var lit_probe := zone.get_node_or_null("ProbeZoneBFloorLit") as Marker3D
+		var shadow_probe := zone.get_node_or_null("ProbeZoneBFloorShadow") as Marker3D
+		var danger_probe := zone.get_node_or_null("ProbeZoneBLaneDanger") as Marker3D
+		if lit_probe != null:
+			t.ok(lit_probe.position.distance_to(Vector3(5.5, 0.095, -28.0)) <= 0.1, "Floor-lit probe remains at the layout coordinate")
+		if shadow_probe != null:
+			t.ok(shadow_probe.position.distance_to(Vector3(1.6, 0.095, -27.5)) <= 0.1, "Floor-shadow probe remains at the layout coordinate")
+		if danger_probe != null:
+			t.eq(danger_probe.get_meta("expected_hex"), "#E5482D", "Lane probe measures signal danger rather than the wood floor")
+			t.eq(danger_probe.get_meta("surface_path"), "ChargeLaneTelegraph/LeftEdge", "Lane probe ray-checks the active signal edge")
+	var lane := zone.get_node_or_null("ChargeLaneTelegraph") as Node3D
+	t.ok(lane != null and lane.get_meta("visual_role") == "signal_danger_floor_telegraph", "B lane uses the signal-only charge telegraph")
+	zone.queue_free()
+	await t.tree.process_frame
+	return true

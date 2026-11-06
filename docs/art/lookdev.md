@@ -74,6 +74,18 @@ Gate cũng chụp **cảnh chơi thật Bến Ngoài (A)** từ `CameraIsometric
 - `game-shit/build/lookdev/zone_a_phone.png` — 640×360, giảm bằng nearest-neighbour.
 - `game-shit/build/lookdev/zone_a_probe.json` — probe nền, mặt sàn sáng và bóng đổ sàn theo PRT-01.
 
+Gate cũng chụp **cảnh chơi thật Chợ Ngập (B)** bằng camera isometric đúng hợp đồng, có Người Thu Hồi ở `BEntry`
+và một vạch lane charge đông cứng ở `progress = 0.6` chỉ để kiểm khung hình (không phải state combat):
+
+- `game-shit/build/lookdev/zone_b_game.png` — 1280×720, màu.
+- `game-shit/build/lookdev/zone_b_gray.png` — 1280×720, thang xám để đối chiếu hình vòng/vạch/chevron.
+- `game-shit/build/lookdev/zone_b_phone.png` — 640×360, giảm bằng nearest-neighbour.
+- `game-shit/build/lookdev/zone_b_probe.json` — nền, sàn sáng, sàn bóng, lane yên và mái đỏ son B; mọi điểm
+  ngoài nền ray-check mesh gần camera nhất nên điểm bị che làm gate lỗi.
+
+`zone_b_flooded_market.tscn` là greybox placeholder tự dựng từ primitive và vật liệu thư viện; không có file dưới
+`game/assets/`, vì vậy manifest asset không cần dòng mới cho TASK-20261106-85.
+
 Để thêm cảnh chơi khác vào gate, đặt script capture dưới `game/src/lookdev/`, chỉ chạy khi nhận user argument
 riêng, rồi gọi scene đó trong `tools/lookdev_capture.sh`. Cảnh phải dùng camera gameplay đang `current`, tự tạo
 nhân vật tại spawn khi capture (không ghi vào scene ship), và có Marker3D nhóm probe riêng. Mỗi marker đặt cao hơn

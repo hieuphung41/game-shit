@@ -20,19 +20,22 @@ fi
 mkdir -p "$OUT_DIR"
 ARGS=(--path "$ROOT/game" --rendering-driver opengl3 --resolution 1280x720 --scene res://src/lookdev/lookdev.tscn -- "--capture-dir=$OUT_DIR")
 ZONE_A_ARGS=(--path "$ROOT/game" --rendering-driver opengl3 --resolution 1280x720 --scene res://src/world/zone_a_outer_pier.tscn -- "--capture-zone-a=$OUT_DIR")
+ZONE_B_ARGS=(--path "$ROOT/game" --rendering-driver opengl3 --resolution 1280x720 --scene res://src/world/zone_b_flooded_market.tscn -- "--capture-zone-b=$OUT_DIR")
 
 if [[ -n "${DISPLAY:-}" ]]; then
 	timeout 90 "$GODOT" "${ARGS[@]}"
 	timeout 90 "$GODOT" "${ZONE_A_ARGS[@]}"
+	timeout 90 "$GODOT" "${ZONE_B_ARGS[@]}"
 elif command -v xvfb-run >/dev/null 2>&1; then
 	timeout 90 xvfb-run -a "$GODOT" "${ARGS[@]}"
 	timeout 90 xvfb-run -a "$GODOT" "${ZONE_A_ARGS[@]}"
+	timeout 90 xvfb-run -a "$GODOT" "${ZONE_B_ARGS[@]}"
 else
 	echo "lookdev needs DISPLAY or xvfb-run" >&2
 	exit 2
 fi
 
-for image in lookdev_game.png lookdev_gray.png lookdev_phone.png lookdev_detail.png zone_a_game.png zone_a_gray.png zone_a_phone.png; do
+for image in lookdev_game.png lookdev_gray.png lookdev_phone.png lookdev_detail.png zone_a_game.png zone_a_gray.png zone_a_phone.png zone_b_game.png zone_b_gray.png zone_b_phone.png; do
 	if [[ ! -s "$OUT_DIR/$image" ]]; then
 		echo "lookdev capture missing or empty: $OUT_DIR/$image" >&2
 		exit 1
@@ -41,5 +44,6 @@ done
 
 python3 "$ROOT/tools/lookdev_probe.py" "$OUT_DIR/probe-raw.json" "$OUT_DIR/probe.json"
 python3 "$ROOT/tools/lookdev_probe.py" "$OUT_DIR/zone_a_probe-raw.json" "$OUT_DIR/zone_a_probe.json"
+python3 "$ROOT/tools/lookdev_probe.py" "$OUT_DIR/zone_b_probe-raw.json" "$OUT_DIR/zone_b_probe.json"
 
 echo "lookdev captures written to $OUT_DIR"
