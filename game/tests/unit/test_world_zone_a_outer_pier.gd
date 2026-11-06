@@ -73,7 +73,8 @@ func test_zone_a_lookdev_capture_uses_the_game_camera_and_visible_prt_probes(t) 
 		t.eq(background_probe.get_meta("expected_hex"), "#4E6570", "Zone A background probe locks sea_bluegrey")
 	var shadow_probe := world.get_node_or_null("ProbeZoneADeckShadow") as Marker3D
 	if shadow_probe != null:
-		t.eq(shadow_probe.get_meta("surface_path"), "ExtractPierA", "Zone A shadow probe samples the visible extract floor")
+		t.eq(shadow_probe.position, Vector3(-4.58, 0.095, -3.6), "Zone A shadow probe remains on the PostTall shadow position")
+		t.eq(shadow_probe.get_meta("surface_path"), "PierDeck", "Zone A shadow probe samples the continuous PierDeck")
 	var capture_script := load("res://src/lookdev/zone_a_lookdev_capture.gd") as Script
 	if capture_script != null:
 		t.ok("zone_a_game.png" in capture_script.source_code, "Zone A capture writes the full gameplay frame")
@@ -153,6 +154,38 @@ func test_zone_a_priority_fixture_transforms_remain_locked_for_task_75(t) -> boo
 	if extract_pier != null:
 		t.eq(extract_pier.position, Vector3(-4.75, 0.0, -5.1), "ExtractPierA keeps the TASK-75 position")
 		t.eq(extract_pier.rotation_degrees, Vector3.ZERO, "ExtractPierA keeps the TASK-75 rotation")
+	world.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func test_zone_a_uses_the_four_approved_kenney_models_with_library_materials(t) -> bool:
+	var scene := load(SCENE_PATH) as PackedScene
+	if not t.ok(scene != null, "Zone A scene loads for approved Kenney model checks"):
+		return true
+	var world := scene.instantiate() as Node3D
+	t.tree.root.add_child(world)
+	await t.tree.process_frame
+	var replacements: Dictionary = {
+		"ExtractPierA": "structure-platform-dock",
+		"CrateStack": "crate",
+		"MooringBarrels": "barrel",
+		"KenneyDeckProps": "platform-planks",
+	}
+	for root_path: String in replacements:
+		var replacement_root := world.get_node_or_null(root_path) as Node3D
+		if not t.ok(replacement_root != null, "%s keeps its replacement root" % root_path):
+			continue
+		var expected_mesh_name: String = replacements[root_path]
+		var imported_meshes := replacement_root.find_children(expected_mesh_name, "MeshInstance3D", true, false)
+		t.ok(not imported_meshes.is_empty(), "%s contains the %s Kenney mesh" % [root_path, expected_mesh_name])
+		for node: Node in imported_meshes:
+			var mesh := node as MeshInstance3D
+			t.ok(mesh.material_override is ShaderMaterial, "%s overrides imported material with a matte library shader" % mesh.get_path())
+	var pier_deck := world.get_node_or_null("PierDeck") as MeshInstance3D
+	t.ok(pier_deck != null and pier_deck.mesh is BoxMesh, "PierDeck keeps its continuous 14 by 10 metre walking surface")
+	t.ok(world.get_node_or_null("ExtractPierA/DockProp") is Node3D, "ExtractPierA keeps its transform while only its visual child changes")
+	t.eq(world.find_children("*", "CollisionObject3D", true, false).size(), 0, "Kenney visual replacements preserve Zone A's collision-free greybox state")
 	world.queue_free()
 	await t.tree.process_frame
 	return true
