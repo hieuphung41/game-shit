@@ -1,0 +1,208 @@
+[gd_scene load_steps=16 format=3]
+
+[ext_resource type="Environment" path="res://art/env_default.tres" id="1_environment"]
+[ext_resource type="Material" path="res://art/materials/env_wood.tres" id="2_wood"]
+[ext_resource type="Material" path="res://art/materials/env_wood_dark.tres" id="3_wood_dark"]
+[ext_resource type="Material" path="res://art/materials/env_rope.tres" id="4_rope"]
+[ext_resource type="Material" path="res://art/materials/env_paper.tres" id="5_paper"]
+[ext_resource type="Material" path="res://art/materials/env_iron.tres" id="6_iron"]
+[ext_resource type="Material" path="res://art/materials/signal_beacon.tres" id="7_beacon"]
+[ext_resource type="Material" path="res://art/materials/water_wet.tres" id="8_water"]
+
+[sub_resource type="BoxMesh" id="DeckMesh"]
+size = Vector3(14, 0.18, 10)
+
+[sub_resource type="BoxMesh" id="PierMesh"]
+size = Vector3(4.5, 0.18, 6)
+
+[sub_resource type="BoxMesh" id="DeskTopMesh"]
+size = Vector3(1.7, 0.16, 0.82)
+
+[sub_resource type="BoxMesh" id="DeskLegMesh"]
+size = Vector3(0.14, 0.9, 0.14)
+
+[sub_resource type="BoxMesh" id="ManifestMesh"]
+size = Vector3(0.48, 0.045, 0.34)
+
+[sub_resource type="CylinderMesh" id="PostMesh"]
+top_radius = 0.17
+bottom_radius = 0.20
+height = 3.6
+radial_segments = 8
+rings = 2
+
+[sub_resource type="CylinderMesh" id="ShortPostMesh"]
+top_radius = 0.16
+bottom_radius = 0.19
+height = 1.8
+radial_segments = 8
+rings = 2
+
+[sub_resource type="CylinderMesh" id="BeaconLanternMesh"]
+top_radius = 0.32
+bottom_radius = 0.32
+height = 0.72
+radial_segments = 8
+rings = 2
+
+[sub_resource type="BoxMesh" id="RouteMesh"]
+size = Vector3(4.8, 0.14, 2.5)
+
+[sub_resource type="BoxMesh" id="CraneArmMesh"]
+size = Vector3(5.2, 0.22, 0.28)
+
+[sub_resource type="BoxMesh" id="WallMesh"]
+size = Vector3(5.5, 2.9, 0.4)
+
+[sub_resource type="PlaneMesh" id="WaterMesh"]
+size = Vector2(20, 16)
+
+[node name="ZoneAOuterPierGreyboxPlaceholder" type="Node3D"]
+metadata/greybox_status = "placeholder"
+metadata/zone = "zone_a_outer_pier"
+metadata/camera_contract = "Fixed orthographic Camera3D: pitch -30 degrees, yaw 45 degrees, size 20 m."
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = ExtResource("1_environment")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-48, -34, 0)
+light_energy = 0.8
+shadow_enabled = true
+directional_shadow_max_distance = 42.0
+
+[node name="CameraIsometric" type="Camera3D" parent="."]
+position = Vector3(14, 14, 14)
+rotation_degrees = Vector3(-30, 45, 0)
+current = true
+projection = 1
+size = 20.0
+near = 0.1
+far = 70.0
+metadata/camera_mode = "fixed_isometric_no_free_rotation"
+
+[node name="Water" type="MeshInstance3D" parent="."]
+position = Vector3(0, -0.12, -1.0)
+mesh = SubResource("WaterMesh")
+material_override = ExtResource("8_water")
+
+[node name="PierDeck" type="MeshInstance3D" parent="."]
+mesh = SubResource("DeckMesh")
+material_override = ExtResource("2_wood")
+
+[node name="ExtractPierA" type="MeshInstance3D" parent="."]
+position = Vector3(-4.75, 0, -5.1)
+mesh = SubResource("PierMesh")
+material_override = ExtResource("2_wood")
+
+[node name="DispatchDesk" type="Node3D" parent="."]
+position = Vector3(1.45, 0, 1.55)
+rotation_degrees = Vector3(0, -3, 0)
+metadata/greybox_role = "dispatch_fixture_placeholder"
+
+[node name="DeskTop" type="MeshInstance3D" parent="DispatchDesk"]
+position = Vector3(0, 0.94, 0)
+mesh = SubResource("DeskTopMesh")
+material_override = ExtResource("3_wood_dark")
+
+[node name="LegFrontLeft" type="MeshInstance3D" parent="DispatchDesk"]
+position = Vector3(-0.68, 0.45, 0.28)
+mesh = SubResource("DeskLegMesh")
+material_override = ExtResource("2_wood")
+
+[node name="LegFrontRight" type="MeshInstance3D" parent="DispatchDesk"]
+position = Vector3(0.68, 0.45, 0.28)
+mesh = SubResource("DeskLegMesh")
+material_override = ExtResource("2_wood")
+
+[node name="LegBackLeft" type="MeshInstance3D" parent="DispatchDesk"]
+position = Vector3(-0.68, 0.45, -0.28)
+mesh = SubResource("DeskLegMesh")
+material_override = ExtResource("2_wood")
+
+[node name="LegBackRight" type="MeshInstance3D" parent="DispatchDesk"]
+position = Vector3(0.68, 0.45, -0.28)
+mesh = SubResource("DeskLegMesh")
+material_override = ExtResource("2_wood")
+
+[node name="ManifestPlaceholder" type="MeshInstance3D" parent="DispatchDesk"]
+position = Vector3(0.12, 1.045, 0)
+rotation_degrees = Vector3(0, 0, -4)
+mesh = SubResource("ManifestMesh")
+material_override = ExtResource("5_paper")
+
+[node name="BeaconA" type="Node3D" parent="."]
+position = Vector3(-5.25, 0, -5.2)
+rotation_degrees = Vector3(0, 3, -2)
+metadata/greybox_role = "extract_landmark_placeholder"
+
+[node name="BeaconStem" type="MeshInstance3D" parent="BeaconA"]
+position = Vector3(0, 1.8, 0)
+mesh = SubResource("PostMesh")
+material_override = ExtResource("6_iron")
+
+[node name="BeaconLantern" type="MeshInstance3D" parent="BeaconA"]
+position = Vector3(0, 3.72, 0)
+mesh = SubResource("BeaconLanternMesh")
+material_override = ExtResource("7_beacon")
+
+[node name="MooringPosts" type="Node3D" parent="."]
+metadata/greybox_role = "edge_readability_placeholder"
+
+[node name="PostTall" type="MeshInstance3D" parent="MooringPosts"]
+position = Vector3(-5.9, 1.9, -1.5)
+rotation_degrees = Vector3(2, 0, 4)
+mesh = SubResource("PostMesh")
+material_override = ExtResource("3_wood_dark")
+
+[node name="PostMedium" type="MeshInstance3D" parent="MooringPosts"]
+position = Vector3(-5.45, 1.55, 1.2)
+rotation_degrees = Vector3(-2, 0, -3)
+mesh = SubResource("PostMesh")
+material_override = ExtResource("3_wood_dark")
+
+[node name="PostShort" type="MeshInstance3D" parent="MooringPosts"]
+position = Vector3(-4.75, 0.9, 3.5)
+rotation_degrees = Vector3(0, 0, 2)
+mesh = SubResource("ShortPostMesh")
+material_override = ExtResource("2_wood")
+
+[node name="RouteToB" type="Node3D" parent="."]
+position = Vector3(5.3, 0, -2.45)
+rotation_degrees = Vector3(0, -8, 0)
+metadata/greybox_role = "route_to_zone_b_placeholder"
+
+[node name="WalkableDeck" type="MeshInstance3D" parent="RouteToB"]
+mesh = SubResource("RouteMesh")
+material_override = ExtResource("2_wood")
+
+[node name="RopeGuide" type="MeshInstance3D" parent="RouteToB"]
+position = Vector3(0, 0.34, 1.0)
+rotation_degrees = Vector3(0, 90, 0)
+mesh = SubResource("RouteMesh")
+material_override = ExtResource("4_rope")
+
+[node name="SilhouetteC" type="Node3D" parent="."]
+position = Vector3(4.6, 2.2, -9.8)
+rotation_degrees = Vector3(0, -4, 0)
+metadata/greybox_role = "non_interactive_backdrop"
+
+[node name="CranePost" type="MeshInstance3D" parent="SilhouetteC"]
+position = Vector3(0, 1.8, 0)
+mesh = SubResource("PostMesh")
+material_override = ExtResource("6_iron")
+
+[node name="CraneArm" type="MeshInstance3D" parent="SilhouetteC"]
+position = Vector3(-1.8, 3.45, 0)
+rotation_degrees = Vector3(0, 0, -4)
+mesh = SubResource("CraneArmMesh")
+material_override = ExtResource("6_iron")
+
+[node name="SilhouetteE" type="Node3D" parent="."]
+position = Vector3(-7.0, 1.45, -9.4)
+rotation_degrees = Vector3(0, 9, 0)
+metadata/greybox_role = "non_interactive_backdrop"
+
+[node name="TaxWall" type="MeshInstance3D" parent="SilhouetteE"]
+mesh = SubResource("WallMesh")
+material_override = ExtResource("3_wood_dark")
