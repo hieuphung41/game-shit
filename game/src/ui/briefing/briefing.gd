@@ -114,7 +114,7 @@ func _build() -> void:
 	rules.size = Vector2(616, 56)
 	rules.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(rules)
-	var info := _button("InfoButton", "ⓘ", Vector2(656, 176), Vector2(64, 64))
+	var info := _button("InfoButton", "BRIEFING_BUTTON_INFO", Vector2(656, 176), Vector2(64, 64))
 	info.pressed.connect(_on_info_pressed)
 	_tooltip = Button.new()
 	_tooltip.name = "Tooltip"
