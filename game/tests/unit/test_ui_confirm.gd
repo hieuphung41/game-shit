@@ -23,6 +23,23 @@ func test_ui_confirm_emits_accept_and_cancel_only_from_buttons(t) -> bool:
 	return true
 
 
+func test_ui_confirm_locks_accept_after_first_confirmation(t) -> bool:
+	var dialog := CONFIRM_SCENE.instantiate() as ConfirmDialog
+	var accepted: Array[bool] = []
+	dialog.accepted.connect(func() -> void: accepted.append(true))
+	t.tree.root.add_child(dialog)
+	await t.tree.process_frame
+	dialog._opened_at_msec = -1000
+	var accept_button := dialog.get_node("ConfirmPanel/AcceptButton") as Button
+	accept_button.pressed.emit()
+	accept_button.pressed.emit()
+	t.eq(accepted.size(), 1, "two accept presses emit one confirmation")
+	t.ok(accept_button.disabled, "first confirmation disables accept")
+	dialog.queue_free()
+	await t.tree.process_frame
+	return true
+
+
 func test_ui_confirm_keeps_r6_touch_and_cancel_available_without_focus(t) -> bool:
 	var joystick := TouchJoystick.new()
 	joystick.position = Vector2(0.0, 460.0)

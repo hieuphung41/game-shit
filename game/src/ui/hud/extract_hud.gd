@@ -10,6 +10,7 @@ signal inventory_requested()
 
 var flow: ExtractPierAFlow
 var desk_in_range := false
+var _overlay_open := false
 var _objective: Label
 var _beacon: Label
 var _banner: Label
@@ -43,10 +44,14 @@ func set_desk_in_range(in_range: bool) -> void:
 
 
 func set_overlay_open(open: bool) -> void:
+	_overlay_open = open
 	if _inventory_button != null:
 		_inventory_button.visible = not open
-	if _context_button != null and open:
-		_context_button.visible = false
+	if open:
+		if _context_button != null:
+			_context_button.visible = false
+		return
+	_refresh_context()
 
 
 func show_prompt(key: StringName) -> void:
@@ -178,6 +183,8 @@ func _refresh_context() -> void:
 	if _context_button == null:
 		return
 	_context_button.visible = false
+	if _overlay_open:
+		return
 	if flow.desk_state == ExtractPierAFlow.DeskState.HAS_MANIFEST and desk_in_range:
 		_context_button.text = tr("WORLD_INTERACT_DISPATCH_DESK")
 		_context_button.visible = true

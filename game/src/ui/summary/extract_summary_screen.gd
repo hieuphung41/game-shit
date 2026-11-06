@@ -86,9 +86,13 @@ func _build() -> void:
 	add_child(right)
 	_add_group(right, "EvidenceGroup", &"SUMMARY_GROUP_EVIDENCE", _evidence_lines())
 	_add_next_group(right)
+	var mentor_speaker := _label("MentorSpeaker", &"BRIEFING_MENTOR_SPEAKER", 20)
+	mentor_speaker.position = Vector2(32, 576)
+	mentor_speaker.size = Vector2(760, 32)
+	add_child(mentor_speaker)
 	var mentor := _label("MentorLine", &"SUMMARY_SUCCESS_MENTOR_LINE", 20)
-	mentor.position = Vector2(32, 584)
-	mentor.size = Vector2(760, 56)
+	mentor.position = Vector2(32, 608)
+	mentor.size = Vector2(760, 72)
 	mentor.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(mentor)
 	var status := _label("Status", &"", 20)
@@ -133,10 +137,22 @@ func _add_next_group(parent: Container) -> void:
 	content.add_theme_constant_override("separation", 4)
 	panel.add_child(content)
 	content.add_child(_label("Heading", &"SUMMARY_GROUP_NEXT", 24))
-	var contract := _label("Contract2", &"SUMMARY_NEXT_CONTRACT2_TITLE", 20)
-	content.add_child(contract)
-	var tag := _label("Contract2Locked", &"SUMMARY_NEXT_CONTRACT2_TAG", 20)
-	content.add_child(tag)
+	for entry: Dictionary in summary.next:
+		var contract_id := StringName(entry.get("contract_id", &""))
+		if contract_id == &"":
+			continue
+		var suffix := _contract_node_suffix(contract_id)
+		content.add_child(_label("Contract%s" % suffix, _next_contract_key(contract_id, &"TITLE"), 20))
+		if not bool(entry.get("playable", false)):
+			content.add_child(_label("Contract%sLocked" % suffix, _next_contract_key(contract_id, &"TAG"), 20))
+
+
+func _contract_node_suffix(contract_id: StringName) -> String:
+	return String(contract_id).trim_prefix("contract_").to_pascal_case()
+
+
+func _next_contract_key(contract_id: StringName, part: StringName) -> StringName:
+	return StringName("SUMMARY_NEXT_%s_%s" % [String(contract_id).to_upper().replace("_", ""), part])
 
 
 func _kept_lines() -> Array[String]:

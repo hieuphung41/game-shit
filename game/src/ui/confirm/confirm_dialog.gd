@@ -14,6 +14,7 @@ var _body_key: StringName = &"EXTRACT_CONFIRM_BODY"
 var _accept_key: StringName = &"EXTRACT_CONFIRM_ACCEPT"
 var _cancel_key: StringName = &"EXTRACT_CONFIRM_CANCEL"
 var _body_values: Dictionary = {"seconds": int(ExtractPierAFlow.EXTRACT_HOLD_SECONDS)}
+var _confirmation_locked := false
 
 
 func _ready() -> void:
@@ -32,8 +33,13 @@ func configure(title_key: StringName, body_key: StringName, accept_key: StringNa
 
 
 func confirm() -> void:
-	if not _input_guard_active():
-		accepted.emit()
+	if _confirmation_locked or _input_guard_active():
+		return
+	_confirmation_locked = true
+	var accept_button := get_node_or_null("ConfirmPanel/AcceptButton") as Button
+	if accept_button != null:
+		accept_button.disabled = true
+	accepted.emit()
 
 
 func cancel() -> void:
@@ -48,6 +54,7 @@ func _input(event: InputEvent) -> void:
 
 
 func _build() -> void:
+	_confirmation_locked = false
 	for child in get_children():
 		remove_child(child)
 		child.queue_free()

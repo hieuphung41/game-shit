@@ -19,6 +19,8 @@ func test_ui_summary_hides_empty_loss_and_emits_hub_once(t) -> bool:
 	t.ok(screen.get_node_or_null("LeftGroups/LostGroup") == null, "empty lost group is absent")
 	t.ok(screen.get_node_or_null("RightGroups/NextGroup/Content/Contract2") != null, "contract 2 is informational")
 	t.ok(screen.get_node_or_null("RightGroups/NextGroup/Content/Contract2Button") == null, "contract 2 has no start button")
+	t.eq((screen.get_node("MentorSpeaker") as Label).text, tr("BRIEFING_MENTOR_SPEAKER"), "mentor speaker is labelled")
+	t.eq((screen.get_node("MentorLine") as Label).text, tr("SUMMARY_SUCCESS_MENTOR_LINE"), "mentor response follows speaker")
 	screen._opened_at_msec = -1000
 	t.ok(not screen._input_guard_active(), "summary accepts input after the open guard")
 	(screen.get_node("HubButton") as Button).pressed.emit()
@@ -26,6 +28,34 @@ func test_ui_summary_hides_empty_loss_and_emits_hub_once(t) -> bool:
 	t.eq(hub_requests.size(), 1, "hub signal is protected from double press")
 	t.ok((screen.get_node("LeftGroups/KeptGroup/Content/Line2") as Label).text.contains("1/12"), "used backpack cells shown")
 	screen.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func test_ui_summary_renders_next_from_summary_data(t) -> bool:
+	var inventory := StarterInventoryFactory.create()
+	var empty_summary := ExtractSummary.new()
+	empty_summary.next = []
+	var empty_screen := SUMMARY_SCENE.instantiate() as ExtractSummaryScreen
+	empty_screen.show_summary(empty_summary, inventory.registry)
+	t.tree.root.add_child(empty_screen)
+	await t.tree.process_frame
+	var empty_content := empty_screen.get_node("RightGroups/NextGroup/Content") as VBoxContainer
+	t.eq(empty_content.get_child_count(), 1, "empty next data has no fabricated contract card")
+	empty_screen.queue_free()
+	await t.tree.process_frame
+	var future_summary := ExtractSummary.new()
+	future_summary.next = [{"contract_id": &"contract_3", "playable": true}]
+	var future_screen := SUMMARY_SCENE.instantiate() as ExtractSummaryScreen
+	future_screen.show_summary(future_summary, inventory.registry)
+	t.tree.root.add_child(future_screen)
+	await t.tree.process_frame
+	var future_content := future_screen.get_node("RightGroups/NextGroup/Content") as VBoxContainer
+	t.ok(future_content.get_node_or_null("Contract3") != null, "next card uses its contract id")
+	t.eq((future_content.get_node("Contract3") as Label).text, tr("SUMMARY_NEXT_CONTRACT3_TITLE"), "next card uses its contract translation key")
+	t.ok(future_content.get_node_or_null("Contract3Locked") == null, "playable next contract has no unavailable tag")
+	t.ok(future_content.get_node_or_null("Contract2") == null, "future data does not fabricate Contract 2")
+	future_screen.queue_free()
 	await t.tree.process_frame
 	return true
 
