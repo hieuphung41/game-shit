@@ -240,6 +240,10 @@ func commit_consume(uid: int) -> InventoryResult:
 	return result
 
 
+func consume(uid: int) -> InventoryResult:
+	return commit_consume(uid)
+
+
 func preview_sort() -> InventoryResult:
 	var ordered: Array[ItemInstance] = []
 	for item: ItemInstance in backpack.items.values():

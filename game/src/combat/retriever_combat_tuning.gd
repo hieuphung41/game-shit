@@ -19,6 +19,7 @@ extends Resource
 @export_range(0.0, 180.0, 1.0) var guard_half_arc_deg := 60.0
 @export_range(0.0, 1.0, 0.01) var guard_move_ratio := 0.4
 @export_range(0.0, 12.0, 0.1) var guard_track_radius := 6.0
+@export_range(0.0, 720.0, 1.0) var guard_track_degrees_per_second := 360.0
 @export_range(0, 999, 1) var remedy_heal := 40
 @export_range(0.1, 5.0, 0.1) var remedy_use_seconds := 1.0
 @export_range(0.0, 2.0, 0.01) var hitstun := 0.3

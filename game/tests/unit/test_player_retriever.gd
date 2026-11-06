@@ -66,6 +66,13 @@ func test_combat_actions_have_required_keyboard_and_gamepad_bindings(t) -> bool:
 	return true
 
 
+func test_combat_motion_velocity_uses_the_actual_physics_delta(t) -> bool:
+	var velocity := RetrieverController.motion_velocity_for(Vector3.RIGHT, 0.20)
+	t.eq(velocity, Vector3(5.0, 0.0, 0.0), "a 1 m clamped displacement is spread over the real 0.2 second physics frame")
+	t.eq(velocity * 0.20, Vector3.RIGHT, "the physics integration applies exactly the clamped displacement")
+	return true
+
+
 func test_outer_pier_overlay_bridge_cancels_guard_and_remedy(t) -> bool:
 	var retriever := (load(PLAYER_SCENE_PATH) as PackedScene).instantiate() as RetrieverController
 	var bridge := OuterPierRun.new()

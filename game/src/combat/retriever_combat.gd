@@ -29,6 +29,7 @@ var position := Vector3.ZERO
 var facing := Vector3.FORWARD
 var state: StringName = STATE_FREE
 var motion_delta := Vector3.ZERO
+var movement_speed := 4.0
 
 var _targets: Array = []
 var _overlay_open := false
@@ -44,10 +45,11 @@ var _remedy_uid := 0
 var _pending_displacement := Vector3.ZERO
 
 
-func _init(p_tuning: RetrieverCombatTuning = null, p_inventory: RetrieverInventory = null) -> void:
+func _init(p_tuning: RetrieverCombatTuning = null, p_inventory: RetrieverInventory = null, p_movement_speed: float = 4.0) -> void:
 	tuning = p_tuning if p_tuning != null else RetrieverCombatTuning.new()
 	health = Health.new(tuning.max_hp)
 	inventory = p_inventory
+	movement_speed = maxf(0.0, p_movement_speed)
 	health.depleted.connect(_on_depleted)
 
 
@@ -255,17 +257,40 @@ func find_sling_remedy_uid() -> int:
 func nearest_target(radius: float, half_arc_deg: float) -> Variant:
 	var nearest: Variant = null
 	var nearest_distance := INF
+	var nearest_angle := INF
+	var nearest_instance_id := INF
 	for target: Variant in _targets:
-		if target == null or not target.has_method(&"get_team") or target.get_team() != TEAM_ENEMY or not target.has_method(&"get_combat_position"):
+		if not is_attack_assist_target(target):
 			continue
 		var offset: Vector3 = target.get_combat_position() - position
 		var distance := Vector2(offset.x, offset.z).length()
 		if distance > radius or not is_in_front_arc(target.get_combat_position(), half_arc_deg):
 			continue
-		if distance < nearest_distance:
+		var angle := facing_angle_to(offset)
+		var instance_id: int = target.get_instance_id()
+		if distance < nearest_distance or (is_equal_approx(distance, nearest_distance) and (angle < nearest_angle or (is_equal_approx(angle, nearest_angle) and instance_id < nearest_instance_id))):
 			nearest = target
 			nearest_distance = distance
+			nearest_angle = angle
+			nearest_instance_id = instance_id
 	return nearest
+
+
+func is_attack_assist_target(target: Variant) -> bool:
+	if target == null or not target.has_method(&"get_team") or target.get_team() != TEAM_ENEMY:
+		return false
+	if not target.has_method(&"get_combat_position") or not target.has_method(&"get_combat_state"):
+		return false
+	var target_state: StringName = target.get_combat_state()
+	return target_state not in [&"withdraw", &"withdrawn", &"down"]
+
+
+func facing_angle_to(offset: Vector3) -> float:
+	var horizontal := Vector2(offset.x, offset.z)
+	if is_zero_approx(horizontal.length_squared()):
+		return 0.0
+	var forward := Vector2(facing.x, facing.z).normalized()
+	return absf(forward.angle_to(horizontal.normalized()))
 
 
 func can_buffer_current_action() -> bool:
@@ -297,7 +322,7 @@ func track_guard_target(step: float) -> void:
 		return
 	var from_angle := atan2(facing.x, facing.z)
 	var target_angle := atan2(desired.x, desired.z)
-	var next_angle := rotate_toward(from_angle, target_angle, deg_to_rad(360.0) * step)
+	var next_angle := rotate_toward(from_angle, target_angle, deg_to_rad(tuning.guard_track_degrees_per_second) * step)
 	facing = Vector3(sin(next_angle), 0.0, cos(next_angle))
 
 
@@ -376,7 +401,7 @@ func tick_remedy(step: float) -> void:
 	_action_elapsed += step
 	if _action_elapsed + 0.00001 < tuning.remedy_use_seconds:
 		return
-	var result := inventory.commit_consume(_remedy_uid) if inventory != null else InventoryResult.failure(InventoryReason.Value.ITEM_NOT_FOUND)
+	var result := inventory.consume(_remedy_uid) if inventory != null else InventoryResult.failure(InventoryReason.Value.ITEM_NOT_FOUND)
 	if result.ok:
 		remedy_used.emit(health.heal(tuning.remedy_heal))
 	else:
@@ -419,7 +444,7 @@ func _apply_movement(step: float) -> void:
 		return
 	if is_zero_approx(_move_direction.length_squared()):
 		return
-	var move := _move_direction * _move_input.length() * movement_ratio() * step
+	var move := _move_direction * _move_input.length() * movement_speed * movement_ratio() * step
 	position += move
 	motion_delta += move
 

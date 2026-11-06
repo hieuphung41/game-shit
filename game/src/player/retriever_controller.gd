@@ -15,7 +15,7 @@ var combat: RetrieverCombat
 
 
 func _ready() -> void:
-	combat = RetrieverCombat.new(combat_tuning, RunSession.inventory)
+	combat = RetrieverCombat.new(combat_tuning, RunSession.inventory, movement_speed)
 	combat.state_changed.connect(_on_combat_state_changed)
 	if _touch_joystick != null:
 		_touch_joystick.direction_changed.connect(_on_touch_direction_changed)
@@ -34,8 +34,7 @@ func _physics_process(delta: float) -> void:
 	combat.set_targets(get_tree().get_nodes_in_group(&"combat_targets"))
 	_read_combat_actions()
 	combat.tick(delta)
-	var step := minf(delta, combat.tuning.max_tick_delta)
-	velocity = combat.motion_delta / step if step > 0.0 else Vector3.ZERO
+	velocity = motion_velocity_for(combat.motion_delta, delta)
 	velocity.y = 0.0
 	move_and_slide()
 	combat.set_combat_position(global_position)
@@ -46,6 +45,10 @@ func _active_direction() -> Vector2:
 	if not is_zero_approx(_touch_direction.length_squared()):
 		return _touch_direction
 	return Input.get_vector(&"move_left", &"move_right", &"move_up", &"move_down")
+
+
+static func motion_velocity_for(displacement: Vector3, physics_delta: float) -> Vector3:
+	return displacement / physics_delta if physics_delta > 0.0 else Vector3.ZERO
 
 
 func _follow_camera() -> void:

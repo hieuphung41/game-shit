@@ -85,6 +85,44 @@ func test_attack_assist_hits_once_and_ignores_enemy_behind(t) -> bool:
 	return true
 
 
+func test_attack_assist_ignores_withdrawing_and_down_enemies(t) -> bool:
+	var combat := _combat()
+	var withdrawing := FakeEnemy.new()
+	withdrawing.position = Vector3(0.0, 0.0, -1.0)
+	withdrawing.combat_state = &"withdraw"
+	var withdrawn := FakeEnemy.new()
+	withdrawn.position = Vector3(0.0, 0.0, -1.2)
+	withdrawn.combat_state = &"withdrawn"
+	var down := FakeEnemy.new()
+	down.position = Vector3(0.0, 0.0, -1.4)
+	down.combat_state = &"down"
+	var eligible := FakeEnemy.new()
+	eligible.position = Vector3(0.75, 0.0, -1.3)
+	combat.set_targets([withdrawing, withdrawn, down, eligible])
+	t.eq(combat.nearest_target(combat.tuning.assist_radius, combat.tuning.assist_half_arc_deg), eligible, "only the active enemy is eligible for attack assist")
+	combat.press(&"combat_attack")
+	t.ok(combat.facing.dot(eligible.position.normalized()) > 0.999, "attack assist turns toward the eligible target instead of a nearer inactive enemy")
+	return true
+
+
+func test_attack_assist_breaks_equal_distance_ties_by_angle_then_instance_id(t) -> bool:
+	var combat := _combat()
+	var wider := FakeEnemy.new()
+	wider.position = Vector3(sqrt(3.0), 0.0, -1.0)
+	var narrower := FakeEnemy.new()
+	narrower.position = Vector3(1.0, 0.0, -sqrt(3.0))
+	combat.set_targets([wider, narrower])
+	t.eq(combat.nearest_target(combat.tuning.assist_radius, combat.tuning.assist_half_arc_deg), narrower, "equal-distance targets prefer the smaller facing angle")
+	var first := FakeEnemy.new()
+	first.position = Vector3(0.0, 0.0, -2.0)
+	var second := FakeEnemy.new()
+	second.position = Vector3(0.0, 0.0, -2.0)
+	var expected: FakeEnemy = first if first.get_instance_id() < second.get_instance_id() else second
+	combat.set_targets([second, first])
+	t.eq(combat.nearest_target(combat.tuning.assist_radius, combat.tuning.assist_half_arc_deg), expected, "equal angle targets prefer the smaller instance ID over target order")
+	return true
+
+
 func test_dodge_iframe_guard_arc_and_chip_damage(t) -> bool:
 	var combat := _combat()
 	combat.set_move_input(Vector2.RIGHT)
@@ -126,6 +164,39 @@ func test_dodge_iframe_guard_arc_and_chip_damage(t) -> bool:
 	var rear := rear_combat.receive_hit(HitInfo.new(4, &"guard_strike", 15, Vector3.BACK))
 	t.ok(not rear.blocked, "guard does not block an attack from behind")
 	t.eq(rear.applied, 15, "rear hit deals full damage")
+	return true
+
+
+func test_movement_speed_applies_free_guard_and_remedy_ratios(t) -> bool:
+	var free := _combat()
+	free.set_move_input(Vector2.RIGHT)
+	free.set_move_direction(Vector3.RIGHT)
+	free.tick(0.10)
+	t.ok(is_equal_approx(free.motion_delta.x, 0.4), "free movement uses the 4 m/s Retriever speed")
+	var guarding := _combat()
+	guarding.set_move_input(Vector2.RIGHT)
+	guarding.set_move_direction(Vector3.RIGHT)
+	guarding.press(&"combat_guard")
+	guarding.tick(0.10)
+	t.ok(is_equal_approx(guarding.motion_delta.x, 0.16), "guard movement uses the 40 percent speed ratio")
+	var remedy := _combat(_inventory(true))
+	remedy.health.damage(10)
+	remedy.set_move_input(Vector2.RIGHT)
+	remedy.set_move_direction(Vector3.RIGHT)
+	remedy.press(&"use_remedy")
+	remedy.tick(0.10)
+	t.ok(is_equal_approx(remedy.motion_delta.x, 0.2), "remedy movement uses the 50 percent speed ratio")
+	return true
+
+
+func test_large_delta_dodge_exposes_only_one_clamped_step_of_motion(t) -> bool:
+	var combat := _combat()
+	combat.set_move_input(Vector2.RIGHT)
+	combat.set_move_direction(Vector3.RIGHT)
+	combat.press(&"combat_dodge")
+	combat.tick(0.20)
+	t.ok(is_equal_approx(combat.motion_delta.x, 1.0), "a 0.2 second frame produces one 0.1 second dodge step")
+	t.ok(is_equal_approx(combat.position.x, 1.0), "combat position advances only the clamped distance")
 	return true
 
 
@@ -220,4 +291,10 @@ func test_guard_tracks_only_nearby_hostiles_in_active_combat_states(t) -> bool:
 	no_track.press(&"combat_guard")
 	no_track.tick(0.10)
 	t.eq(no_track.facing, Vector3.FORWARD, "idle hostile does not change guard facing")
+	var slower_track := _combat()
+	slower_track.tuning.guard_track_degrees_per_second = 90.0
+	slower_track.set_targets([alert_enemy])
+	slower_track.press(&"combat_guard")
+	slower_track.tick(0.10)
+	t.ok(slower_track.facing.x > 0.15 and slower_track.facing.x < 0.16, "guard tracking reads its configured turn rate")
 	return true
