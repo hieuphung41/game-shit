@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/flow/outer_pier_run.gd" id="1_outer_pier_run"]
+
+[node name="OuterPierRun" type="Node3D"]
+script = ExtResource("1_outer_pier_run")
