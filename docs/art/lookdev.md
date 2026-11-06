@@ -67,6 +67,20 @@ Lệnh dùng GL Compatibility (`opengl3`), `$DISPLAY` hoặc `xvfb-run`, và ph�
   nếu quá ngưỡng (nền ≤ 5, mặt sáng ≤ 10, bóng ≤ 12). `ProbeWaterLit` và `ProbeWaterShadow` kiểm riêng vật liệu
   không dùng `toon_matte`; hai probe đều có kiểm mesh che khuất như các probe còn lại.
 
+Gate cũng chụp **cảnh chơi thật Bến Ngoài (A)** từ `CameraIsometric`, có Người Thu Hồi ở điểm xuất phát:
+
+- `game-shit/build/lookdev/zone_a_game.png` — 1280×720, màu.
+- `game-shit/build/lookdev/zone_a_gray.png` — 1280×720, thang xám.
+- `game-shit/build/lookdev/zone_a_phone.png` — 640×360, giảm bằng nearest-neighbour.
+- `game-shit/build/lookdev/zone_a_probe.json` — probe nền, mặt sàn sáng và bóng đổ sàn theo PRT-01.
+
+Để thêm cảnh chơi khác vào gate, đặt script capture dưới `game/src/lookdev/`, chỉ chạy khi nhận user argument
+riêng, rồi gọi scene đó trong `tools/lookdev_capture.sh`. Cảnh phải dùng camera gameplay đang `current`, tự tạo
+nhân vật tại spawn khi capture (không ghi vào scene ship), và có Marker3D nhóm probe riêng. Mỗi marker đặt cao hơn
+0.005 m trên mặt nhìn thấy, khai báo `surface_path`, `tolerance`, `role`; mặt sáng khai báo `expected_hex`, bóng lấy
+`shadow_indigo` từ ShaderMaterial. Capture phải ray-check mesh gần camera nhất, ghi `occluded`, và script shell phải
+fail khi thiếu PNG hoặc probe không đạt.
+
 Thêm điểm probe cho asset mới: thêm một `Marker3D` có tên mô tả vào `lookdev.tscn`, đặt nó nhô 0.005 m
 trên mặt nhìn thấy, gán nhóm `lookdev_probe`, và metadata `surface_path`, `tolerance`, `role`. Probe mặt sáng
 cần thêm `expected_hex`; probe bóng có thể bỏ `expected_hex` để lấy `shadow_indigo` từ ShaderMaterial của
