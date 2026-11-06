@@ -35,7 +35,7 @@ else
 	exit 2
 fi
 
-for image in lookdev_game.png lookdev_gray.png lookdev_phone.png lookdev_detail.png zone_a_game.png zone_a_gray.png zone_a_phone.png zone_b_game.png zone_b_gray.png zone_b_phone.png; do
+for image in lookdev_game.png lookdev_gray.png lookdev_phone.png lookdev_detail.png zone_a_game.png zone_a_gray.png zone_a_phone.png zone_b_game.png zone_b_gray.png zone_b_phone.png zone_b_route_d_game.png zone_b_route_d_gray.png zone_b_route_d_phone.png; do
 	if [[ ! -s "$OUT_DIR/$image" ]]; then
 		echo "lookdev capture missing or empty: $OUT_DIR/$image" >&2
 		exit 1

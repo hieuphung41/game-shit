@@ -93,11 +93,11 @@ shader_parameter/paper_grain_strength = 0.06
 shader_parameter/paper_fiber_scale = 7.0
 shader_parameter/paper_speckle_density = 5.0
 shader_parameter/hatch_enabled = true
-shader_parameter/hatch_density = 2.0
-shader_parameter/hatch_line_width = 0.28
-shader_parameter/hatch_strength = 0.9
+shader_parameter/hatch_density = 2.6
+shader_parameter/hatch_line_width = 0.13
+shader_parameter/hatch_strength = 0.85
 shader_parameter/hatch_irregularity = 1.0
-shader_parameter/hatch_dash_frequency = 0.42
+shader_parameter/hatch_dash_frequency = 0.33
 shader_parameter/hatch_gouge_colour = Color(0.92549, 0.890196, 0.811765, 1)
 
 [sub_resource type="ShaderMaterial" id="BAwningWoodcut"]
@@ -110,11 +110,11 @@ shader_parameter/paper_grain_strength = 0.06
 shader_parameter/paper_fiber_scale = 7.0
 shader_parameter/paper_speckle_density = 5.0
 shader_parameter/hatch_enabled = true
-shader_parameter/hatch_density = 2.4
-shader_parameter/hatch_line_width = 0.24
-shader_parameter/hatch_strength = 0.9
+shader_parameter/hatch_density = 2.6
+shader_parameter/hatch_line_width = 0.13
+shader_parameter/hatch_strength = 0.85
 shader_parameter/hatch_irregularity = 1.0
-shader_parameter/hatch_dash_frequency = 0.46
+shader_parameter/hatch_dash_frequency = 0.33
 shader_parameter/hatch_gouge_colour = Color(0.92549, 0.890196, 0.811765, 1)
 
 [sub_resource type="BoxMesh" id="BlockedGateSlatMesh"]

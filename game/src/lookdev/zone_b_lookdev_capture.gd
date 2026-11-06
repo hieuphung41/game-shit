@@ -6,6 +6,11 @@ const PHONE_HEIGHT := 360
 const PROBE_GROUP := &"zone_b_lookdev_probe"
 const PROBE_SURFACE_OFFSET := 0.04
 const TRIANGLE_EPSILON := 0.00001
+const CAPTURE_CAMERA_OFFSET := Vector3(15.45, 13.05, 11.6)
+const ROUTE_D_CAPTURE_CAMERA_OFFSET := Vector3(6.3, 5.25, 6.3)
+const ROUTE_D_CAPTURE_CAMERA_SIZE := 7.0
+const B_ENTRY_PATH := ^"BEntry"
+const BLOCKED_ROUTE_D_PATH := ^"BlockedRouteD"
 const RETRIEVER_SCENE := preload("res://src/player/retriever.tscn")
 const ENVIRONMENT := preload("res://art/env_default.tres")
 const BACKGROUND_PROBE_PIXEL := Vector2(96.0, 96.0)
@@ -34,7 +39,10 @@ func _prepare_capture_camera() -> void:
 	add_child(sun)
 	_camera = Camera3D.new()
 	_camera.name = "CameraIsometric"
-	_camera.position = Vector3(18.45, 14.0, 10.6)
+	var b_entry := get_node_or_null(B_ENTRY_PATH) as Node3D
+	if b_entry == null:
+		push_error("Zone B look-dev capture requires BEntry")
+		return
 	_camera.rotation_degrees = Vector3(-30.0, 45.0, 0.0)
 	_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	_camera.size = 20.0
@@ -42,6 +50,7 @@ func _prepare_capture_camera() -> void:
 	_camera.far = 80.0
 	_camera.current = true
 	add_child(_camera)
+	_camera.global_position = b_entry.global_position + CAPTURE_CAMERA_OFFSET
 	var retriever := RETRIEVER_SCENE.instantiate() as CharacterBody3D
 	retriever.position = Vector3(3.0, 0.95, -1.0)
 	add_child(retriever)
@@ -74,9 +83,45 @@ func _capture(capture_directory: String) -> void:
 		var phone_image := game_image.duplicate()
 		phone_image.resize(PHONE_WIDTH, PHONE_HEIGHT, Image.INTERPOLATE_NEAREST)
 		result = phone_image.save_png(capture_directory.path_join("zone_b_phone.png"))
+	if result == OK:
+		result = await _capture_blocked_route_d(capture_directory)
 	if result != OK:
 		push_error("Could not save Zone B capture(s): %s" % error_string(result))
 	get_tree().quit(0 if result == OK else 1)
+
+
+func _capture_blocked_route_d(capture_directory: String) -> Error:
+	if not _position_camera_at_blocked_route_d():
+		return ERR_DOES_NOT_EXIST
+	await get_tree().process_frame
+	await get_tree().process_frame
+	RenderingServer.force_sync()
+	var route_image := get_viewport().get_texture().get_image()
+	if route_image == null:
+		push_error("Route D capture needs an active rendering viewport")
+		return ERR_UNAVAILABLE
+	var result := route_image.save_png(capture_directory.path_join("zone_b_route_d_game.png"))
+	if result == OK:
+		result = _grayscale(route_image).save_png(capture_directory.path_join("zone_b_route_d_gray.png"))
+	if result == OK:
+		var phone_image := route_image.duplicate()
+		phone_image.resize(PHONE_WIDTH, PHONE_HEIGHT, Image.INTERPOLATE_NEAREST)
+		result = phone_image.save_png(capture_directory.path_join("zone_b_route_d_phone.png"))
+	return result
+
+
+func _position_camera_at_blocked_route_d() -> bool:
+	var blocked_route := get_node_or_null(BLOCKED_ROUTE_D_PATH) as Node3D
+	if blocked_route == null:
+		push_error("Zone B look-dev capture requires BlockedRouteD")
+		return false
+	# Keep the locked isometric angle, but frame the actual gate node rather than
+	# reusing the wide Zone B composition. The nearer node-relative offset gives
+	# the gate plane enough screen area for every physical closure signal to read
+	# separately, while retaining the water gap and warehouse behind it.
+	_camera.size = ROUTE_D_CAPTURE_CAMERA_SIZE
+	_camera.global_position = blocked_route.global_position + ROUTE_D_CAPTURE_CAMERA_OFFSET
+	return true
 
 
 func _write_projected_probe(image: Image, capture_directory: String) -> Error:
