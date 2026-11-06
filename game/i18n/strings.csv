@@ -51,6 +51,7 @@ INVENTORY_SEAL_LABEL_SEALED_NOT_EXTRACTED,đã niêm — chưa extract
 INVENTORY_PANEL_TITLE,Đồ mang theo
 INVENTORY_PICKUP_HINT,Chạm ô ba lô hoặc Hộp để xếp Manifest; vào Hộp là niêm phong.
 INVENTORY_PICKUP_SOURCE_DESK,Còn ở bàn dispatch
+INVENTORY_SELECTED_ITEM,{item} · {width}×{height}
 INVENTORY_REASON_OK,vừa
 INVENTORY_REASON_ITEM_NOT_FOUND,không tìm thấy món
 INVENTORY_REASON_WRONG_SOURCE,rút ra trước
