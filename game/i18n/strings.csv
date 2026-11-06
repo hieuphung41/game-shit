@@ -5,6 +5,7 @@ BRIEFING_RULES_LINE,Easy · Cầu tàu A mở · Đồ không niêm phong mất 
 BRIEFING_MENTOR_SPEAKER,Người Thu Hồi già
 BRIEFING_MENTOR_LINE,"Mang bản dispatch về trước kỳ thuế. Nó chỉ là đầu mối, nhưng thiếu nó ta mất quyền nhận contract."
 BRIEFING_TOOLTIP_UNSEALED_LOSS,Đồ không niêm phong sẽ mất khi Phù Hiệu Hồi Hương kích hoạt.
+BRIEFING_BUTTON_INFO,ⓘ
 BRIEFING_BUTTON_ENTER,Vào cảng
 BRIEFING_BUTTON_ENTER_BLOCKED,Loadout chưa hợp lệ.
 LOADOUT_LABEL_BACKPACK,Ba lô
@@ -25,6 +26,7 @@ LOADOUT_CONFIRM_GEAR_ACCEPT,Đổi đồ
 LOADOUT_CONFIRM_NO_WEAPON_TITLE,Vào cảng không vũ khí?
 LOADOUT_CONFIRM_NO_WEAPON_BODY,"Bạn sẽ vào Cảng Hắc Thuế tay không. Vẫn đi được, nhưng khó tự vệ."
 ITEM_STARTER_REMEDY_NAME,Cuộn Băng Muối
+ITEM_SLING_REMEDY_NAME,Gói Băng Muối
 HUD_OBJECTIVE_TAKE_MANIFEST,Lấy Manifest R-17 ở bàn dispatch A.
 HUD_OBJECTIVE_CROSS_TAX_POST,Qua trạm thuế.
 HUD_OBJECTIVE_DELIVER_PIER_A,Đưa Manifest ra Cầu tàu A.

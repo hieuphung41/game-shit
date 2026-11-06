@@ -16,6 +16,7 @@ enum Category {
 }
 
 @export var id: StringName = &""
+@export var display_name_key: StringName = &""
 @export var display_name_vi := ""
 @export var size := Vector2i.ONE
 @export var rotatable := false
@@ -31,8 +32,12 @@ func is_square() -> bool:
 	return size.x == size.y
 
 
+func localized_display_name() -> String:
+	return tr(display_name_key) if not display_name_key.is_empty() else display_name_vi
+
+
 func validation_error() -> String:
-	if id.is_empty() or display_name_vi.is_empty():
+	if id.is_empty() or (display_name_key.is_empty() and display_name_vi.is_empty()):
 		return "item definition needs id and Vietnamese display name"
 	if size.x < 1 or size.x > 3 or size.y < 1 or size.y > 3:
 		return "item definition size must be 1..3"
