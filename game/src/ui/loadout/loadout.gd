@@ -7,9 +7,12 @@ extends Control
 signal finished(inventory: RetrieverInventory)
 signal cancelled(inventory: RetrieverInventory)
 
+const UI_OPEN_GUARD_SECONDS := 0.3
+
 var inventory: RetrieverInventory
 var snapshot_open: Dictionary = {}
 var selected_uid := 0
+var _opened_at_msec := 0
 
 var _backpack: InventoryGridWidget
 var _notary_box: InventoryGridWidget
@@ -78,7 +81,7 @@ func cancel() -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
-	if event.is_action_pressed(&"ui_cancel"):
+	if event.is_action_pressed(&"ui_cancel") and not _input_guard_active():
 		cancel()
 		accept_event()
 
@@ -87,6 +90,7 @@ func _open() -> void:
 	snapshot_open = inventory.snapshot()
 	selected_uid = 0
 	_build()
+	_opened_at_msec = Time.get_ticks_msec()
 
 
 func _build() -> void:
@@ -101,24 +105,45 @@ func _build() -> void:
 	title.position = Vector2(32, 24)
 	title.size = Vector2(600, 64)
 	add_child(title)
-	_backpack = _grid_with_label("Backpack", "LOADOUT_LABEL_BACKPACK", RetrieverInventory.BACKPACK, Vector2(64, 104))
-	_notary_box = _grid_with_label("NotaryBox", "LOADOUT_LABEL_NOTARY_BOX", RetrieverInventory.NOTARY_BOX, Vector2(448, 104))
-	_sling_pouch = _grid_with_label("SlingPouch", "LOADOUT_LABEL_SLING_POUCH", RetrieverInventory.SLING_POUCH, Vector2(448, 392))
+	var backpack_at := Vector2(64, 104)
+	var notary_box_at := Vector2(448, 104)
+	var sling_pouch_at := Vector2(448, 392)
+	var summary_at := Vector2(736, 136)
+	var summary_size := Vector2(512, 184)
+	var status_at := Vector2(64, 540)
+	var status_size := Vector2(896, 48)
+	var actions_y := 600.0
+	if _uses_compact_touch_layout():
+		backpack_at = Vector2(64, 64)
+		notary_box_at = Vector2(480, 64)
+		sling_pouch_at = Vector2(480, 376)
+		summary_at = Vector2(800, 96)
+		summary_size = Vector2(448, 352)
+		status_at = Vector2(800, 472)
+		status_size = Vector2(448, 104)
+		actions_y = 608.0
+	_backpack = _grid_with_label("Backpack", "LOADOUT_LABEL_BACKPACK", RetrieverInventory.BACKPACK, backpack_at)
+	_notary_box = _grid_with_label("NotaryBox", "LOADOUT_LABEL_NOTARY_BOX", RetrieverInventory.NOTARY_BOX, notary_box_at)
+	_sling_pouch = _grid_with_label("SlingPouch", "LOADOUT_LABEL_SLING_POUCH", RetrieverInventory.SLING_POUCH, sling_pouch_at)
 	var summary := _label("Summary", "LOADOUT_SUMMARY_DEFAULT_KIT", 20)
-	summary.position = Vector2(736, 136)
-	summary.size = Vector2(512, 184)
+	summary.position = summary_at
+	summary.size = summary_size
 	summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(summary)
 	_status = _label("Status", "LOADOUT_HINT_SELECT", 20)
-	_status.position = Vector2(64, 540)
-	_status.size = Vector2(896, 48)
+	_status.position = status_at
+	_status.size = status_size
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(_status)
-	var cancel_button := _button("CancelButton", "LOADOUT_BUTTON_CANCEL", Vector2(32, 600), Vector2(240, 96))
-	cancel_button.pressed.connect(cancel)
-	var done_button := _button("DoneButton", "LOADOUT_BUTTON_DONE", Vector2(968, 600), Vector2(280, 96))
-	done_button.pressed.connect(finish)
+	var cancel_button := _button("CancelButton", "LOADOUT_BUTTON_CANCEL", Vector2(32, actions_y), Vector2(240, 96))
+	cancel_button.pressed.connect(_on_cancel_pressed)
+	var done_button := _button("DoneButton", "LOADOUT_BUTTON_DONE", Vector2(968, actions_y), Vector2(280, 96))
+	done_button.pressed.connect(_on_done_pressed)
 	_refresh_grids()
+
+
+func _uses_compact_touch_layout() -> bool:
+	return InventoryGridWidget.logical_cell_size_for_window(DisplayServer.window_get_size()) > InventoryGridWidget.CELL_SIZE
 
 
 func _grid_with_label(node_name: String, label_key: String, kind: StringName, at: Vector2) -> InventoryGridWidget:
@@ -130,8 +155,8 @@ func _grid_with_label(node_name: String, label_key: String, kind: StringName, at
 	grid.name = node_name
 	grid.position = at + Vector2(0, 32)
 	grid.configure(inventory, kind)
-	grid.item_pressed.connect(select_item)
-	grid.cell_pressed.connect(tap_cell)
+	grid.item_pressed.connect(_on_item_pressed)
+	grid.cell_pressed.connect(_on_cell_pressed)
 	add_child(grid)
 	return grid
 
@@ -191,7 +216,7 @@ func _reason_text(reason: InventoryReason.Value) -> String:
 
 
 func _display_name(item: ItemInstance) -> String:
-	return tr("ITEM_STARTER_REMEDY_NAME") if item.def_id == &"starter_remedy" else item.definition.display_name_vi
+	return item.definition.localized_display_name()
 
 
 func _find_item(uid: int) -> Dictionary:
@@ -211,6 +236,30 @@ func _grid_for(kind: StringName) -> InventoryGrid:
 		RetrieverInventory.SLING_POUCH:
 			return inventory.sling_pouch
 	return inventory.backpack
+
+
+func _on_item_pressed(uid: int) -> void:
+	if not _input_guard_active():
+		select_item(uid)
+
+
+func _on_cell_pressed(target: StringName, anchor: Vector2i) -> void:
+	if not _input_guard_active():
+		tap_cell(target, anchor)
+
+
+func _on_cancel_pressed() -> void:
+	if not _input_guard_active():
+		cancel()
+
+
+func _on_done_pressed() -> void:
+	if not _input_guard_active():
+		finish()
+
+
+func _input_guard_active() -> bool:
+	return Time.get_ticks_msec() - _opened_at_msec < int(UI_OPEN_GUARD_SECONDS * 1000.0)
 
 
 func _label(node_name: String, key: String, font_size: int) -> Label:

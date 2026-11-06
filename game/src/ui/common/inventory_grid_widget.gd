@@ -7,6 +7,8 @@ signal item_pressed(uid: int)
 signal cell_pressed(grid_kind: StringName, anchor: Vector2i)
 
 const CELL_SIZE := 96
+const DESIGN_VIEWPORT := Vector2i(1280, 720)
+const MIN_TOUCH_PIXELS := 64.0
 
 var inventory: RetrieverInventory
 var grid_kind: StringName = RetrieverInventory.BACKPACK
@@ -19,6 +21,23 @@ var error_cells: Array[Vector2i] = []
 var _grid: InventoryGrid
 var _cells: Dictionary = {}
 var _items: Dictionary = {}
+var _cell_size := CELL_SIZE
+
+
+static func logical_cell_size_for_window(window_size: Vector2i) -> float:
+	if window_size.x <= 0 or window_size.y <= 0:
+		return CELL_SIZE
+	var physical_scale := minf(
+		float(window_size.x) / float(DESIGN_VIEWPORT.x),
+		float(window_size.y) / float(DESIGN_VIEWPORT.y)
+	)
+	if physical_scale <= 0.0:
+		return CELL_SIZE
+	return maxf(CELL_SIZE, ceilf(MIN_TOUCH_PIXELS / physical_scale))
+
+
+func current_cell_size() -> float:
+	return _cell_size
 
 
 func configure(p_inventory: RetrieverInventory, p_grid_kind: StringName, p_read_only: bool = false, p_cell_scale: float = 1.0) -> void:
@@ -26,6 +45,7 @@ func configure(p_inventory: RetrieverInventory, p_grid_kind: StringName, p_read_
 	grid_kind = p_grid_kind
 	read_only = p_read_only
 	cell_scale = p_cell_scale
+	_cell_size = logical_cell_size_for_window(DisplayServer.window_get_size()) * cell_scale
 	_grid = _grid_for_kind()
 	_render()
 
@@ -62,12 +82,13 @@ func _grid_for_kind() -> InventoryGrid:
 
 func _render() -> void:
 	for child in get_children():
+		remove_child(child)
 		child.queue_free()
 	_cells.clear()
 	_items.clear()
 	if _grid == null:
 		return
-	var cell_size := CELL_SIZE * cell_scale
+	var cell_size := _cell_size
 	custom_minimum_size = Vector2(_grid.size.x * cell_size, _grid.size.y * cell_size)
 	size = custom_minimum_size
 	for y in _grid.size.y:
@@ -119,9 +140,7 @@ func _add_item(item: ItemInstance, cell_size: float) -> void:
 
 
 func _item_label(item: ItemInstance) -> String:
-	if item.def_id == &"starter_remedy":
-		return tr("ITEM_STARTER_REMEDY_NAME")
-	return item.definition.display_name_vi
+	return item.definition.localized_display_name()
 
 
 func _seal_label(uid: int) -> String:

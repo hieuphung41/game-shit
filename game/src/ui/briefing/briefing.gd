@@ -9,13 +9,17 @@ signal loadout_requested(inventory: RetrieverInventory)
 signal enter_outer_pier_requested(inventory: RetrieverInventory)
 signal back_requested()
 
+const UI_OPEN_GUARD_SECONDS := 0.3
+
 static var _tooltip_seen_this_session := false
 
 var inventory: RetrieverInventory
 var _enter_button: Button
-var _tooltip: Label
+var _tooltip: Button
 var _status: Label
 var _is_loading := false
+var _scene_load_error := false
+var _opened_at_msec := 0
 
 
 func _ready() -> void:
@@ -36,6 +40,7 @@ func open_with_inventory(p_inventory: RetrieverInventory) -> void:
 func request_loadout() -> void:
 	if _is_loading:
 		return
+	_scene_load_error = false
 	_tooltip.visible = false
 	_tooltip_seen_this_session = true
 	loadout_requested.emit(inventory)
@@ -44,11 +49,13 @@ func request_loadout() -> void:
 func request_enter() -> void:
 	if _is_loading:
 		return
+	_scene_load_error = false
 	var errors := inventory.validate()
 	if not errors.is_empty():
 		_show_invalid(errors[0])
 		return
 	_is_loading = true
+	_status.text = ""
 	_enter_button.text = tr("UI_LOADING")
 	enter_outer_pier_requested.emit(inventory)
 
@@ -60,7 +67,7 @@ func request_back() -> void:
 
 func show_scene_load_error() -> void:
 	_is_loading = false
-	_status.text = tr("UI_ERROR_SCENE_LOAD")
+	_scene_load_error = true
 	refresh()
 
 
@@ -71,13 +78,16 @@ func refresh() -> void:
 	_enter_button.disabled = not errors.is_empty() or _is_loading
 	if not errors.is_empty():
 		_show_invalid(errors[0])
+	elif _scene_load_error:
+		_status.text = tr("UI_ERROR_SCENE_LOAD")
+		_enter_button.text = tr("BRIEFING_BUTTON_ENTER")
 	elif not _is_loading:
 		_status.text = ""
 		_enter_button.text = tr("BRIEFING_BUTTON_ENTER")
 
 
 func _gui_input(event: InputEvent) -> void:
-	if event.is_action_pressed(&"ui_cancel"):
+	if event.is_action_pressed(&"ui_cancel") and not _input_guard_active():
 		request_back()
 		accept_event()
 
@@ -105,12 +115,19 @@ func _build() -> void:
 	rules.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(rules)
 	var info := _button("InfoButton", "ⓘ", Vector2(656, 176), Vector2(64, 64))
-	info.pressed.connect(_toggle_tooltip)
-	_tooltip = _label("Tooltip", "BRIEFING_TOOLTIP_UNSEALED_LOSS", 20)
+	info.pressed.connect(_on_info_pressed)
+	_tooltip = Button.new()
+	_tooltip.name = "Tooltip"
+	_tooltip.text = tr("BRIEFING_TOOLTIP_UNSEALED_LOSS")
+	_tooltip.flat = true
+	_tooltip.focus_mode = Control.FOCUS_ALL
+	_tooltip.add_theme_font_size_override("font_size", 20)
+	_tooltip.add_theme_color_override("font_color", UiTheme.INK)
 	_tooltip.position = Vector2(32, 248)
 	_tooltip.size = Vector2(688, 72)
 	_tooltip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_tooltip.visible = not _tooltip_seen_this_session
+	_tooltip.pressed.connect(_on_tooltip_pressed)
 	add_child(_tooltip)
 	var speaker := _label("MentorSpeaker", "BRIEFING_MENTOR_SPEAKER", 20)
 	speaker.position = Vector2(32, 408)
@@ -130,16 +147,17 @@ func _build() -> void:
 	_add_preview_grid("NotaryPreview", "LOADOUT_LABEL_NOTARY_BOX", RetrieverInventory.NOTARY_BOX, Vector2(928, 240), 0.5)
 	_add_preview_grid("SlingPreview", "LOADOUT_LABEL_SLING_POUCH", RetrieverInventory.SLING_POUCH, Vector2(1088, 240), 0.5)
 	var edit := _button("EditLoadoutButton", "BRIEFING_BUTTON_EDIT_LOADOUT", Vector2(928, 480), Vector2(320, 96))
-	edit.pressed.connect(request_loadout)
+	edit.pressed.connect(_on_loadout_pressed)
 	var back := _button("BackButton", "BRIEFING_BUTTON_BACK", Vector2(32, 600), Vector2(240, 96))
-	back.pressed.connect(request_back)
+	back.pressed.connect(_on_back_pressed)
 	_enter_button = _button("EnterButton", "BRIEFING_BUTTON_ENTER", Vector2(968, 600), Vector2(280, 96))
-	_enter_button.pressed.connect(request_enter)
+	_enter_button.pressed.connect(_on_enter_pressed)
 	_status = _label("Status", "", 20)
 	_status.position = Vector2(752, 552)
 	_status.size = Vector2(496, 40)
 	_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	add_child(_status)
+	_opened_at_msec = Time.get_ticks_msec()
 
 
 func _add_preview_grid(node_name: String, label_key: String, kind: StringName, at: Vector2, scale: float) -> void:
@@ -158,13 +176,42 @@ func _add_preview_grid(node_name: String, label_key: String, kind: StringName, a
 	touch.size = Vector2(156, 216)
 	touch.flat = true
 	touch.text = ""
-	touch.pressed.connect(request_loadout)
+	touch.pressed.connect(_on_loadout_pressed)
 	add_child(touch)
 
 
 func _toggle_tooltip() -> void:
 	_tooltip.visible = not _tooltip.visible
 	_tooltip_seen_this_session = true
+
+
+func _on_info_pressed() -> void:
+	if not _input_guard_active():
+		_toggle_tooltip()
+
+
+func _on_tooltip_pressed() -> void:
+	if not _input_guard_active() and _tooltip.visible:
+		_toggle_tooltip()
+
+
+func _on_loadout_pressed() -> void:
+	if not _input_guard_active():
+		request_loadout()
+
+
+func _on_back_pressed() -> void:
+	if not _input_guard_active():
+		request_back()
+
+
+func _on_enter_pressed() -> void:
+	if not _input_guard_active():
+		request_enter()
+
+
+func _input_guard_active() -> bool:
+	return Time.get_ticks_msec() - _opened_at_msec < int(UI_OPEN_GUARD_SECONDS * 1000.0)
 
 
 func _show_invalid(error: InventoryResult) -> void:
@@ -176,7 +223,7 @@ func _invalid_item_name(uid: int) -> String:
 	for grid: InventoryGrid in [inventory.backpack, inventory.notary_box, inventory.sling_pouch]:
 		var item := grid.items.get(uid) as ItemInstance
 		if item != null:
-			return tr("ITEM_STARTER_REMEDY_NAME") if item.def_id == &"starter_remedy" else item.definition.display_name_vi
+			return item.definition.localized_display_name()
 	return ""
 
 

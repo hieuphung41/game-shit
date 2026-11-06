@@ -314,6 +314,16 @@ func test_inv_23_sling_pouch_is_not_a_pickup_target(t) -> bool:
 	return true
 
 
+func test_sling_remedy_definition_is_a_sealable_1x1_consumable(t) -> bool:
+	var definition := SlingRemedyDefinition.new()
+	t.eq(definition.id, &"sling_remedy", "definition id")
+	t.eq(definition.size, Vector2i.ONE, "sling remedy footprint")
+	t.eq(definition.item_category, ItemDef.Category.CONSUMABLE, "sling remedy category")
+	t.ok(definition.sealable, "sling remedy can be sealed")
+	t.eq(definition.display_name_key, &"ITEM_SLING_REMEDY_NAME", "name remains localized")
+	return true
+
+
 func test_inv_24_drop_returns_item_to_ground_and_emits_removed(t) -> bool:
 	var inventory := _inventory()
 	_load(inventory, [_entry(1, &"fixture_b_small_1x1", Vector2i.ZERO, 3)])
