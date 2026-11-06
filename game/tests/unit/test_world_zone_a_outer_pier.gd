@@ -70,7 +70,7 @@ func test_zone_a_lookdev_capture_uses_the_game_camera_and_visible_prt_probes(t) 
 			t.ok(bool(world.call("_probe_surface_is_visible", camera, probe)), "%s is not hidden by a nearer mesh" % probe_name)
 	var background_probe := world.get_node_or_null("ProbeZoneABackground") as Marker3D
 	if background_probe != null:
-		t.eq(background_probe.get_meta("expected_hex"), "#4E656F", "Zone A background probe locks sea_bluegrey")
+		t.eq(background_probe.get_meta("expected_hex"), "#4E6570", "Zone A background probe locks sea_bluegrey")
 	var shadow_probe := world.get_node_or_null("ProbeZoneADeckShadow") as Marker3D
 	if shadow_probe != null:
 		t.eq(shadow_probe.get_meta("surface_path"), "ExtractPierA", "Zone A shadow probe samples the visible extract floor")
@@ -93,12 +93,29 @@ func test_zone_a_priority_fixtures_keep_phone_readable_ink_and_sparse_gouges(t) 
 	await t.tree.process_frame
 	var desk := world.get_node_or_null("DispatchDesk/DeskTop") as MeshInstance3D
 	var desk_material := desk.material_override as ShaderMaterial if desk != null else null
+	var deck := world.get_node_or_null("PierDeck") as MeshInstance3D
+	var deck_material := deck.material_override as ShaderMaterial if deck != null else null
+	t.ok(deck_material != null, "The broad pier deck uses a printed world material")
+	if deck_material != null:
+		t.eq(deck_material.get_shader_parameter("paper_grain_enabled"), true, "Pier deck keeps world-space paper grain")
+		t.eq(deck_material.get_shader_parameter("paper_grain_strength"), 0.05, "Pier deck visibly modulates its broad lit face by five percent")
+		t.eq(deck_material.get_shader_parameter("paper_fiber_scale"), 8.0, "Pier deck uses broad fibres readable at game scale")
 	t.ok(desk_material != null, "Dispatch desk uses the matte toon material")
 	if desk_material != null:
 		t.eq(desk_material.get_shader_parameter("paper_grain_enabled"), true, "Dispatch desk keeps world-space paper grain")
+		t.eq(desk_material.get_shader_parameter("paper_grain_strength"), 0.05, "Dispatch desk keeps the five percent printed modulation")
 		t.eq(desk_material.get_shader_parameter("hatch_enabled"), true, "Dispatch desk carries sparse shadow gouges")
 		t.eq(desk_material.get_shader_parameter("hatch_density"), 2.6, "Dispatch desk gouges remain spaced for a phone frame")
 		t.ok(desk_material.next_pass is ShaderMaterial, "Dispatch desk uses the priority ink outline")
+	var tax_wall := world.get_node_or_null("SilhouetteE/TaxWall") as MeshInstance3D
+	var tax_wall_material := tax_wall.material_override as ShaderMaterial if tax_wall != null else null
+	t.ok(tax_wall_material != null, "Tax wall uses the shadow-gouge material")
+	if tax_wall_material != null:
+		t.eq(tax_wall_material.get_shader_parameter("paper_grain_strength"), 0.05, "Tax wall preserves visible paper grain")
+		t.eq(tax_wall_material.get_shader_parameter("hatch_enabled"), true, "Tax wall restricts pale gouges to its indigo shadow")
+		var gouge_colour := tax_wall_material.get_shader_parameter("hatch_gouge_colour") as Color
+		t.eq(gouge_colour.to_html(false).to_upper(), "ECE3CF", "Tax wall gouges lift only the dark shadow band with paper colour")
+	t.ok(world.get_node_or_null("SilhouetteE/TaxWall/TaxWallEave") is MeshInstance3D, "Tax wall eave casts the broad shadow band for gouges")
 	var beacon_stem := world.get_node_or_null("BeaconA/BeaconStem") as MeshInstance3D
 	var beacon_lantern := world.get_node_or_null("BeaconA/BeaconLantern") as MeshInstance3D
 	t.ok(beacon_stem != null and beacon_stem.material_override is ShaderMaterial, "Beacon stem uses matte inked world material")

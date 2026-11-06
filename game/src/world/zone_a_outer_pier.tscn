@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3]
+[gd_scene load_steps=25 format=3]
 
 [ext_resource type="Environment" path="res://art/env_default.tres" id="1_environment"]
 [ext_resource type="Material" path="res://art/materials/env_wood.tres" id="2_wood"]
@@ -31,14 +31,25 @@ shader = ExtResource("10_toon")
 shader_parameter/albedo_color = Color(0.290196, 0.203922, 0.14902, 1)
 shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
 shader_parameter/paper_grain_enabled = true
-shader_parameter/paper_grain_strength = 0.04
-shader_parameter/paper_fiber_scale = 14.0
-shader_parameter/paper_speckle_density = 7.0
+shader_parameter/paper_grain_strength = 0.05
+shader_parameter/paper_fiber_scale = 8.0
+shader_parameter/paper_speckle_density = 4.0
 shader_parameter/hatch_enabled = true
 shader_parameter/hatch_density = 2.6
 shader_parameter/hatch_line_width = 0.22
 shader_parameter/hatch_strength = 0.9
 shader_parameter/hatch_gouge_colour = Color(0.92549, 0.890196, 0.811765, 1)
+
+[sub_resource type="ShaderMaterial" id="WoodBroadPrint"]
+resource_name = "toon_env_wood_broad_print"
+shader = ExtResource("10_toon")
+shader_parameter/albedo_color = Color(0.482353, 0.356863, 0.25098, 1)
+shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
+shader_parameter/paper_grain_enabled = true
+shader_parameter/paper_grain_strength = 0.05
+shader_parameter/paper_fiber_scale = 8.0
+shader_parameter/paper_speckle_density = 4.0
+shader_parameter/hatch_enabled = false
 
 [sub_resource type="ShaderMaterial" id="IronLandmark"]
 resource_name = "toon_env_iron_landmark"
@@ -97,6 +108,9 @@ size = Vector3(5.2, 0.22, 0.28)
 [sub_resource type="BoxMesh" id="WallMesh"]
 size = Vector3(5.5, 2.9, 0.4)
 
+[sub_resource type="BoxMesh" id="WallEaveMesh"]
+size = Vector3(5.78, 0.18, 0.72)
+
 [sub_resource type="PlaneMesh" id="WaterMesh"]
 size = Vector2(20, 16)
 
@@ -132,12 +146,12 @@ material_override = ExtResource("8_water")
 
 [node name="PierDeck" type="MeshInstance3D" parent="."]
 mesh = SubResource("DeckMesh")
-material_override = ExtResource("2_wood")
+material_override = SubResource("WoodBroadPrint")
 
 [node name="ExtractPierA" type="MeshInstance3D" parent="."]
 position = Vector3(-4.75, 0, -5.1)
 mesh = SubResource("PierMesh")
-material_override = ExtResource("2_wood")
+material_override = SubResource("WoodBroadPrint")
 
 [node name="DispatchDesk" type="Node3D" parent="."]
 position = Vector3(1.45, 0, 1.55)
@@ -219,7 +233,7 @@ metadata/greybox_role = "route_to_zone_b_placeholder"
 
 [node name="WalkableDeck" type="MeshInstance3D" parent="RouteToB"]
 mesh = SubResource("RouteMesh")
-material_override = ExtResource("2_wood")
+material_override = SubResource("WoodBroadPrint")
 
 [node name="RopeGuide" type="MeshInstance3D" parent="RouteToB"]
 position = Vector3(0, 0.34, 1.0)
@@ -252,10 +266,16 @@ metadata/greybox_role = "non_interactive_backdrop"
 mesh = SubResource("WallMesh")
 material_override = SubResource("WoodDarkHatchPriority")
 
+[node name="TaxWallEave" type="MeshInstance3D" parent="SilhouetteE/TaxWall"]
+position = Vector3(0, 1.32, 0.48)
+rotation_degrees = Vector3(0, 2, 0)
+mesh = SubResource("WallEaveMesh")
+material_override = ExtResource("3_wood_dark")
+
 [node name="ProbeZoneABackground" type="Marker3D" parent="." groups=["zone_a_lookdev_probe"]]
 position = Vector3(-14.47, 7.75, 6.74)
 metadata/role = "background"
-metadata/expected_hex = "#4E656F"
+metadata/expected_hex = "#4E6570"
 metadata/tolerance = 5.0
 
 [node name="ProbeZoneADeckLight" type="Marker3D" parent="." groups=["zone_a_lookdev_probe"]]
