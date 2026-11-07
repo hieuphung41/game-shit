@@ -45,6 +45,8 @@ material_override = SubResource("RetrieverCanvasMaterial")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 shape = SubResource("RetrieverCollision")
 
+[node name="Visual" type="Node3D" parent="."]
+
 [node name="TouchControls" type="CanvasLayer" parent="."]
 layer = 5
 

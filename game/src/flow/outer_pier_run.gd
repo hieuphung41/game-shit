@@ -218,6 +218,7 @@ func _present_overlay(next_overlay: Control) -> void:
 	_overlay = next_overlay
 	_overlay_layer.add_child(_overlay)
 	_hud.set_overlay_open(true)
+	_set_retriever_overlay_open(true)
 	_set_retriever_control_enabled(false)
 
 
@@ -226,6 +227,7 @@ func _close_overlay(restore_control: bool = true) -> void:
 		_overlay.queue_free()
 		_overlay = null
 	_hud.set_overlay_open(false)
+	_set_retriever_overlay_open(false)
 	if restore_control and flow.extract_state != ExtractPierAFlow.ExtractState.S10_SUCCESS:
 		_set_retriever_control_enabled(true)
 
@@ -233,3 +235,9 @@ func _close_overlay(restore_control: bool = true) -> void:
 func _set_retriever_control_enabled(enabled: bool) -> void:
 	if _retriever != null:
 		_retriever.set_physics_process(enabled)
+
+
+func _set_retriever_overlay_open(open: bool) -> void:
+	var controller := _retriever as RetrieverController
+	if controller != null:
+		controller.set_overlay_open(open)
