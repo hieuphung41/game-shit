@@ -170,7 +170,7 @@ func _next_contract_key(contract_id: StringName, part: StringName) -> StringName
 func _kept_lines() -> Array[String]:
 	var lines: Array[String] = [tr("SUMMARY_SUCCESS_KEPT_LICENCE")]
 	for entry: Dictionary in summary.kept:
-		lines.append(_item_name(StringName(entry.get("def_id", &""))))
+		lines.append(_item_line(StringName(entry.get("def_id", &""))))
 	lines.append(tr("SUMMARY_SUCCESS_KEPT_CELLS").format({
 		"used": summary.backpack_cells_used,
 		"total": summary.backpack_cells_total,
@@ -181,7 +181,7 @@ func _kept_lines() -> Array[String]:
 func _lost_lines() -> Array[String]:
 	var lines: Array[String] = []
 	for entry: Dictionary in summary.lost:
-		lines.append(_item_name(StringName(entry.get("def_id", &""))))
+		lines.append("⌄ %s" % _item_name(StringName(entry.get("def_id", &""))))
 		lines.append(tr("SUMMARY_SUCCESS_LOST_LEFT_BEHIND"))
 	return lines
 
@@ -206,6 +206,16 @@ func _item_name(def_id: StringName) -> String:
 		if definition != null:
 			return definition.localized_display_name()
 	return tr("CARD_MANIFEST_R17_NAME") if def_id == &"manifest_r17" else tr("ITEM_STARTER_REMEDY_NAME")
+
+
+func _item_line(def_id: StringName) -> String:
+	var footprint := Vector2i.ONE
+	if registry != null:
+		var definition := registry.get_def(def_id)
+		if definition != null:
+			footprint = definition.size
+	var chip := tr("INVENTORY_FOOTPRINT_CHIP").format({"w": footprint.x, "h": footprint.y})
+	return "◇ %s · %s" % [_item_name(def_id), chip]
 
 
 func _input_guard_active() -> bool:

@@ -158,3 +158,28 @@ func test_ui_summary_focuses_hub_and_accept_activates_it(t) -> bool:
 	screen.queue_free()
 	await t.tree.process_frame
 	return true
+
+
+func test_ui_summary_shows_footprint_chip_and_left_behind_marker(t) -> bool:
+	var inventory := StarterInventoryFactory.create()
+	var cargo := ItemDef.new()
+	cargo.id = &"cargo_d_2x2"
+	cargo.display_name_key = &"ITEM_CARGO_D_2X2_NAME"
+	cargo.size = Vector2i(2, 2)
+	inventory.registry.add(cargo)
+	var summary := ExtractSummary.new()
+	summary.kept = [{"uid": 4, "def_id": &"cargo_d_2x2"}]
+	summary.lost = [{"uid": 5, "def_id": &"starter_remedy"}]
+	summary.backpack_cells_used = 4
+	summary.backpack_cells_total = 12
+	var screen := SUMMARY_SCENE.instantiate() as ExtractSummaryScreen
+	screen.show_summary(summary, inventory.registry)
+	t.tree.root.add_child(screen)
+	await t.tree.process_frame
+	var kept_line := screen.get_node("LeftScroll/LeftGroups/KeptGroup/Content/Line1") as Label
+	var lost_line := screen.get_node("LeftScroll/LeftGroups/LostGroup/Content/Line0") as Label
+	t.ok(kept_line.text.contains("2×2"), "S10 identifies the cargo footprint")
+	t.ok(lost_line.text.contains("⌄"), "S10 marks left-behind items with a shape cue")
+	screen.queue_free()
+	await t.tree.process_frame
+	return true
