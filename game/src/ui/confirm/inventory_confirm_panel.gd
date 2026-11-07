@@ -71,22 +71,25 @@ func _build() -> void:
 	var title_key: StringName = &"INVENTORY_CONFIRM_WITHDRAW_TITLE" if is_withdraw else &"INVENTORY_CONFIRM_DROP_TITLE"
 	var title := _label("Title", title_key, 28)
 	title.position = Vector2(16, 12)
-	title.size = Vector2(264, 40)
+	# O5i reserves y=196..260 for a two-line localized confirmation question.
+	title.size = Vector2(264, 64)
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	title.clip_text = true
 	panel.add_child(title)
 	var item_row := _static_label("ItemRow", _item_text(), 24)
-	item_row.position = Vector2(16, 56)
-	item_row.size = Vector2(264, 32)
+	item_row.position = Vector2(16, 80)
+	item_row.size = Vector2(264, 40)
 	item_row.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	item_row.clip_text = true
 	panel.add_child(item_row)
 	var target := _static_label("TargetRow", _target_text(is_withdraw), 24)
-	target.position = Vector2(16, 92)
-	target.size = Vector2(264, 32)
+	target.position = Vector2(16, 124)
+	target.size = Vector2(264, 40)
 	panel.add_child(target)
 	if is_withdraw:
 		var seal_change := _static_label("SealChange", _seal_change_text(), 24)
-		seal_change.position = Vector2(16, 128)
-		seal_change.size = Vector2(264, 32)
+		seal_change.position = Vector2(16, 144)
+		seal_change.size = Vector2(264, 20)
 		panel.add_child(seal_change)
 	var body_key := _body_key(is_withdraw)
 	var body := _body_label("Body", body_key, 24)
@@ -103,6 +106,9 @@ func _build() -> void:
 	accept_button.pressed.connect(confirm)
 	panel.add_child(accept_button)
 	_opened_at_msec = Time.get_ticks_msec()
+	# O5i can open from a grid touch, which leaves focus on the dock beneath it.
+	# Defer until this control is in the viewport so ui_accept always targets O5i.
+	accept_button.call_deferred("grab_focus")
 
 
 func _body_key(is_withdraw: bool) -> StringName:

@@ -35,6 +35,12 @@ func test_ui_notary_withdraw_confirms_before_commit_and_unblocks_tax_stamp_seal(
 	t.eq((withdraw_source_cell.get_node("PendingSourceCue") as Label).text, "🔓", "withdraw source shows the unlock cue above its item button")
 	var withdraw_target := panel._confirmation.get_node("InventoryConfirmPanel/TargetRow") as Label
 	t.eq(withdraw_target.text, tr("INVENTORY_CONFIRM_TARGET_BACKPACK_ANCHOR").format({"column": 1, "row": 1}), "withdraw O5i names the selected backpack anchor")
+	var confirm_panel := panel._confirmation.get_node("InventoryConfirmPanel") as Control
+	var title := confirm_panel.get_node("Title") as Label
+	var item_row := confirm_panel.get_node("ItemRow") as Label
+	t.eq(title.get_global_rect(), Rect2(328, 196, 264, 64), "O5i title reserves two localized lines at the specified rect")
+	t.eq(item_row.get_global_rect(), Rect2(328, 264, 264, 40), "O5i item row starts below the title at the specified rect")
+	t.eq(withdraw_target.get_global_rect(), Rect2(328, 308, 264, 40), "O5i target row starts at the specified rect")
 	var withdraw_body := panel._confirmation.get_node("InventoryConfirmPanel/Body") as Control
 	t.eq(withdraw_body.get_global_rect(), Rect2(328, 352, 264, 112), "withdraw O5i reserves the required complete consequence-copy region")
 	t.eq(inventory.snapshot(), before, "opening O5i keeps the fixture snapshot")
@@ -202,9 +208,23 @@ func test_ui_notary_o5_blocks_grid_and_close_behind_fullscreen_capture(t) -> boo
 	var manifest := inventory.notary_box.items[2] as ItemInstance
 	panel._on_item_pressed(remedy.uid)
 	var before_direct_target := inventory.snapshot()
-	var direct_target := panel.release_cell(RetrieverInventory.BACKPACK, Vector2i(0, 0))
-	t.ok(direct_target.ok, "a direct valid backpack target previews the selected sealed item")
-	t.ok(panel._confirmation != null, "a direct valid backpack target opens O5i without pressing Withdraw")
+	var backpack := panel.get_node("LootGridPanel/Backpack") as InventoryGridWidget
+	var direct_anchor := Vector2i(0, 0)
+	var direct_backpack_cell := backpack.get_node("Cell_0_0") as Control
+	var press := InputEventScreenTouch.new()
+	press.index = 0
+	press.position = direct_backpack_cell.get_global_rect().get_center()
+	press.pressed = true
+	backpack._on_cell_gui_input(press, direct_anchor)
+	var release := InputEventScreenTouch.new()
+	release.index = 0
+	release.position = press.position
+	release.pressed = false
+	backpack._on_cell_gui_input(release, direct_anchor)
+	await t.tree.process_frame
+	t.ok(backpack.touch_preview_ok, "a direct backpack touch previews the selected sealed item")
+	t.eq(backpack.touch_preview_cells, [Vector2i(0, 0), Vector2i(0, 1)], "the direct touch preserves the pending withdraw footprint at its anchor")
+	t.ok(panel._confirmation != null, "a direct valid backpack touch opens O5i without pressing Withdraw")
 	t.eq(inventory.snapshot(), before_direct_target, "a direct target preview keeps the inventory snapshot unchanged")
 	await t.tree.process_frame
 	var confirmation := panel._confirmation
@@ -239,11 +259,17 @@ func test_ui_notary_o5_uses_real_input_guard_cancel_and_single_confirm(t) -> boo
 	var remedy := inventory.notary_box.items[1] as ItemInstance
 	panel._on_item_pressed(remedy.uid)
 	var before := inventory.snapshot()
-	t.ok(panel.release_cell(RetrieverInventory.BACKPACK, Vector2i(0, 0)).ok, "direct withdraw target opens O5i for input-guard coverage")
+	var backpack := panel.get_node("LootGridPanel/Backpack") as InventoryGridWidget
+	_tap_grid_cell(backpack, Vector2i(0, 0))
 	await t.tree.process_frame
 	var confirmation := panel._confirmation
+	t.ok(confirmation != null, "a grid touch opens O5i for input-guard coverage")
+	if confirmation == null:
+		panel.queue_free()
+		await t.tree.process_frame
+		return false
 	var accept := confirmation.get_node("InventoryConfirmPanel/AcceptButton") as Button
-	accept.grab_focus()
+	t.eq(t.tree.root.get_viewport().gui_get_focus_owner(), accept, "a grid-opened O5i gives initial focus to AcceptButton")
 	_push_action(t.tree.root.get_viewport(), &"ui_accept")
 	_push_cancel(t.tree.root.get_viewport())
 	await t.tree.process_frame
@@ -259,12 +285,16 @@ func test_ui_notary_o5_uses_real_input_guard_cancel_and_single_confirm(t) -> boo
 	t.eq(inventory.snapshot(), before, "ui_cancel closes O5i without a withdraw mutation")
 	t.eq(withdrawals.size(), 0, "ui_cancel emits no withdraw confirmation")
 	panel.request_withdraw()
-	t.ok(panel.release_cell(RetrieverInventory.BACKPACK, Vector2i(0, 0)).ok, "Withdraw can be reopened after input-driven cancellation")
+	_tap_grid_cell(backpack, Vector2i(0, 0))
 	await t.tree.process_frame
 	confirmation = panel._confirmation
+	t.ok(confirmation != null, "a grid touch reopens Withdraw after input-driven cancellation")
+	if confirmation == null:
+		panel.queue_free()
+		await t.tree.process_frame
+		return false
 	accept = confirmation.get_node("InventoryConfirmPanel/AcceptButton") as Button
-	accept.grab_focus()
-	t.eq(t.tree.root.get_viewport().gui_get_focus_owner(), accept, "reopened O5i accepts input through its focused confirmation button")
+	t.eq(t.tree.root.get_viewport().gui_get_focus_owner(), accept, "reopened O5i accepts input through its initial confirmation focus")
 	confirmation._opened_at_msec = Time.get_ticks_msec() - 301
 	t.ok(not confirmation._input_guard_active(), "the O5i 0.3-second input guard expires before confirmation input")
 	_push_action(t.tree.root.get_viewport(), &"ui_accept")
@@ -367,6 +397,20 @@ func _push_touch(viewport: Viewport, position: Vector2, pressed: bool) -> void:
 	event.position = position
 	event.pressed = pressed
 	viewport.push_input(event, true)
+
+
+func _tap_grid_cell(grid: InventoryGridWidget, anchor: Vector2i) -> void:
+	var cell := grid.get_node("Cell_%d_%d" % [anchor.x, anchor.y]) as Control
+	var press := InputEventScreenTouch.new()
+	press.index = 0
+	press.position = cell.get_global_rect().get_center()
+	press.pressed = true
+	grid._on_cell_gui_input(press, anchor)
+	var release := InputEventScreenTouch.new()
+	release.index = 0
+	release.position = press.position
+	release.pressed = false
+	grid._on_cell_gui_input(release, anchor)
 
 
 func _push_cancel(viewport: Viewport) -> void:
