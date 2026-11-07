@@ -749,7 +749,8 @@ func _on_d_source_body_entered(body: Node3D, source_id: StringName) -> void:
 func _on_d_source_body_exited(body: Node3D, source_id: StringName) -> void:
 	if body == _retriever:
 		_d_source_in_range[source_id] = false
-		if _overlay is LootCachePanel:
+		var panel := _overlay as LootCachePanel
+		if panel != null and panel.is_source_bound() and not panel.has_pending_confirmation():
 			_close_overlay()
 		_refresh_route_ui()
 

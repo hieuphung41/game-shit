@@ -283,6 +283,75 @@ func test_flow_rotated_tax_stamp_drop_creates_upright_ground_drop(t) -> bool:
 	return true
 
 
+func test_flow_d_source_exit_preserves_pending_drop_confirmation(t) -> bool:
+	var run := await _new_run_from_boot_through_loadout(t)
+	if run == null:
+		return true
+	var coin := ItemInstance.new(303, RunSession.inventory.registry.get_def(&"scraped_tax_coin"))
+	t.ok(RunSession.inventory.commit_pickup(coin, RetrieverInventory.BACKPACK, Vector2i.ZERO, false).ok, "drop fixture enters the backpack through the inventory rule")
+	await _enter(t, run, "CargoD/InteractArea")
+	run._hud.inventory_requested.emit()
+	await t.tree.process_frame
+	var panel := run._overlay as LootCachePanel
+	if not t.ok(panel != null, "the public inventory request opens its dock inside CargoD"):
+		return true
+	var coin_button := panel.get_node_or_null("LootGridPanel/Backpack/Item_303") as Button
+	if not t.ok(coin_button != null, "the run dock exposes the drop fixture"):
+		return true
+	coin_button.pressed.emit()
+	panel.request_drop()
+	if not t.ok(panel.has_pending_confirmation(), "drop opens O5 before any inventory mutation"):
+		return true
+	var before := RunSession.inventory.snapshot()
+	await _leave_to(t, run, "CargoD/InteractArea", "CalmZoneD")
+	t.ok(run._overlay == panel and panel.has_pending_confirmation(), "leaving CargoD keeps the pending drop O5 open")
+	t.eq(RunSession.inventory.snapshot(), before, "leaving CargoD does not commit the pending drop")
+	t.ok(not run._ground_drops.has(303), "leaving CargoD creates no GroundDrop")
+	OS.delay_msec(350)
+	(panel.get_node("InventoryConfirm") as InventoryConfirmPanel).confirm()
+	await t.tree.process_frame
+	t.ok(run._ground_drops.has(303), "the preserved O5 commits exactly once after its input guard")
+	t.eq(run._ground_drops.size(), 1, "one accepted O5 creates exactly one GroundDrop")
+	t.ok(not RunSession.inventory.backpack.items.has(303), "confirmed drop removes the item after source exit")
+	run.queue_free()
+	RunSession.clear()
+	await t.tree.process_frame
+	return true
+
+
+func test_flow_d_source_exit_preserves_pending_withdraw_confirmation(t) -> bool:
+	var run := await _new_run_from_boot_through_loadout(t)
+	if run == null:
+		return true
+	await _enter(t, run, "TaxStampD/InteractArea")
+	run._hud.inventory_requested.emit()
+	await t.tree.process_frame
+	var panel := run._overlay as LootCachePanel
+	if not t.ok(panel != null, "the public inventory request opens its dock inside TaxStampD"):
+		return true
+	var remedy_button := panel.get_node_or_null("LootGridPanel/NotaryBox/Item_1") as Button
+	if not t.ok(remedy_button != null, "the run dock exposes the sealed starter remedy"):
+		return true
+	remedy_button.pressed.emit()
+	panel.request_withdraw()
+	t.ok(panel.release_cell(RetrieverInventory.BACKPACK, Vector2i.ZERO).ok, "withdraw preview chooses a valid backpack destination")
+	if not t.ok(panel.has_pending_confirmation(), "withdraw opens O5 before any inventory mutation"):
+		return true
+	var before := RunSession.inventory.snapshot()
+	await _leave_to(t, run, "TaxStampD/InteractArea", "CalmZoneD")
+	t.ok(run._overlay == panel and panel.has_pending_confirmation(), "leaving TaxStampD keeps the pending withdraw O5 open")
+	t.eq(RunSession.inventory.snapshot(), before, "leaving TaxStampD does not commit the pending withdraw")
+	OS.delay_msec(350)
+	(panel.get_node("InventoryConfirm") as InventoryConfirmPanel).confirm()
+	await t.tree.process_frame
+	t.ok(RunSession.inventory.backpack.items.has(1), "the preserved withdraw O5 moves the remedy after its input guard")
+	t.ok(not RunSession.inventory.notary_box.items.has(1), "confirmed withdraw removes the remedy from the Notary Box")
+	run.queue_free()
+	RunSession.clear()
+	await t.tree.process_frame
+	return true
+
+
 func test_flow_ground_drop_is_hidden_and_rejected_during_hold(t) -> bool:
 	var run := await _new_run_from_boot_through_loadout(t)
 	if run == null:
@@ -354,6 +423,30 @@ func test_flow_ground_drop_overlap_reselects_and_skip_advances_by_distance_then_
 	t.ok(tied_panel != null and tied_panel.cache.item_at(0).uid == 301, "equal-distance GroundDrops choose the lower UID")
 	if tied_panel != null:
 		(tied_panel.get_node("LootCacheCard/CloseButton") as Button).pressed.emit()
+	run.queue_free()
+	RunSession.clear()
+	await t.tree.process_frame
+	return true
+
+
+func test_flow_confirmed_ground_drop_left_behind_appears_in_s10_lost_group(t) -> bool:
+	var run := await _new_run_from_boot_through_loadout(t)
+	if run == null:
+		return true
+	await _take_manifest_to_notary(t, run)
+	await _drop_backpack_item(t, run, 301, Vector2i.ZERO)
+	t.ok(run._ground_drops.has(301), "an O5-confirmed drop remains in the world before extract")
+	await _finish_extract(t, run)
+	var screen := run._overlay as ExtractSummaryScreen
+	if not t.ok(screen != null, "boarding after a confirmed GroundDrop opens S10"):
+		return true
+	var left_behind := _entry_for_uid(screen.summary.lost, 301)
+	t.ok(not left_behind.is_empty(), "S10 records the exact UID of the uncollected GroundDrop as lost")
+	t.eq(left_behind.get("def_id", &""), &"scraped_tax_coin", "S10 preserves the uncollected GroundDrop definition")
+	var lost_reason := screen.get_node_or_null("LeftScroll/LeftGroups/LostGroup/Content/Line1") as Label
+	t.ok(lost_reason != null, "S10 renders a lost-reason line for the uncollected GroundDrop")
+	if lost_reason != null:
+		t.eq(lost_reason.text, tr(&"SUMMARY_SUCCESS_LOST_LEFT_BEHIND"), "S10 labels the GroundDrop with the left-behind copy")
 	run.queue_free()
 	RunSession.clear()
 	await t.tree.process_frame
@@ -536,3 +629,10 @@ func _contains(entries: Array[Dictionary], def_id: StringName) -> bool:
 		if entry.get("def_id", &"") == def_id:
 			return true
 	return false
+
+
+func _entry_for_uid(entries: Array[Dictionary], uid: int) -> Dictionary:
+	for entry: Dictionary in entries:
+		if int(entry.get("uid", 0)) == uid:
+			return entry
+	return {}

@@ -69,6 +69,14 @@ func configure_s04(p_inventory: RetrieverInventory, p_cache: LootCache) -> void:
 		open_card()
 
 
+func is_source_bound() -> bool:
+	return session == Session.CARD or session == Session.PICKUP
+
+
+func has_pending_confirmation() -> bool:
+	return _confirmation != null
+
+
 func open_card(index: int = 0) -> void:
 	if cache == null or cache.cache_state() == &"empty":
 		close_overlay()
