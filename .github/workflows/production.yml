@@ -2,9 +2,8 @@ name: production
 
 # Push a tag vX.Y.Z (matching game/project.godot config/version, on main) →
 # ci → export (production channel) → deploy to the `production` environment
-# (only v*.*.* tags may deploy) = a GitHub Release with web zip + signed APK.
-# Android signing secrets live on the `production` environment:
-# ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_ALIAS, ANDROID_KEYSTORE_PASSWORD.
+# (only v*.*.* tags may deploy) = a GitHub Release with a web zip.
+# Android release signing is deferred until phase 2, after sideload testing approval.
 on:
   push:
     tags: ['v*.*.*']
@@ -46,7 +45,6 @@ jobs:
     with:
       channel: production
       version: ${{ needs.guard.outputs.version }}
-    secrets: inherit
 
   deploy:
     needs: [guard, build]
