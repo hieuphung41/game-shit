@@ -12,13 +12,6 @@ on:
       version:
         type: string
         required: true
-    secrets:
-      ANDROID_KEYSTORE_BASE64:
-        required: false
-      ANDROID_KEYSTORE_ALIAS:
-        required: false
-      ANDROID_KEYSTORE_PASSWORD:
-        required: false
 
 permissions:
   contents: read
@@ -27,8 +20,7 @@ jobs:
   export:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    # Bind the job to the channel's environment so its branch/tag policy applies and
-    # environment secrets (Android release keystore on `production`) are readable here.
+    # Bind the job to the channel's environment so its branch/tag policy applies.
     environment: ${{ inputs.channel }}
     container:
       image: barichello/godot-ci:4.7.2
@@ -52,10 +44,6 @@ jobs:
         run: tools/ci/export.sh web "${{ inputs.channel }}"
 
       - name: Export Android (${{ inputs.channel }})
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_KEYSTORE_ALIAS: ${{ secrets.ANDROID_KEYSTORE_ALIAS }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: tools/ci/export.sh android "${{ inputs.channel }}"
 
       - uses: actions/upload-artifact@v7

@@ -2,8 +2,8 @@
 # Export one platform for one channel. Used by .github/workflows/_build.yml.
 #   tools/ci/export.sh <web|android> <staging|production>
 # Output: build/<channel>/<platform>/...
-# Android production needs ANDROID_KEYSTORE_BASE64 / _ALIAS / _PASSWORD (environment
-# secrets); without them the Android export is skipped with a warning.
+# Phase 1 ships only the staging debug APK. Android production signing is deferred
+# until phase 2, after sideload testing approval.
 set -euo pipefail
 
 PLATFORM="${1:?platform}"
@@ -33,17 +33,7 @@ case "$PLATFORM" in
       # Debug export, signed with the debug keystore configured in the CI image.
       export_preset --export-debug "Android $SUFFIX" "$OUT/khe-uoc-tan-vuong-staging.apk"
     else
-      if [[ -z "${ANDROID_KEYSTORE_BASE64:-}" ]]; then
-        echo "::warning::ANDROID_KEYSTORE_BASE64 not set on the production environment — Android release skipped."
-        exit 0
-      fi
-      KS="${RUNNER_TEMP:-/tmp}/release.keystore"
-      echo "$ANDROID_KEYSTORE_BASE64" | base64 -d >"$KS"
-      export GODOT_ANDROID_KEYSTORE_RELEASE_PATH="$KS"
-      export GODOT_ANDROID_KEYSTORE_RELEASE_USER="${ANDROID_KEYSTORE_ALIAS:?}"
-      export GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD="${ANDROID_KEYSTORE_PASSWORD:?}"
-      export_preset --export-release "Android $SUFFIX" "$OUT/khe-uoc-tan-vuong.apk"
-      rm -f "$KS"
+      echo "::notice::Android production export is deferred until phase 2."
     fi
     ;;
   *) echo "unknown platform $PLATFORM" >&2; exit 2 ;;
