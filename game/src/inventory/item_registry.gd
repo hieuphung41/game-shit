@@ -6,6 +6,7 @@ var _definitions: Dictionary = {}
 
 func _init() -> void:
 	_add_zone_b_loot_definitions()
+	_add_zone_d_loot_definitions()
 
 
 func add(definition: ItemDef) -> void:
@@ -52,3 +53,34 @@ func _add_zone_b_loot_definitions() -> void:
 	ledger.claim_id = &"house_hac_thue"
 	ledger.appraisal_class = 3
 	add(ledger)
+
+
+func _add_zone_d_loot_definitions() -> void:
+	var cargo := ItemDef.new()
+	cargo.id = &"cargo_d_2x2"
+	cargo.display_name_key = &"ITEM_CARGO_D_2X2_NAME"
+	cargo.lore_key = &"CARD_CARGO_D_2X2_LORE"
+	cargo.display_name_vi = "Vải Cứu Trợ Đổi Nhãn"
+	cargo.size = Vector2i(2, 2)
+	cargo.sealable = false
+	cargo.item_category = ItemDef.Category.CARGO
+	cargo.claim_id = &"house_hac_thue"
+	cargo.appraisal_class = 1
+	cargo.relative_value_total = 8
+	cargo.set_meta(&"relative_value_total", cargo.relative_value_total)
+	add(cargo)
+
+	var stamp := ItemDef.new()
+	stamp.id = &"tax_stamp_d"
+	stamp.display_name_key = &"ITEM_TAX_STAMP_D_NAME"
+	stamp.lore_key = &"CARD_TAX_STAMP_D_LORE"
+	stamp.display_name_vi = "Dấu Thuế"
+	stamp.size = Vector2i(1, 2)
+	stamp.rotatable = true
+	stamp.sealable = true
+	stamp.item_category = ItemDef.Category.VALUABLE
+	stamp.claim_id = &"house_hac_thue"
+	stamp.appraisal_class = 1
+	stamp.relative_value_total = 6
+	stamp.set_meta(&"relative_value_total", stamp.relative_value_total)
+	add(stamp)
