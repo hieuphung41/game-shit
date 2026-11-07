@@ -66,10 +66,51 @@ func test_zone_b_cover_and_blocked_route_have_honest_collision(t) -> bool:
 	t.ok(water_gap != null and water_gap.get_meta("greybox_role") == "route_d_missing_plank_water_gap_1_5m", "Blocked D route exposes the one-and-a-half-metre water gap")
 	var water_mesh := water_gap.mesh as PlaneMesh if water_gap != null else null
 	t.ok(water_mesh != null and water_mesh.size.x >= 4.0, "Blocked D water gap stays broad enough to read behind the frame")
-	var warehouse := zone.get_node_or_null("DistantWarehouseSilhouetteD") as MeshInstance3D
-	t.ok(warehouse != null and warehouse.get_meta("greybox_role") == "route_d_distant_warehouse_silhouette_placeholder", "Blocked D route reads against a distant warehouse silhouette")
+	t.ok(zone.get_node_or_null("DistantWarehouseSilhouetteD") == null, "Distant D silhouette moves into the real Zone D cage landmark")
+	t.ok(zone.get_node_or_null("RouteDLintel") is MeshInstance3D, "Blocked D route keeps the fixed red-canvas return lintel")
+	t.ok(zone.get_node_or_null("RouteDPlanks") is StaticBody3D, "Blocked D route owns the open-state walkable planks")
+	t.ok(zone.get_node_or_null("RouteDSideRails") is Node3D, "Blocked D route keeps low rails along both plank edges")
+	t.ok(zone.get_node_or_null("RouteDOpenDebris") is Node3D, "Blocked D route has broken-chain debris for the open read")
+	t.ok(zone.get_node_or_null("PatrolTriggerB") is Area3D, "B has the authored return patrol trigger beyond Gate B")
 	var floor := zone.get_node_or_null("FloorCollision") as StaticBody3D
 	t.ok(floor != null and floor.get_node_or_null("CollisionShape3D") is CollisionShape3D, "B floor collision continues the walkable seam")
+	zone.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func test_zone_b_route_d_open_state_switches_honest_collision(t) -> bool:
+	var scene := load(SCENE_PATH) as PackedScene
+	if not t.ok(scene != null, "Zone B scene loads for route state checks"):
+		return true
+	var zone := scene.instantiate() as Node3D
+	t.tree.root.add_child(zone)
+	await t.tree.process_frame
+	var blocked := zone.get_node_or_null("BlockedRouteD") as StaticBody3D
+	var blocker := zone.get_node_or_null("BlockedRouteD/CollisionShape3D") as CollisionShape3D
+	var planks := zone.get_node_or_null("RouteDPlanks") as StaticBody3D
+	var plank_collision := zone.get_node_or_null("RouteDPlanks/CollisionShape3D") as CollisionShape3D
+	var debris := zone.get_node_or_null("RouteDOpenDebris") as Node3D
+	t.ok(blocked != null and blocker != null, "Closed D route has a full-width blocking collision")
+	t.ok(planks != null and plank_collision != null, "Open D route has a separate plank collision")
+	zone.call("set_route_d_open", false)
+	await t.tree.process_frame
+	if blocked != null and blocker != null and planks != null and plank_collision != null and debris != null:
+		t.eq(blocked.collision_layer, 2, "Closed D route blocks the world-static layer")
+		t.eq(blocker.disabled, false, "Closed D route collision is enabled")
+		t.eq(planks.collision_layer, 0, "Closed D planks do not leave a collision bridge")
+		t.eq(plank_collision.disabled, true, "Closed D plank collision is disabled")
+		t.eq(planks.visible, false, "Closed D route hides the bridge geometry")
+		t.eq(debris.visible, false, "Closed D route hides opened-chain debris")
+	zone.call("set_route_d_open", true)
+	await t.tree.process_frame
+	if blocked != null and blocker != null and planks != null and plank_collision != null and debris != null:
+		t.eq(blocked.collision_layer, 0, "Open D frame no longer blocks the world-static layer")
+		t.eq(blocker.disabled, true, "Open D frame collision is disabled")
+		t.eq(planks.collision_layer, 2, "Open D planks join the world-static layer")
+		t.eq(plank_collision.disabled, false, "Open D plank collision is enabled")
+		t.eq(planks.visible, true, "Open D route shows the plank bridge")
+		t.eq(debris.visible, true, "Open D route shows broken-chain debris")
 	zone.queue_free()
 	await t.tree.process_frame
 	return true

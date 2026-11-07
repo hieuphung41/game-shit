@@ -30,6 +30,10 @@ uniform float hatch_cluster_cell_size : hint_range(1.5, 3.0) = 2.4;
 // Lighter materials cut toward ink; dark materials may cut toward paper so
 // their sparse relief remains distinct inside the indigo shadow band.
 uniform vec3 hatch_gouge_colour : source_color = vec3(0.121569, 0.101961, 0.090196);
+// A small number of authored gouge meshes use this only when a broad shadow
+// band needs a guaranteed paper-light cut at gameplay scale. The mesh itself
+// owns the placement; normal env materials keep the printed two-tone light.
+uniform bool paper_gouge_override = false;
 
 varying vec3 world_position;
 varying vec3 world_normal;
@@ -137,19 +141,26 @@ void fragment() {
 }
 
 void light() {
-	// Godot combines DIFFUSE_LIGHT with ALBEDO after light().  A lit face therefore
-	// needs a unit multiplier, not its albedo a second time.  The directional
-	// light supplies only a stable direction and shadow map: its tint and energy
-	// must not recolour printed palette ink.
-	float faces_light = step(0.20, dot(normalize(NORMAL), normalize(LIGHT)));
-	float receives_light = step(0.01, ATTENUATION);
-	float lit = faces_light * receives_light;
-	float shadow_hatch = hatch_mark * (1.0 - lit) * hatch_strength;
-	// ALBEDO is already linear. GL Compatibility exposes these source colours as
-	// raw sRGB in light(), so linearise both before deriving the multiplier.
-	vec3 linear_shadow_indigo = srgb_to_linear(shadow_indigo.rgb);
-	vec3 linear_hatch_gouge = srgb_to_linear(hatch_gouge_colour);
-	vec3 shadow_colour = mix(linear_shadow_indigo, linear_hatch_gouge, shadow_hatch);
-	vec3 shadow_multiplier = shadow_colour / max(ALBEDO, vec3(0.02));
-	DIFFUSE_LIGHT += mix(shadow_multiplier, vec3(1.0), lit);
+	if (paper_gouge_override) {
+		// This is an ink-free cut in a pre-authored shadow band, not a light
+		// source. Outputting the palette paper colour keeps its hard geometry
+		// readable under the cage's directional shadow.
+		DIFFUSE_LIGHT += vec3(1.0);
+	} else {
+		// Godot combines DIFFUSE_LIGHT with ALBEDO after light().  A lit face therefore
+		// needs a unit multiplier, not its albedo a second time.  The directional
+		// light supplies only a stable direction and shadow map: its tint and energy
+		// must not recolour printed palette ink.
+		float faces_light = step(0.20, dot(normalize(NORMAL), normalize(LIGHT)));
+		float receives_light = step(0.01, ATTENUATION);
+		float lit = faces_light * receives_light;
+		float shadow_hatch = hatch_mark * (1.0 - lit) * hatch_strength;
+		// ALBEDO is already linear. GL Compatibility exposes these source colours as
+		// raw sRGB in light(), so linearise both before deriving the multiplier.
+		vec3 linear_shadow_indigo = srgb_to_linear(shadow_indigo.rgb);
+		vec3 linear_hatch_gouge = srgb_to_linear(hatch_gouge_colour);
+		vec3 shadow_colour = mix(linear_shadow_indigo, linear_hatch_gouge, shadow_hatch);
+		vec3 shadow_multiplier = shadow_colour / max(ALBEDO, vec3(0.02));
+		DIFFUSE_LIGHT += mix(shadow_multiplier, vec3(1.0), lit);
+	}
 }
