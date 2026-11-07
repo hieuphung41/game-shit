@@ -69,6 +69,23 @@ func test_inv_01_pickup_places_item_and_emits_signal(t) -> bool:
 	return true
 
 
+func test_zone_b_item_registry_definitions_are_complete(t) -> bool:
+	var registry := ItemRegistry.new()
+	var coin := registry.get_def(&"scraped_tax_coin")
+	var ledger := registry.get_def(&"waterlogged_stock_ledger")
+	t.ok(registry.validate_defs().is_empty(), "default registry definitions validate")
+	t.eq(coin.size, Vector2i.ONE, "coin footprint")
+	t.ok(coin.stackable and coin.stack_max == 3 and coin.sealable, "coin stack and seal fields")
+	t.eq(coin.claim_id, &"house_hac_thue", "coin claim")
+	t.eq(coin.appraisal_class, 2, "coin appraisal class")
+	t.eq(coin.item_category, ItemDef.Category.VALUABLE, "coin category")
+	t.eq(ledger.size, Vector2i(1, 2), "ledger footprint")
+	t.ok(ledger.rotatable and ledger.sealable and not ledger.stackable, "ledger placement fields")
+	t.eq(ledger.appraisal_class, 3, "ledger appraisal class")
+	t.ok(not ledger.lore_key.is_empty(), "ledger has a localization lore key")
+	return true
+
+
 func test_inv_02_pickup_out_of_bounds_keeps_ground_item(t) -> bool:
 	var inventory := _inventory()
 	var item := _ground(inventory, &"fixture_b_small_1x2", 1)

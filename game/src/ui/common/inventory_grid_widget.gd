@@ -5,6 +5,8 @@ extends Control
 
 signal item_pressed(uid: int)
 signal cell_pressed(grid_kind: StringName, anchor: Vector2i)
+signal cell_touch_started(grid_kind: StringName, anchor: Vector2i)
+signal cell_touch_released(grid_kind: StringName, anchor: Vector2i, inside: bool)
 
 const CELL_SIZE := 96
 const DESIGN_VIEWPORT := Vector2i(1280, 720)
@@ -104,6 +106,7 @@ func _render() -> void:
 			cell.text = marker
 			cell.add_theme_font_size_override("font_size", max(20, int(26 * cell_scale)))
 			cell.pressed.connect(press_cell.bind(anchor))
+			cell.gui_input.connect(_on_cell_gui_input.bind(anchor))
 			add_child(cell)
 			_cells[anchor] = cell
 	for item: ItemInstance in _grid.all_items():
@@ -146,3 +149,13 @@ func _item_label(item: ItemInstance) -> String:
 func _seal_label(uid: int) -> String:
 	var label_key := "INVENTORY_SEAL_LABEL_" + str(inventory.seal_label(uid)).to_upper()
 	return tr(label_key)
+
+
+func _on_cell_gui_input(event: InputEvent, anchor: Vector2i) -> void:
+	if read_only:
+		return
+	if event is InputEventScreenTouch:
+		if event.pressed:
+			cell_touch_started.emit(grid_kind, anchor)
+		else:
+			cell_touch_released.emit(grid_kind, anchor, true)
