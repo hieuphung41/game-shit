@@ -11,6 +11,7 @@ const PATROL_CUE_LEAD := 2.0
 signal patrol_cue_started
 
 var _activated := false
+var _stopped := false
 var _elapsed := 0.0
 var _guard: EnemyActor
 var _lamp: Node
@@ -22,7 +23,7 @@ func _ready() -> void:
 
 
 func activate() -> void:
-	if _activated:
+	if _activated or _stopped:
 		return
 	_activated = true
 	_elapsed = 0.0
@@ -33,7 +34,10 @@ func activate() -> void:
 
 
 func tick(delta: float) -> void:
-	if not _activated:
+	if not _activated or _stopped:
+		return
+	if _guard != null and (_guard.brain == null or _guard.brain.state in [EnemyBrain.STATE_WITHDRAWN, EnemyBrain.STATE_DOWN]):
+		stop(false)
 		return
 	_elapsed += clampf(delta, 0.0, EnemyBrain.MAX_TICK_DELTA)
 	if _lamp != null and _elapsed <= PATROL_CUE_LEAD:
@@ -44,6 +48,17 @@ func tick(delta: float) -> void:
 		_lamp.call(&"set_state", &"active")
 	if _guard != null and _guard.brain != null and _guard.brain.state != EnemyBrain.STATE_PATROL:
 		_guard.begin_patrol(_path_points())
+
+
+func stop(withdraw: bool = true) -> void:
+	if _stopped:
+		return
+	_stopped = true
+	_activated = false
+	if _lamp != null:
+		_lamp.call(&"set_state", &"off")
+	if withdraw and _guard != null and _guard.brain != null and _guard.brain.state not in [EnemyBrain.STATE_WITHDRAWN, EnemyBrain.STATE_DOWN]:
+		_guard.force_withdraw()
 
 
 func _process(delta: float) -> void:

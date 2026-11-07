@@ -67,18 +67,29 @@ func test_flow_loop_reaches_success_summary_through_context_signals(t) -> bool:
 	return true
 
 
-func test_flow_overlay_pauses_and_restores_retriever_control(t) -> bool:
+func test_flow_overlay_keeps_world_actions_running_but_blocks_new_combat_input(t) -> bool:
 	var run := await _new_run(t)
 	if run == null:
 		return true
+	run._retriever.combat.start_dodge()
+	t.eq(run._retriever.combat.state, RetrieverCombat.STATE_DODGING, "given a dodge is already active")
 	run.set_dispatch_in_range(true)
 	run.request_dispatch()
-	t.ok(not run._retriever.is_physics_processing(), "an open overlay stops Retriever movement")
+	t.ok(run._retriever.is_physics_processing(), "an open overlay keeps Retriever physics running")
+	run._retriever.combat.press(&"combat_attack")
+	t.eq(run._retriever.combat.state, RetrieverCombat.STATE_DODGING, "overlay refuses a new combat action")
+	for _step in 8:
+		run._retriever.combat.tick(0.1)
+	t.eq(run._retriever.combat.state, RetrieverCombat.STATE_FREE, "the in-flight dodge completes under the overlay")
+	run._guard.brain.set_player(run._guard.global_position + Vector3(0.0, 0.0, 1.0), true, true)
+	run._guard.brain.tick(0.1)
+	t.eq(run._guard.brain.state, EnemyBrain.STATE_ALERT, "enemy simulation keeps ticking while an overlay is open")
 	var card := run._overlay as ManifestPickupCard
 	if card != null:
 		card.closed.emit()
 	await t.tree.process_frame
-	t.ok(run._retriever.is_physics_processing(), "closing the overlay returns Retriever control")
+	run._retriever.combat.press(&"combat_attack")
+	t.eq(run._retriever.combat.state, RetrieverCombat.STATE_ATTACKING, "closing the overlay restores combat input")
 	run.queue_free()
 	RunSession.clear()
 	await t.tree.process_frame
