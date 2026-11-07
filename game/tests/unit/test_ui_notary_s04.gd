@@ -24,6 +24,19 @@ func test_ui_notary_withdraw_confirms_before_commit_and_unblocks_tax_stamp_seal(
 	var preview := panel.release_cell(RetrieverInventory.BACKPACK, Vector2i(0, 0))
 	t.ok(preview.ok, "withdraw target previews through RetrieverInventory")
 	t.ok(panel._confirmation != null, "release opens O5i instead of committing withdraw")
+	var backpack_preview := panel.get_node("LootGridPanel/Backpack") as InventoryGridWidget
+	t.eq(backpack_preview.touch_preview_cells, [Vector2i(0, 0), Vector2i(0, 1)], "withdraw O5i keeps the selected backpack footprint preview visible")
+	t.ok(backpack_preview.touch_preview_ok, "withdraw O5i keeps its destination preview valid")
+	t.ok((panel.get_node("LootGridPanel/NotaryBox/Item_%d" % remedy.uid) as Button).text.begins_with("┄🔓"), "withdraw O5i marks the sealed source as pending")
+	var withdraw_source_overlay := panel.get_node("LootGridPanel/NotaryBox/PendingSourceOverlay_%d" % remedy.uid) as Control
+	t.ok(withdraw_source_overlay != null, "withdraw O5i draws a source footprint overlay above the sealed item")
+	var withdraw_source_cell := withdraw_source_overlay.get_node("Cell_0_0") as Control
+	t.ok((withdraw_source_cell.get_node("TopDottedBorder") as Label).text.contains("┄"), "withdraw source has a visible dotted border")
+	t.eq((withdraw_source_cell.get_node("PendingSourceCue") as Label).text, "🔓", "withdraw source shows the unlock cue above its item button")
+	var withdraw_target := panel._confirmation.get_node("InventoryConfirmPanel/TargetRow") as Label
+	t.eq(withdraw_target.text, tr("INVENTORY_CONFIRM_TARGET_BACKPACK_ANCHOR").format({"column": 1, "row": 1}), "withdraw O5i names the selected backpack anchor")
+	var withdraw_body := panel._confirmation.get_node("InventoryConfirmPanel/Body") as Control
+	t.eq(withdraw_body.get_global_rect(), Rect2(328, 352, 264, 112), "withdraw O5i reserves the required complete consequence-copy region")
 	t.eq(inventory.snapshot(), before, "opening O5i keeps the fixture snapshot")
 	panel._confirmation._opened_at_msec = -1000
 	(panel._confirmation.get_node("InventoryConfirmPanel/AcceptButton") as Button).pressed.emit()
@@ -102,6 +115,18 @@ func test_ui_notary_cargo_cannot_seal_and_only_confirmed_drop_emits_world_intent
 	panel._on_item_pressed(cargo.uid)
 	panel.request_drop()
 	t.ok(panel._confirmation != null, "drop needs O5i")
+	var drop_preview := panel.get_node("LootGridPanel/Backpack") as InventoryGridWidget
+	t.eq(drop_preview.touch_preview_cells, [Vector2i(0, 0), Vector2i(1, 0), Vector2i(0, 1), Vector2i(1, 1)], "drop O5i keeps the source footprint preview visible")
+	t.ok(drop_preview.touch_preview_ok, "drop O5i keeps its source preview valid")
+	t.ok((panel.get_node("LootGridPanel/Backpack/Item_%d" % cargo.uid) as Button).text.begins_with("┄↓"), "drop O5i marks the source with the dotted ground cue")
+	var drop_source_overlay := panel.get_node("LootGridPanel/Backpack/PendingSourceOverlay_%d" % cargo.uid) as Control
+	t.ok(drop_source_overlay != null, "drop O5i draws the source footprint overlay above cargo")
+	for cell_name: String in ["Cell_0_0", "Cell_1_0", "Cell_0_1", "Cell_1_1"]:
+		var source_cell := drop_source_overlay.get_node(cell_name) as Control
+		t.ok((source_cell.get_node("TopDottedBorder") as Label).text.contains("┄"), "each cargo source cell has a dotted pending border")
+		t.eq((source_cell.get_node("PendingSourceCue") as Label).text, "↓", "each cargo source cell shows the ground-drop arrow")
+	var drop_body := panel._confirmation.get_node("InventoryConfirmPanel/Body") as Control
+	t.eq(drop_body.get_global_rect(), Rect2(328, 352, 264, 112), "drop O5i reserves the required complete consequence-copy region")
 	t.eq(drops.size(), 0, "world drop signal waits for confirmation")
 	panel._confirmation._opened_at_msec = -1000
 	(panel._confirmation.get_node("InventoryConfirmPanel/AcceptButton") as Button).pressed.emit()
@@ -176,7 +201,13 @@ func test_ui_notary_o5_blocks_grid_and_close_behind_fullscreen_capture(t) -> boo
 	var remedy := inventory.notary_box.items[1] as ItemInstance
 	var manifest := inventory.notary_box.items[2] as ItemInstance
 	panel._on_item_pressed(remedy.uid)
-	t.ok(panel.release_cell(RetrieverInventory.BACKPACK, Vector2i(0, 0)).ok, "withdraw opens from a valid preview")
+	var before_direct_target := inventory.snapshot()
+	var direct_target := panel.release_cell(RetrieverInventory.BACKPACK, Vector2i(0, 0))
+	t.ok(not direct_target.ok, "a backpack target is inert until the player presses Withdraw")
+	t.ok(panel._confirmation == null, "a direct backpack target before Withdraw opens no O5i")
+	t.eq(inventory.snapshot(), before_direct_target, "a direct backpack target before Withdraw preserves the inventory snapshot")
+	panel.request_withdraw()
+	t.ok(panel.release_cell(RetrieverInventory.BACKPACK, Vector2i(0, 0)).ok, "Withdraw then a valid backpack target opens its confirmation preview")
 	await t.tree.process_frame
 	var confirmation := panel._confirmation
 	t.ok(confirmation != null, "withdraw is pending in O5i")

@@ -10,6 +10,8 @@ const UI_OPEN_GUARD_SECONDS := 0.3
 
 var _item: ItemInstance
 var _kind: StringName = &"drop"
+var _anchor := Vector2i.ZERO
+var _rotated := false
 var _opened_at_msec := 0
 var _confirmation_locked := false
 
@@ -19,9 +21,11 @@ func _ready() -> void:
 	_build()
 
 
-func configure(item: ItemInstance, kind: StringName) -> void:
+func configure(item: ItemInstance, kind: StringName, anchor: Vector2i = Vector2i.ZERO, rotated: bool = false) -> void:
 	_item = item
 	_kind = kind
+	_anchor = anchor
+	_rotated = rotated
 	if is_inside_tree():
 		_build()
 
@@ -61,29 +65,29 @@ func _build() -> void:
 	var title_key: StringName = &"INVENTORY_CONFIRM_WITHDRAW_TITLE" if is_withdraw else &"INVENTORY_CONFIRM_DROP_TITLE"
 	var title := _label("Title", title_key, 28)
 	title.position = Vector2(16, 12)
-	title.size = Vector2(264, 64)
+	title.size = Vector2(264, 40)
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	panel.add_child(title)
 	var item_row := _static_label("ItemRow", _item_text(), 24)
-	item_row.position = Vector2(16, 80)
-	item_row.size = Vector2(264, 40)
+	item_row.position = Vector2(16, 56)
+	item_row.size = Vector2(264, 32)
 	item_row.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	panel.add_child(item_row)
-	var target_key: StringName = &"INVENTORY_CONFIRM_TARGET_BACKPACK" if is_withdraw else &"INVENTORY_CONFIRM_TARGET_GROUND"
-	var target := _label("TargetRow", target_key, 24)
-	target.position = Vector2(16, 124)
+	var target := _static_label("TargetRow", _target_text(is_withdraw), 24)
+	target.position = Vector2(16, 92)
 	target.size = Vector2(264, 32)
 	panel.add_child(target)
 	if is_withdraw:
 		var seal_change := _static_label("SealChange", _seal_change_text(), 24)
-		seal_change.position = Vector2(16, 156)
+		seal_change.position = Vector2(16, 128)
 		seal_change.size = Vector2(264, 32)
 		panel.add_child(seal_change)
 	var body_key := _body_key(is_withdraw)
-	var body := _label("Body", body_key, 24)
-	body.position = Vector2(16, 192)
-	body.size = Vector2(264, 88)
-	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var body := _body_label("Body", body_key, 24)
+	# O5i reserves global y=352..464 for the complete consequence copy.
+	# The seal-change row sits above it, so withdraw does not reduce this space.
+	body.position = Vector2(16, 168)
+	body.size = Vector2(264, 112)
 	panel.add_child(body)
 	var cancel_button := _button("CancelButton", &"CONFIRM_BUTTON_CANCEL", Vector2(16, 288), Vector2(128, 96))
 	cancel_button.pressed.connect(cancel)
@@ -107,7 +111,16 @@ func _item_text() -> String:
 	if _item == null or _item.definition == null:
 		return ""
 	var quantity := tr(&"CARD_QUANTITY_SUFFIX").format({"quantity": _item.quantity}) if _item.quantity > 1 else ""
-	return "□ " + _item.definition.localized_display_name() + quantity + " · " + tr(&"INVENTORY_FOOTPRINT_CHIP").format({"w": _item.effective_size().x, "h": _item.effective_size().y})
+	var footprint := _item.definition.size
+	if _rotated and footprint.x != footprint.y:
+		footprint = Vector2i(footprint.y, footprint.x)
+	return "□ " + _item.definition.localized_display_name() + quantity + " · " + tr(&"INVENTORY_FOOTPRINT_CHIP").format({"w": footprint.x, "h": footprint.y})
+
+
+func _target_text(is_withdraw: bool) -> String:
+	if not is_withdraw:
+		return tr(&"INVENTORY_CONFIRM_TARGET_GROUND")
+	return tr(&"INVENTORY_CONFIRM_TARGET_BACKPACK_ANCHOR").format({"column": _anchor.x + 1, "row": _anchor.y + 1})
 
 
 func _seal_change_text() -> String:
@@ -126,6 +139,20 @@ func _input_guard_active() -> bool:
 
 func _label(node_name: String, key: StringName, font_size: int) -> Label:
 	return _static_label(node_name, tr(key), font_size)
+
+
+## RichTextLabel does not expand to its unwrapped text minimum, so its fixed
+## O5i rect can safely accommodate the four allowed body lines.
+func _body_label(node_name: String, key: StringName, font_size: int) -> RichTextLabel:
+	var label := RichTextLabel.new()
+	label.name = node_name
+	label.text = tr(key)
+	label.fit_content = false
+	label.scroll_active = false
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.add_theme_font_size_override("normal_font_size", font_size)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return label
 
 
 func _static_label(node_name: String, value: String, font_size: int) -> Label:

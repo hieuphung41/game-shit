@@ -135,7 +135,8 @@ func release_cell(target: StringName, anchor: Vector2i, inside: bool = true) -> 
 		_show_preview(preview, target, anchor)
 		return preview
 	if _should_open_withdraw_confirmation(target):
-		_open_confirmation(&"withdraw", anchor)
+		_show_preview(preview, target, anchor)
+		_open_confirmation(&"withdraw", anchor, pending_rotated)
 		return preview
 	var result := _commit_for(target, anchor)
 	if not result.ok:
@@ -172,7 +173,11 @@ func request_drop() -> void:
 	if not preview.ok:
 		_show_preview(preview, RetrieverInventory.BACKPACK, Vector2i.ZERO)
 		return
-	_open_confirmation(&"drop", Vector2i.ZERO)
+	var item := _selected_item()
+	if item == null:
+		return
+	_show_preview(preview, RetrieverInventory.BACKPACK, item.anchor)
+	_open_confirmation(&"drop", item.anchor, item.rotated)
 
 
 func request_withdraw() -> void:
@@ -383,7 +388,9 @@ func _preview_for(target: StringName, anchor: Vector2i) -> InventoryResult:
 		return InventoryResult.failure(InventoryReason.Value.ITEM_NOT_FOUND, selected_uid)
 	var source: InventoryGrid = found.grid
 	if source.grid_kind == RetrieverInventory.NOTARY_BOX and target == RetrieverInventory.BACKPACK:
-		return inventory.preview_withdraw(selected_uid, anchor, pending_rotated) if s04_mode else InventoryResult.failure(InventoryReason.Value.WRONG_TARGET, selected_uid)
+		if not _is_withdrawing_to(target):
+			return InventoryResult.failure(InventoryReason.Value.WRONG_TARGET, selected_uid)
+		return inventory.preview_withdraw(selected_uid, anchor, pending_rotated)
 	if source.grid_kind == RetrieverInventory.BACKPACK and target == RetrieverInventory.NOTARY_BOX:
 		return inventory.preview_seal(selected_uid, anchor, pending_rotated)
 	if source.grid_kind == target:
@@ -397,6 +404,8 @@ func _commit_for(target: StringName, anchor: Vector2i) -> InventoryResult:
 	var found := _find_selected()
 	if found.is_empty():
 		return InventoryResult.failure(InventoryReason.Value.ITEM_NOT_FOUND, selected_uid)
+	if found.grid.grid_kind == RetrieverInventory.NOTARY_BOX and target == RetrieverInventory.BACKPACK:
+		return InventoryResult.failure(InventoryReason.Value.WRONG_TARGET, selected_uid)
 	if found.grid.grid_kind == RetrieverInventory.BACKPACK and target == RetrieverInventory.NOTARY_BOX:
 		return inventory.commit_seal(selected_uid, anchor, pending_rotated)
 	return inventory.commit_move(selected_uid, target, anchor, pending_rotated)
@@ -547,7 +556,7 @@ func _on_drop_or_withdraw_pressed() -> void:
 
 
 func _is_withdrawing_to(target: StringName) -> bool:
-	if target != RetrieverInventory.BACKPACK or not s04_mode or session != Session.VIEW:
+	if target != RetrieverInventory.BACKPACK or not s04_mode or session != Session.VIEW or not _withdraw_targeting:
 		return false
 	var found := _find_selected()
 	return not found.is_empty() and found.grid.grid_kind == RetrieverInventory.NOTARY_BOX
@@ -573,20 +582,21 @@ func _withdraw_button_text(no_fit: bool) -> String:
 	return "⊘ 🔒 " + label if no_fit else label
 
 
-func _open_confirmation(kind: StringName, anchor: Vector2i) -> void:
+func _open_confirmation(kind: StringName, anchor: Vector2i, rotated: bool) -> void:
 	var item := _selected_item()
 	if item == null:
 		return
-	_pending_confirmation = {"kind": kind, "uid": item.uid, "anchor": anchor, "rotated": pending_rotated}
+	_pending_confirmation = {"kind": kind, "uid": item.uid, "anchor": anchor, "rotated": rotated}
 	_confirmation = INVENTORY_CONFIRM_SCENE.instantiate() as InventoryConfirmPanel
 	if _confirmation == null:
 		_pending_confirmation.clear()
 		return
 	_confirmation.name = "InventoryConfirm"
-	_confirmation.configure(item, kind)
+	_confirmation.configure(item, kind, anchor, rotated)
 	_confirmation.accepted.connect(_commit_confirmation)
 	_confirmation.cancelled.connect(_cancel_confirmation)
 	add_child(_confirmation)
+	_pending_source_widget(kind).show_pending_source(item.uid, kind)
 	_refresh_s04_controls(item)
 
 
@@ -597,6 +607,7 @@ func _cancel_confirmation() -> void:
 	_confirmation = null
 	_pending_confirmation.clear()
 	_withdraw_targeting = false
+	_clear_pending_confirmation_presentation()
 	_refresh_grid_markers()
 
 
@@ -612,6 +623,7 @@ func _commit_confirmation() -> void:
 	_confirmation = null
 	_pending_confirmation.clear()
 	_withdraw_targeting = false
+	_clear_pending_confirmation_presentation()
 	if not result.ok:
 		_show_preview(result, RetrieverInventory.BACKPACK, anchor)
 		return
@@ -622,6 +634,17 @@ func _commit_confirmation() -> void:
 	selected_uid = 0
 	pending_rotated = false
 	_refresh_grid_markers()
+
+
+func _pending_source_widget(kind: StringName) -> InventoryGridWidget:
+	return _notary_box if kind == &"withdraw" else _backpack
+
+
+func _clear_pending_confirmation_presentation() -> void:
+	if _backpack != null:
+		_backpack.clear_pending_source()
+	if _notary_box != null:
+		_notary_box.clear_pending_source()
 
 
 func _label(node_name: String, key: StringName, font_size: int) -> Label:
