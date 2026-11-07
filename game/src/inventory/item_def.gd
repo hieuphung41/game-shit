@@ -17,6 +17,7 @@ enum Category {
 
 @export var id: StringName = &""
 @export var display_name_key: StringName = &""
+@export var lore_key: StringName = &""
 @export var display_name_vi := ""
 @export var size := Vector2i.ONE
 @export var rotatable := false
