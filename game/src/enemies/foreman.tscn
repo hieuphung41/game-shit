@@ -1,0 +1,56 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://src/enemies/enemy_actor.gd" id="1_actor"]
+[ext_resource type="Script" path="res://src/enemies/enemy_role_def.gd" id="2_role"]
+[ext_resource type="PackedScene" path="res://src/vfx/telegraph_charge_lane.tscn" id="3_stripe"]
+[ext_resource type="Material" path="res://art/materials/character_foreman.tres" id="4_material"]
+
+[sub_resource type="Resource" id="EnemyRole"]
+script = ExtResource("2_role")
+role_id = &"foreman"
+max_hp = 90
+move_speed = 1.8
+perception_radius = 9.0
+view_half_arc_deg = 70.0
+leash_radius = 1.5
+windup_seconds = 1.0
+active_seconds = 0.0
+recover_seconds = 1.5
+min_attack_interval = 2.5
+damage = 30
+attack_range = 0.0
+attack_arc_deg = 0.0
+shield_half_arc_deg = 0.0
+charge_speed = 9.0
+charge_hitbox_width = 1.2
+lane_width = 1.6
+
+[sub_resource type="CapsuleMesh" id="BodyMesh"]
+radius = 0.38
+height = 1.9
+radial_segments = 8
+rings = 2
+
+[sub_resource type="CapsuleShape3D" id="BodyShape"]
+radius = 0.38
+height = 1.9
+
+[node name="Foreman" type="CharacterBody3D"]
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("1_actor")
+role_def = SubResource("EnemyRole")
+metadata/greybox_status = "placeholder"
+metadata/placeholder_reason = "TASK-20261106-88 combat silhouette; TASK-90 places it at authored markers."
+
+[node name="Body" type="MeshInstance3D" parent="."]
+mesh = SubResource("BodyMesh")
+material_override = ExtResource("4_material")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BodyShape")
+
+[node name="Visual" type="Node3D" parent="."]
+
+[node name="ChargeStripe" parent="." instance=ExtResource("3_stripe")]
+position = Vector3(0, -0.93, 0)
