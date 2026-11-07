@@ -537,7 +537,7 @@ func _clear() -> void:
 func _pickup_source_key() -> StringName:
 	if not s04_mode:
 		return &"INVENTORY_PICKUP_SOURCE_CACHE"
-	return &"INVENTORY_PICKUP_SOURCE_GROUND" if cache != null and cache.cache_id == &"ground_drop" else &"INVENTORY_PICKUP_SOURCE_D"
+	return &"INVENTORY_PICKUP_SOURCE_GROUND" if cache != null and (cache.cache_id == &"ground_drop" or String(cache.cache_id).begins_with("ground_drop_")) else &"INVENTORY_PICKUP_SOURCE_D"
 
 
 func _refresh_s04_controls(item: ItemInstance) -> void:

@@ -19,11 +19,12 @@ const CACHE_PANEL_SCENE := preload("res://src/ui/pickup/loot_cache_panel.tscn")
 const CONFIRM_SCENE := preload("res://src/ui/confirm/confirm_dialog.tscn")
 const SUMMARY_SCENE := preload("res://src/ui/summary/extract_summary_screen.tscn")
 const DEATH_SUMMARY_SCENE := preload("res://src/ui/death/death_summary_screen.tscn")
+const RECALL_SIGIL_SCENE := preload("res://src/ui/death/recall_sigil_overlay.tscn")
 
 const BEACON_ZONE_RADIUS_M := 3.0
 const BOARD_ZONE_RADIUS_M := 1.5
 const CACHE_INTERACT_RADIUS_M := 1.5
-const RECALL_SIGIL_SECONDS := 2.5
+const RECALL_SIGIL_SECONDS := RecallSigilOverlay.RECALL_SIGIL_SECONDS
 const ZONE_D_WORLD_POSITION := Vector3(11.75, 0.0, -36.95)
 const SOURCE_CARGO_D: StringName = &"source_cargo_d"
 const SOURCE_TAX_STAMP_D: StringName = &"source_tax_stamp_d"
@@ -66,7 +67,6 @@ var _skipped_ground_drop_uids: Dictionary = {}
 var _pending_ground_items: Dictionary = {}
 var _nearest_ground_drop: GroundDrop
 var _patrol_started := false
-var _death_remaining := -1.0
 var _route_beat: RouteBeat = RouteBeat.A
 
 
@@ -86,7 +86,6 @@ func _process(delta: float) -> void:
 	if flow == null:
 		return
 	flow.tick(delta)
-	_tick_recall_sigil(delta)
 	_stop_patrol_on_return_to_deck_a()
 	_update_gate()
 	_update_danger()
@@ -655,45 +654,12 @@ func _on_retriever_depleted() -> void:
 	_combat_hud.visible = false
 	_set_retriever_overlay_open(true)
 	_present_recall_sigil()
-	_death_remaining = RECALL_SIGIL_SECONDS
 
 
 func _present_recall_sigil() -> void:
-	var recall := Control.new()
-	recall.name = "RecallSigilOverlay"
-	recall.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var blocker := ColorRect.new()
-	blocker.color = Color(0.92549, 0.890196, 0.811765, 0.88)
-	blocker.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	blocker.mouse_filter = Control.MOUSE_FILTER_STOP
-	recall.add_child(blocker)
-	var sigil := Label.new()
-	sigil.name = "SigilMark"
-	sigil.text = "◎"
-	sigil.add_theme_font_size_override("font_size", 112)
-	sigil.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	sigil.position = Vector2(536, 224)
-	sigil.size = Vector2(208, 136)
-	recall.add_child(sigil)
-	var line := Label.new()
-	line.name = "RecallLine"
-	line.text = tr(&"RECALL_SIGIL_MOMENT_LINE")
-	line.add_theme_font_size_override("font_size", 24)
-	line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	line.position = Vector2(256, 400)
-	line.size = Vector2(768, 56)
-	recall.add_child(line)
+	var recall := RECALL_SIGIL_SCENE.instantiate() as RecallSigilOverlay
+	recall.completed.connect(_show_death_summary, CONNECT_ONE_SHOT)
 	_present_overlay(recall)
-
-
-func _tick_recall_sigil(delta: float) -> void:
-	if _death_remaining < 0.0:
-		return
-	_death_remaining = maxf(0.0, _death_remaining - maxf(delta, 0.0))
-	if _death_remaining > 0.0:
-		return
-	_death_remaining = -1.0
-	_show_death_summary()
 
 
 func _show_death_summary() -> void:

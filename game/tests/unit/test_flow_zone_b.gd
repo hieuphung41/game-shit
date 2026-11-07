@@ -90,14 +90,14 @@ func test_flow_hp_zero_resolves_to_s11_then_returns_to_boot(t) -> bool:
 	run._retriever.combat.health.damage(run._retriever.combat.health.max_hp)
 	t.eq(run.flow.extract_state, ExtractPierAFlow.ExtractState.ENDED_DEATH, "HP zero ends the run without extraction")
 	t.ok(run._overlay != null and run._overlay.name == "RecallSigilOverlay", "HP zero begins the Recall Sigil moment instead of the S03 stub")
-	run._process(2.5)
+	await _advance_scene_seconds(t, OuterPierRun.RECALL_SIGIL_SECONDS + 0.1)
 	var summary := run._overlay as DeathSummaryScreen
 	t.ok(summary != null, "Recall Sigil leads to S11 rather than S10")
 	if summary == null:
 		run.queue_free()
 		return true
 	t.eq(summary.summary.death_variant, &"before_manifest", "death before Manifest keeps Contract 1 open")
-	summary._elapsed_seconds = DeathSummaryScreen.SUMMARY_DEATH_BUTTON_LOCK_SECONDS
+	await _advance_scene_seconds(t, DeathSummaryScreen.SUMMARY_DEATH_BUTTON_LOCK_SECONDS + 0.1)
 	summary.request_primary()
 	await t.tree.process_frame
 	await t.tree.process_frame
@@ -224,6 +224,13 @@ func _new_run(t) -> OuterPierRun:
 	t.tree.root.add_child(run)
 	await t.tree.process_frame
 	return run
+
+
+func _advance_scene_seconds(t, seconds: float) -> void:
+	var original_time_scale := Engine.time_scale
+	Engine.time_scale = 8.0
+	await t.tree.create_timer(seconds).timeout
+	Engine.time_scale = original_time_scale
 
 
 func _contains_kept(entries: Array[Dictionary], def_id: StringName) -> bool:

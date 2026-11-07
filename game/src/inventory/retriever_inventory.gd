@@ -213,7 +213,9 @@ func commit_drop(uid: int) -> InventoryResult:
 	if result.ok:
 		var item: ItemInstance = backpack.remove(uid)
 		item.item_location = &"ground"
+		item.rotated = false
 		result.moved[0]["item"] = item
+		result.moved[0]["rotated"] = false
 		item_removed.emit(uid, BACKPACK)
 		item_dropped.emit(item)
 		if item.definition.item_category == ItemDef.Category.EVIDENCE:

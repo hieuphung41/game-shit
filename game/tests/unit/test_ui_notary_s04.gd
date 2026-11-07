@@ -3,6 +3,24 @@ extends RefCounted
 const RUN_PANEL := preload("res://src/ui/notary/notary_run_panel.tscn")
 
 
+func test_ui_notary_ground_drop_prefix_uses_ground_source_label(t) -> bool:
+	var inventory := _inventory_with_box_fixture()
+	var source := LootCache.new()
+	source.load_single_ground_item(ItemInstance.new(301, inventory.registry.get_def(&"tax_stamp_d")), &"ground_drop_301")
+	var panel := LootCachePanel.new()
+	panel.configure_s04(inventory, source)
+	t.tree.root.add_child(panel)
+	await t.tree.process_frame
+	panel.open_pickup()
+	var source_label := panel.get_node_or_null("LootGridPanel/Source") as Label
+	t.ok(source_label != null, "GroundDrop pickup dock exposes its source label")
+	if source_label != null:
+		t.eq(source_label.text, tr("INVENTORY_PICKUP_SOURCE_GROUND"), "unique GroundDrop IDs keep the ground-source label")
+	panel.queue_free()
+	await t.tree.process_frame
+	return true
+
+
 func test_ui_notary_withdraw_confirms_before_commit_and_unblocks_tax_stamp_seal(t) -> bool:
 	var inventory := _inventory_with_box_fixture()
 	var source := LootCache.new()

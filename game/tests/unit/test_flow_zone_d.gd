@@ -1,11 +1,10 @@
 extends RefCounted
 
-const RUN_SCENE := preload("res://src/flow/outer_pier_run.tscn")
 const BOOT_SCENE := preload("res://src/boot/boot.tscn")
 
 
 func test_flow_zone_d_cargo_route_uses_authored_areas_then_extracts(t) -> bool:
-	var run := await _new_run(t)
+	var run := await _new_run_from_boot_through_loadout(t)
 	if run == null:
 		return true
 	await _take_manifest_to_notary(t, run)
@@ -39,7 +38,7 @@ func test_flow_zone_d_cargo_route_uses_authored_areas_then_extracts(t) -> bool:
 
 
 func test_flow_zone_d_stamp_rejection_withdraw_and_seal_uses_o5(t) -> bool:
-	var run := await _new_run(t)
+	var run := await _new_run_from_boot_through_loadout(t)
 	if run == null:
 		return true
 	await _take_manifest_to_notary(t, run)
@@ -70,8 +69,7 @@ func test_flow_zone_d_stamp_rejection_withdraw_and_seal_uses_o5(t) -> bool:
 	inventory_panel.request_withdraw()
 	t.ok(inventory_panel.release_cell(RetrieverInventory.BACKPACK, Vector2i(0, 0)).ok, "withdraw preview uses the offered backpack cells")
 	t.ok(inventory_panel._confirmation != null, "withdraw opens the inventory O5 before mutation")
-	inventory_panel._confirmation._opened_at_msec = -1000
-	(inventory_panel._confirmation.get_node("InventoryConfirmPanel/AcceptButton") as Button).pressed.emit()
+	inventory_panel._confirmation.accepted.emit()
 	await t.tree.process_frame
 	var stamp_button := inventory_panel.get_node_or_null("LootGridPanel/Backpack/Item_202") as Button
 	if not t.ok(stamp_button != null, "confirmed pickup leaves Tax Stamp selected through the run dock"):
@@ -94,7 +92,7 @@ func test_flow_zone_d_stamp_rejection_withdraw_and_seal_uses_o5(t) -> bool:
 
 
 func test_flow_zone_d_death_resolves_s11_without_extract(t) -> bool:
-	var run := await _new_run(t)
+	var run := await _new_run_from_boot_through_loadout(t)
 	if run == null:
 		return true
 	await _take_manifest_to_notary(t, run)
@@ -109,7 +107,7 @@ func test_flow_zone_d_death_resolves_s11_without_extract(t) -> bool:
 	run._retriever.combat.health.damage(run._retriever.combat.health.max_hp)
 	t.eq(run.flow.extract_state, ExtractPierAFlow.ExtractState.ENDED_DEATH, "HP zero ends extraction before any S10 transition")
 	t.ok(run._overlay != null and run._overlay.name == "RecallSigilOverlay", "death starts the Recall Sigil overlay")
-	run._process(OuterPierRun.RECALL_SIGIL_SECONDS)
+	await _wait_seconds(t, OuterPierRun.RECALL_SIGIL_SECONDS + 0.1)
 	var screen := run._overlay as DeathSummaryScreen
 	t.ok(screen != null, "Recall Sigil resolves into S11")
 	if screen != null:
@@ -124,18 +122,48 @@ func test_flow_zone_d_death_resolves_s11_without_extract(t) -> bool:
 	return true
 
 
-func test_flow_death_before_manifest_prepares_and_hold_death_never_extracts(t) -> bool:
+func test_flow_recall_sigil_absorbs_back_and_touch_until_completion(t) -> bool:
+	var run := await _new_run_from_boot_through_loadout(t)
+	if run == null:
+		return true
+	run._retriever.combat.health.damage(run._retriever.combat.health.max_hp)
+	var recall := run._overlay as RecallSigilOverlay
+	if not t.ok(recall != null, "HP zero opens the authored Recall Sigil overlay"):
+		return true
+	t.ok(recall.get_node_or_null("Sigil/Ring") is ProgressBar, "Recall Sigil presents its progress ring before S11")
+	var back := InputEventAction.new()
+	back.action = &"ui_cancel"
+	back.pressed = true
+	t.tree.root.get_viewport().push_input(back, true)
+	var touch := InputEventScreenTouch.new()
+	touch.index = 0
+	touch.position = Vector2(640.0, 360.0)
+	touch.pressed = true
+	t.tree.root.get_viewport().push_input(touch, true)
+	await t.tree.process_frame
+	t.eq(t.tree.current_scene, run, "Back and touch during O7 do not change scene")
+	t.eq(run._overlay, recall, "Back and touch during O7 do not bypass the Recall Sigil")
+	t.ok(recall.is_inside_tree(), "Recall Sigil stays open until its completed signal")
+	await _wait_seconds(t, RecallSigilOverlay.RECALL_SIGIL_SECONDS + 0.1)
+	t.ok(run._overlay is DeathSummaryScreen, "only Recall Sigil completion opens S11")
+	run.queue_free()
+	RunSession.clear()
+	await t.tree.process_frame
+	return true
+
+
+func test_flow_death_before_manifest_prepares_and_hold_and_boat_ready_deaths_never_extract(t) -> bool:
 	var before_run := await _new_run_from_boot_through_loadout(t)
 	if before_run == null:
 		return true
 	await _enter(t, before_run, "BEntryZone")
 	t.eq(before_run._route_beat, OuterPierRun.RouteBeat.GUARD, "G16 enters B through its authored Area3D before Manifest pickup")
 	before_run._retriever.combat.health.damage(before_run._retriever.combat.health.max_hp)
-	before_run._process(OuterPierRun.RECALL_SIGIL_SECONDS)
+	await _wait_seconds(t, OuterPierRun.RECALL_SIGIL_SECONDS + 0.1)
 	var before_screen := before_run._overlay as DeathSummaryScreen
 	t.ok(before_screen != null and before_screen.summary.death_variant == &"before_manifest", "G16 sends HP zero before Manifest to the before-Manifest S11")
 	if before_screen != null:
-		before_screen._elapsed_seconds = DeathSummaryScreen.SUMMARY_DEATH_BUTTON_LOCK_SECONDS
+		await _wait_seconds(t, DeathSummaryScreen.SUMMARY_DEATH_BUTTON_LOCK_SECONDS + 0.1)
 		before_screen.request_primary()
 	await t.tree.process_frame
 	await t.tree.process_frame
@@ -145,7 +173,7 @@ func test_flow_death_before_manifest_prepares_and_hold_death_never_extracts(t) -
 	RunSession.clear()
 	await t.tree.process_frame
 
-	var hold_run := await _new_run(t)
+	var hold_run := await _new_run_from_boot_through_loadout(t)
 	if hold_run == null:
 		return true
 	await _take_manifest_to_notary(t, hold_run)
@@ -155,24 +183,51 @@ func test_flow_death_before_manifest_prepares_and_hold_death_never_extracts(t) -
 	var dialog := hold_run._overlay as ConfirmDialog
 	if dialog == null:
 		return true
-	dialog.accepted.emit()
-	for _step in 6:
-		hold_run.flow.tick(0.25)
+	_accept_dialog(dialog)
+	await _advance_scene_seconds(t, ExtractPierAFlow.EXTRACT_CALL_ACK_SECONDS + 0.1)
 	t.eq(hold_run.flow.extract_state, ExtractPierAFlow.ExtractState.S8_HOLD, "fixture enters the real hold before HP zero")
 	hold_run._retriever.combat.health.damage(hold_run._retriever.combat.health.max_hp)
 	t.eq(hold_run.flow.extract_state, ExtractPierAFlow.ExtractState.ENDED_DEATH, "HP zero during hold terminates extract")
-	hold_run._process(OuterPierRun.RECALL_SIGIL_SECONDS)
+	await _wait_seconds(t, OuterPierRun.RECALL_SIGIL_SECONDS + 0.1)
 	var hold_screen := hold_run._overlay as DeathSummaryScreen
 	t.ok(hold_screen != null and hold_screen.summary.death_variant == &"after_manifest", "hold death resolves the after-Manifest S11")
 	t.ok(not (hold_run._overlay is ExtractSummaryScreen), "hold death never opens S10")
 	hold_run.queue_free()
 	RunSession.clear()
 	await t.tree.process_frame
+
+	var boat_ready_run := await _new_run_from_boot_through_loadout(t)
+	if boat_ready_run == null:
+		return true
+	await _take_manifest_to_notary(t, boat_ready_run)
+	var extract_successes := 0
+	boat_ready_run.flow.extract_succeeded.connect(func(_summary: ExtractSummary) -> void: extract_successes += 1)
+	await _enter(t, boat_ready_run, "BeaconZoneA")
+	boat_ready_run._hud.call_requested.emit()
+	await t.tree.process_frame
+	var boat_dialog := boat_ready_run._overlay as ConfirmDialog
+	if boat_dialog == null:
+		return true
+	_accept_dialog(boat_dialog)
+	await _advance_scene_seconds(t, ExtractPierAFlow.EXTRACT_CALL_ACK_SECONDS + ExtractPierAFlow.EXTRACT_HOLD_SECONDS + 0.2)
+	t.eq(boat_ready_run.flow.extract_state, ExtractPierAFlow.ExtractState.S9_BOAT_READY, "public call and engine frames reach boat-ready before boarding")
+	await _enter(t, boat_ready_run, "BoardZoneA")
+	t.ok(boat_ready_run.flow.can_board(), "S9 board zone allows boarding before HP reaches zero")
+	boat_ready_run._retriever.combat.health.damage(boat_ready_run._retriever.combat.health.max_hp)
+	t.eq(boat_ready_run.flow.extract_state, ExtractPierAFlow.ExtractState.ENDED_DEATH, "HP zero in S9 ends the run before boarding")
+	t.eq(extract_successes, 0, "S9 death emits no extraction success")
+	await _wait_seconds(t, OuterPierRun.RECALL_SIGIL_SECONDS + 0.1)
+	var boat_ready_screen := boat_ready_run._overlay as DeathSummaryScreen
+	t.ok(boat_ready_screen != null and boat_ready_screen.summary.death_variant == &"after_manifest", "S9 death resolves the after-Manifest S11")
+	t.ok(not (boat_ready_run._overlay is ExtractSummaryScreen), "S9 death never completes boarding into S10")
+	boat_ready_run.queue_free()
+	RunSession.clear()
+	await t.tree.process_frame
 	return true
 
 
 func test_flow_context_target_prefers_nearest_ground_drop_over_d_source(t) -> bool:
-	var run := await _new_run(t)
+	var run := await _new_run_from_boot_through_loadout(t)
 	if run == null:
 		return true
 	await _enter(t, run, "CargoD/InteractArea")
@@ -196,8 +251,40 @@ func test_flow_context_target_prefers_nearest_ground_drop_over_d_source(t) -> bo
 	return true
 
 
+func test_flow_rotated_tax_stamp_drop_creates_upright_ground_drop(t) -> bool:
+	var run := await _new_run_from_boot_through_loadout(t)
+	if run == null:
+		return true
+	var stamp := ItemInstance.new(202, RunSession.inventory.registry.get_def(&"tax_stamp_d"))
+	t.ok(RunSession.inventory.commit_pickup(stamp, RetrieverInventory.BACKPACK, Vector2i.ZERO, false).ok, "Tax Stamp enters the backpack through the public pickup rule")
+	t.ok(RunSession.inventory.commit_rotate(stamp.uid).ok, "Tax Stamp is rotated before its O5 drop")
+	t.ok((RunSession.inventory.backpack.items[stamp.uid] as ItemInstance).rotated, "fixture confirms the carried Tax Stamp is rotated")
+	run._hud.inventory_requested.emit()
+	await t.tree.process_frame
+	var panel := run._overlay as LootCachePanel
+	if not t.ok(panel != null, "run dock opens for the rotated Tax Stamp"):
+		return true
+	var stamp_button := panel.get_node_or_null("LootGridPanel/Backpack/Item_202") as Button
+	if not t.ok(stamp_button != null, "run dock exposes the rotated Tax Stamp"):
+		return true
+	stamp_button.pressed.emit()
+	panel.request_drop()
+	if not t.ok(panel._confirmation != null, "dropping the rotated Tax Stamp opens O5"):
+		return true
+	panel._confirmation.accepted.emit()
+	await t.tree.process_frame
+	var drop := run._ground_drops.get(stamp.uid) as GroundDrop
+	t.ok(drop != null and drop.item != null, "confirmed O5 drop creates the world GroundDrop")
+	if drop != null and drop.item != null:
+		t.ok(not drop.item.rotated, "GroundDrop retains the Tax Stamp upright after a rotated drop")
+	run.queue_free()
+	RunSession.clear()
+	await t.tree.process_frame
+	return true
+
+
 func test_flow_ground_drop_is_hidden_and_rejected_during_hold(t) -> bool:
-	var run := await _new_run(t)
+	var run := await _new_run_from_boot_through_loadout(t)
 	if run == null:
 		return true
 	await _take_manifest_to_notary(t, run)
@@ -213,9 +300,8 @@ func test_flow_ground_drop_is_hidden_and_rejected_during_hold(t) -> bool:
 	var dialog := run._overlay as ConfirmDialog
 	if dialog == null:
 		return true
-	dialog.accepted.emit()
-	for _step in 6:
-		run.flow.tick(0.25)
+	_accept_dialog(dialog)
+	await _advance_scene_seconds(t, ExtractPierAFlow.EXTRACT_CALL_ACK_SECONDS + 0.1)
 	t.eq(run.flow.extract_state, ExtractPierAFlow.ExtractState.S8_HOLD, "fixture enters S8 while standing beside the GroundDrop")
 	t.ok(not run._ground_button.visible, "GroundDrop context is hidden during extraction hold")
 	run.request_ground_drop()
@@ -227,7 +313,7 @@ func test_flow_ground_drop_is_hidden_and_rejected_during_hold(t) -> bool:
 
 
 func test_flow_ground_drop_overlap_reselects_and_skip_advances_by_distance_then_uid(t) -> bool:
-	var run := await _new_run(t)
+	var run := await _new_run_from_boot_through_loadout(t)
 	if run == null:
 		return true
 	await _drop_backpack_item(t, run, 302, Vector2i.ZERO)
@@ -306,8 +392,7 @@ func _drop_backpack_item(t, run: OuterPierRun, uid: int, anchor: Vector2i) -> vo
 	panel.request_drop()
 	if panel._confirmation == null:
 		return
-	panel._confirmation._opened_at_msec = -1000
-	(panel._confirmation.get_node("InventoryConfirmPanel/AcceptButton") as Button).pressed.emit()
+	panel._confirmation.accepted.emit()
 	await t.tree.process_frame
 	t.ok(run._ground_drops.has(uid), "O5 confirmation creates the GroundDrop through the run signal")
 	if uid == 301:
@@ -332,11 +417,9 @@ func _finish_extract(t, run: OuterPierRun) -> void:
 	var dialog := run._overlay as ConfirmDialog
 	if dialog == null:
 		return
-	dialog.accepted.emit()
-	for _step in 6:
-		run.flow.tick(0.25)
-	for _step in 80:
-		run.flow.tick(0.25)
+	_accept_dialog(dialog)
+	await _advance_scene_seconds(t, ExtractPierAFlow.EXTRACT_CALL_ACK_SECONDS + ExtractPierAFlow.EXTRACT_HOLD_SECONDS + 0.2)
+	t.eq(run.flow.extract_state, ExtractPierAFlow.ExtractState.S9_BOAT_READY, "call acknowledgement and hold reach the public boarding state")
 	await _enter(t, run, "BoardZoneA")
 	run._hud.board_requested.emit()
 	await t.tree.process_frame
@@ -375,22 +458,11 @@ func _zone(run: OuterPierRun, path: String) -> Area3D:
 	return null
 
 
-func _new_run(t) -> OuterPierRun:
-	RunSession.clear()
-	RunSession.begin_briefing()
-	var run := RUN_SCENE.instantiate() as OuterPierRun
-	if not t.ok(run != null, "OuterPierRun loads for D flow"):
-		return null
-	t.tree.root.add_child(run)
-	await t.tree.process_frame
-	return run
-
-
 func _new_run_from_boot_through_loadout(t) -> OuterPierRun:
 	RunSession.clear()
-	var boot := BOOT_SCENE.instantiate() as Control
-	t.tree.root.add_child(boot)
+	t.tree.change_scene_to_packed(BOOT_SCENE)
 	await t.tree.process_frame
+	var boot := t.tree.current_scene as Control
 	var enter_button := boot.get_node_or_null("EnterOuterPierButton") as Button
 	if not t.ok(enter_button != null, "Boot exposes the public entry action for G16"):
 		return null
@@ -403,7 +475,7 @@ func _new_run_from_boot_through_loadout(t) -> OuterPierRun:
 	var briefing := briefing_flow.get_node_or_null("Briefing") as BriefingScreen
 	if not t.ok(briefing != null, "BriefingFlow builds the public briefing screen"):
 		return null
-	briefing._opened_at_msec = -1000
+	await _wait_for_ui_guard(t, 0.4)
 	var loadout_button := _button_for_key(briefing, &"BRIEFING_BUTTON_EDIT_LOADOUT")
 	var run_button := _button_for_key(briefing, &"BRIEFING_BUTTON_ENTER")
 	if not t.ok(loadout_button != null and run_button != null, "briefing exposes loadout and run actions"):
@@ -413,13 +485,12 @@ func _new_run_from_boot_through_loadout(t) -> OuterPierRun:
 	var loadout := briefing_flow.get_node_or_null("Loadout") as LoadoutScreen
 	if not t.ok(loadout != null, "G16 traverses the public loadout screen"):
 		return null
-	loadout._opened_at_msec = -1000
+	await _wait_for_ui_guard(t, 0.4)
 	var done_button := _button_for_key(loadout, &"LOADOUT_BUTTON_DONE")
 	if not t.ok(done_button != null, "loadout exposes its public completion action"):
 		return null
 	done_button.pressed.emit()
 	await t.tree.process_frame
-	briefing._opened_at_msec = -1000
 	run_button.pressed.emit()
 	await t.tree.process_frame
 	await t.tree.process_frame
@@ -427,6 +498,27 @@ func _new_run_from_boot_through_loadout(t) -> OuterPierRun:
 	if not t.ok(run != null, "briefing enters OuterPierRun through the public route"):
 		return null
 	return run
+
+
+func _wait_seconds(t, seconds: float) -> void:
+	await _advance_scene_seconds(t, seconds)
+
+
+func _wait_for_ui_guard(t, seconds: float) -> void:
+	await t.tree.create_timer(seconds, true, false, true).timeout
+
+
+func _advance_scene_seconds(t, seconds: float) -> void:
+	var original_time_scale := Engine.time_scale
+	# Keep each rendered delta below ExtractPierAFlow.MAX_TICK_DELTA so this
+	# advances the real scene loop without losing hold time to clamping.
+	Engine.time_scale = 8.0
+	await t.tree.create_timer(seconds).timeout
+	Engine.time_scale = original_time_scale
+
+
+func _accept_dialog(dialog: ConfirmDialog) -> void:
+	dialog.accepted.emit()
 
 
 func _button_for_key(parent: Control, key: StringName) -> Button:
