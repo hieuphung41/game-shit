@@ -207,6 +207,7 @@ INVENTORY_BUTTON_DROP,Bỏ
 INVENTORY_BUTTON_WITHDRAW,Rút
 INVENTORY_CONFIRM_TARGET_GROUND,"Xuống đất, chỗ bạn đứng"
 INVENTORY_CONFIRM_TARGET_BACKPACK,"Vào ba lô, ô có khung"
+INVENTORY_CONFIRM_TARGET_BACKPACK_ANCHOR,"Vào ba lô, ô {column},{row}"
 INVENTORY_SEAL_LABEL_UNSEALED,không niêm
 INVENTORY_SEAL_LABEL_NOT_EXTRACTED,chưa extract · vật chứng
 INVENTORY_CONFIRM_WITHDRAW_EVIDENCE_BODY,"Manifest R-17 vẫn là vật chứng: không mất hẳn, vẫn gọi được thuyền, nhưng chưa extract."

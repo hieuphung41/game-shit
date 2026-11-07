@@ -5,6 +5,8 @@ extends Control
 
 signal closed
 signal item_placed(item: ItemInstance, target: StringName, anchor: Vector2i)
+signal item_drop_confirmed(uid: int)
+signal item_withdraw_confirmed(uid: int, anchor: Vector2i)
 
 enum Session { CARD, PICKUP, VIEW, CLOSED }
 
@@ -14,6 +16,9 @@ var session: Session = Session.CLOSED
 var selected_index := 0
 var selected_uid := 0
 var pending_rotated := false
+var s04_mode := false
+var _withdraw_targeting := false
+var _pending_confirmation: Dictionary = {}
 
 var _card: LootCacheCard
 var _backpack: InventoryGridWidget
@@ -22,12 +27,16 @@ var _status: Label
 var _rotate: Button
 var _footprint_chip: Label
 var _footprint_shape_cue: Control
+var _notary_status: Label
+var _drop_or_withdraw: Button
+var _confirmation: InventoryConfirmPanel
 
 const DOCK_RIGHT_INSET := 16.0
 const GRID_DOCK_TOP := 176.0
 const GRID_DOCK_SIZE := Vector2(560, 528)
 const CLOSE_BUTTON_TOP := 16.0
 const CLOSE_BUTTON_SIZE := Vector2(96, 96)
+const INVENTORY_CONFIRM_SCENE := preload("res://src/ui/confirm/inventory_confirm_panel.tscn")
 
 
 func _ready() -> void:
@@ -39,9 +48,23 @@ func _ready() -> void:
 func configure(p_inventory: RetrieverInventory, p_cache: LootCache) -> void:
 	inventory = p_inventory
 	cache = p_cache
+	s04_mode = false
 	selected_index = 0
 	selected_uid = 0
 	pending_rotated = false
+	if is_inside_tree():
+		open_card()
+
+
+## S04 uses the same source/card dock but enables the explicit Notary Box actions.
+func configure_s04(p_inventory: RetrieverInventory, p_cache: LootCache) -> void:
+	inventory = p_inventory
+	cache = p_cache
+	s04_mode = true
+	selected_index = 0
+	selected_uid = 0
+	pending_rotated = false
+	_withdraw_targeting = false
 	if is_inside_tree():
 		open_card()
 
@@ -73,6 +96,7 @@ func open_pickup() -> void:
 	selected_uid = 0
 	session = Session.PICKUP
 	pending_rotated = false
+	_withdraw_targeting = false
 	_clear()
 	_build_grid()
 	_refresh_grid_markers()
@@ -86,24 +110,33 @@ func open_view(p_inventory: RetrieverInventory = null) -> void:
 	selected_uid = 0
 	session = Session.VIEW
 	pending_rotated = false
+	_withdraw_targeting = false
 	_clear()
 	_build_grid()
 	_refresh_grid_markers()
 
 
 func preview_cell(target: StringName, anchor: Vector2i) -> InventoryResult:
+	if _confirmation != null:
+		return InventoryResult.failure(InventoryReason.Value.WRONG_TARGET, selected_uid)
 	var result := _preview_for(target, anchor)
 	_show_preview(result, target, anchor)
 	return result
 
 
 func release_cell(target: StringName, anchor: Vector2i, inside: bool = true) -> InventoryResult:
+	if _confirmation != null:
+		return InventoryResult.failure(InventoryReason.Value.WRONG_TARGET, selected_uid)
 	if not inside:
 		_refresh_grid_markers()
 		return InventoryResult.failure(InventoryReason.Value.ITEM_NOT_FOUND)
 	var preview := _preview_for(target, anchor)
 	if not preview.ok:
 		_show_preview(preview, target, anchor)
+		return preview
+	if _should_open_withdraw_confirmation(target):
+		_show_preview(preview, target, anchor)
+		_open_confirmation(&"withdraw", anchor, pending_rotated)
 		return preview
 	var result := _commit_for(target, anchor)
 	if not result.ok:
@@ -124,6 +157,8 @@ func release_cell(target: StringName, anchor: Vector2i, inside: bool = true) -> 
 
 
 func toggle_rotate() -> void:
+	if _confirmation != null:
+		return
 	var item := _selected_item()
 	if item == null or not item.definition.rotatable or item.definition.is_square():
 		return
@@ -131,26 +166,73 @@ func toggle_rotate() -> void:
 	_refresh_grid_markers()
 
 
+func request_drop() -> void:
+	if not s04_mode or session != Session.VIEW or selected_uid == 0 or _confirmation != null:
+		return
+	var preview := inventory.preview_drop(selected_uid)
+	if not preview.ok:
+		_show_preview(preview, RetrieverInventory.BACKPACK, Vector2i.ZERO)
+		return
+	var item := _selected_item()
+	if item == null:
+		return
+	_show_preview(preview, RetrieverInventory.BACKPACK, item.anchor)
+	_open_confirmation(&"drop", item.anchor, item.rotated)
+
+
+func request_withdraw() -> void:
+	if not s04_mode or session != Session.VIEW or selected_uid == 0 or _confirmation != null:
+		return
+	var found := _find_selected()
+	if found.is_empty() or found.grid.grid_kind != RetrieverInventory.NOTARY_BOX:
+		return
+	if not _has_withdraw_fit():
+		_refresh_grid_markers()
+		_status.text = _reason_text(InventoryResult.failure(InventoryReason.Value.CELLS_OCCUPIED, selected_uid))
+		return
+	_withdraw_targeting = not _withdraw_targeting
+	_refresh_grid_markers()
+
+
 func close() -> void:
+	if _confirmation != null:
+		return
 	if session == Session.PICKUP:
 		open_card(selected_index)
 	else:
 		close_overlay()
 
 
+## D1 is deliberately exceptional while O5i owns pointer capture: it cancels
+## the pending inventory action and then closes the entire dock in one tap.
+func danger_close() -> void:
+	if session == Session.CLOSED:
+		return
+	if _confirmation != null:
+		_cancel_confirmation()
+	close_overlay()
+
+
 func close_overlay() -> void:
 	session = Session.CLOSED
 	selected_uid = 0
 	pending_rotated = false
+	_withdraw_targeting = false
+	_pending_confirmation.clear()
 	_clear()
 	closed.emit()
 
 
 func _input(event: InputEvent) -> void:
-	if session == Session.CLOSED:
+	if session == Session.CLOSED or get_viewport().is_input_handled():
 		return
 	if event.is_action_pressed(&"ui_cancel"):
-		close()
+		if _confirmation != null:
+			# Let O5i own its guard and cancellation path before this dock may
+			# consider closing itself.
+			_confirmation.cancel()
+		else:
+			close()
 		get_viewport().set_input_as_handled()
 
 
@@ -159,7 +241,7 @@ func _build_grid() -> void:
 	panel.name = "LootGridPanel"
 	_anchor_top_right(panel, DOCK_RIGHT_INSET, GRID_DOCK_TOP, GRID_DOCK_SIZE)
 	add_child(panel)
-	var source_key: StringName = &"INVENTORY_PICKUP_SOURCE_CACHE" if session == Session.PICKUP else &"INVENTORY_PANEL_TITLE"
+	var source_key: StringName = _pickup_source_key() if session == Session.PICKUP else &"INVENTORY_PANEL_TITLE"
 	var source := _label("Source", source_key, 24)
 	source.position = Vector2(16, 6)
 	source.size = Vector2(528, 24)
@@ -190,26 +272,38 @@ func _build_grid() -> void:
 	_status.autowrap_mode = TextServer.AUTOWRAP_OFF
 	_status.clip_text = true
 	panel.add_child(_status)
-	_backpack = _grid(panel, "Backpack", &"LOADOUT_LABEL_BACKPACK", RetrieverInventory.BACKPACK, Vector2(16, 108))
-	_notary_box = _grid(panel, "NotaryBox", &"LOADOUT_LABEL_NOTARY_BOX", RetrieverInventory.NOTARY_BOX, Vector2(352, 108))
+	var grid_top := 92.0 if s04_mode else 108.0
+	_backpack = _grid(panel, "Backpack", &"LOADOUT_LABEL_BACKPACK", RetrieverInventory.BACKPACK, Vector2(16, grid_top))
+	_notary_box = _grid(panel, "NotaryBox", &"LOADOUT_LABEL_NOTARY_BOX", RetrieverInventory.NOTARY_BOX, Vector2(352, grid_top))
 	if item != null and item.definition.rotatable and not item.definition.is_square():
 		_rotate = _button("RotateButton", &"INVENTORY_BUTTON_ROTATE")
-		_rotate.position = Vector2(352, 328)
-		_rotate.size = Vector2(192, 96)
+		_rotate.position = Vector2(320, 392) if s04_mode else Vector2(352, 328)
+		_rotate.size = Vector2(104, 96) if s04_mode else Vector2(192, 96)
 		_rotate.pressed.connect(toggle_rotate)
 		panel.add_child(_rotate)
+	if s04_mode:
+		_notary_status = _static_label("NotaryStatus", "", 24)
+		_notary_status.position = Vector2(320, 320)
+		_notary_status.size = Vector2(224, 64)
+		_notary_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		panel.add_child(_notary_status)
+		_drop_or_withdraw = _button("DropOrWithdrawButton", &"INVENTORY_BUTTON_DROP")
+		_drop_or_withdraw.position = Vector2(440, 392)
+		_drop_or_withdraw.size = Vector2(104, 96)
+		_drop_or_withdraw.pressed.connect(_on_drop_or_withdraw_pressed)
+		panel.add_child(_drop_or_withdraw)
 	var sling := _label("SlingPouch", &"LOADOUT_LABEL_SLING_POUCH", 24)
-	sling.position = Vector2(352, 440)
+	sling.position = Vector2(320, 496) if s04_mode else Vector2(352, 440)
 	sling.size = Vector2(192, 24)
 	panel.add_child(sling)
 	var sling_item := _sling_pouch_item()
 	if sling_item != null:
 		var sling_cue := _static_label("SlingPouchCue", "✚", 24)
-		sling_cue.position = Vector2(352, 464)
+		sling_cue.position = Vector2(320, 520) if s04_mode else Vector2(352, 464)
 		sling_cue.size = Vector2(24, 24)
 		panel.add_child(sling_cue)
 		var sling_item_label := _static_label("SlingPouchItem", sling_item.definition.localized_display_name() + " " + tr(&"CARD_QUANTITY_SUFFIX").format({"quantity": sling_item.quantity}), 24)
-		sling_item_label.position = Vector2(376, 464)
+		sling_item_label.position = Vector2(344, 520) if s04_mode else Vector2(376, 464)
 		sling_item_label.size = Vector2(168, 24)
 		panel.add_child(sling_item_label)
 	var close_button := _button("CloseButton", &"CARD_ACTION_CLOSE")
@@ -244,6 +338,7 @@ func _refresh_grid_markers() -> void:
 		_notary_box.show_selection(0)
 		if _status != null:
 			_status.text = tr(&"LOADOUT_HINT_SELECT")
+		_refresh_s04_controls(null)
 		return
 	_backpack.show_selection(selected_uid, _preview_map(RetrieverInventory.BACKPACK))
 	_notary_box.show_selection(selected_uid, _preview_map(RetrieverInventory.NOTARY_BOX))
@@ -251,7 +346,11 @@ func _refresh_grid_markers() -> void:
 		_rotate.text = tr(&"INVENTORY_BUTTON_ROTATE") + (" ↻" if pending_rotated else "")
 	_refresh_footprint_chip()
 	if _status != null:
-		_status.text = tr(&"INVENTORY_PICKUP_HINT_ITEM") if session == Session.PICKUP else _view_hint(item)
+		if session == Session.PICKUP:
+			_status.text = tr(&"INVENTORY_PICKUP_HINT_ITEM")
+		else:
+			_status.text = tr(&"INVENTORY_WITHDRAW_PICK_CELL_HINT") if _withdraw_targeting else _view_hint(item)
+	_refresh_s04_controls(item)
 
 
 func _refresh_footprint_chip() -> void:
@@ -285,7 +384,13 @@ func _preview_map(target: StringName) -> Dictionary:
 	for y in grid.size.y:
 		for x in grid.size.x:
 			var anchor := Vector2i(x, y)
-			output[anchor] = _preview_for(target, anchor)
+			# Direct touch on a backpack cell is a valid S04 withdraw entry, but
+			# only the explicit Rút state paints every valid anchor in advance.
+			# A direct touch still receives its own preview in preview_cell().
+			if _selected_notary_item() and target == RetrieverInventory.BACKPACK and not _withdraw_targeting:
+				output[anchor] = InventoryResult.failure(InventoryReason.Value.WRONG_TARGET, selected_uid)
+			else:
+				output[anchor] = _preview_for(target, anchor)
 	return output
 
 
@@ -301,7 +406,9 @@ func _preview_for(target: StringName, anchor: Vector2i) -> InventoryResult:
 		return InventoryResult.failure(InventoryReason.Value.ITEM_NOT_FOUND, selected_uid)
 	var source: InventoryGrid = found.grid
 	if source.grid_kind == RetrieverInventory.NOTARY_BOX and target == RetrieverInventory.BACKPACK:
-		return InventoryResult.failure(InventoryReason.Value.WRONG_TARGET, selected_uid)
+		if not _can_withdraw_to(target):
+			return InventoryResult.failure(InventoryReason.Value.WRONG_TARGET, selected_uid)
+		return inventory.preview_withdraw(selected_uid, anchor, pending_rotated)
 	if source.grid_kind == RetrieverInventory.BACKPACK and target == RetrieverInventory.NOTARY_BOX:
 		return inventory.preview_seal(selected_uid, anchor, pending_rotated)
 	if source.grid_kind == target:
@@ -315,6 +422,8 @@ func _commit_for(target: StringName, anchor: Vector2i) -> InventoryResult:
 	var found := _find_selected()
 	if found.is_empty():
 		return InventoryResult.failure(InventoryReason.Value.ITEM_NOT_FOUND, selected_uid)
+	if found.grid.grid_kind == RetrieverInventory.NOTARY_BOX and target == RetrieverInventory.BACKPACK:
+		return InventoryResult.failure(InventoryReason.Value.WRONG_TARGET, selected_uid)
 	if found.grid.grid_kind == RetrieverInventory.BACKPACK and target == RetrieverInventory.NOTARY_BOX:
 		return inventory.commit_seal(selected_uid, anchor, pending_rotated)
 	return inventory.commit_move(selected_uid, target, anchor, pending_rotated)
@@ -324,7 +433,10 @@ func _show_preview(result: InventoryResult, target: StringName, anchor: Vector2i
 	if _status == null:
 		return
 	if result.ok:
-		_status.text = tr(&"INVENTORY_PREVIEW_FITS_BACKPACK") if target == RetrieverInventory.BACKPACK else tr(&"INVENTORY_PREVIEW_FITS_NOTARY_BOX")
+		if _can_withdraw_to(target):
+			_status.text = tr(&"INVENTORY_PREVIEW_WITHDRAW_BACKPACK")
+		else:
+			_status.text = tr(&"INVENTORY_PREVIEW_FITS_BACKPACK") if target == RetrieverInventory.BACKPACK else tr(&"INVENTORY_PREVIEW_SEAL_NOTARY_BOX") if s04_mode else tr(&"INVENTORY_PREVIEW_FITS_NOTARY_BOX")
 	else:
 		_status.text = _reason_text(result)
 	var widget := _backpack if target == RetrieverInventory.BACKPACK else _notary_box
@@ -349,10 +461,11 @@ func _on_grid_cell_pressed(target: StringName, anchor: Vector2i) -> void:
 
 
 func _on_item_pressed(uid: int) -> void:
-	if session != Session.VIEW:
+	if session != Session.VIEW or _confirmation != null:
 		return
 	selected_uid = 0 if selected_uid == uid else uid
 	pending_rotated = false
+	_withdraw_targeting = false
 	_refresh_grid_markers()
 
 
@@ -394,13 +507,13 @@ func _find_selected() -> Dictionary:
 
 
 func _view_hint(item: ItemInstance) -> String:
-	return tr(&"INVENTORY_REASON_WITHDRAW_LOCKED") if item.item_location == RetrieverInventory.NOTARY_BOX else item.definition.localized_display_name()
+	return item.definition.localized_display_name()
 
 
 func _reason_text(result: InventoryResult) -> String:
 	var item := _selected_item()
 	var name := item.definition.localized_display_name() + " · " if item != null else ""
-	if item != null and item.item_location == RetrieverInventory.NOTARY_BOX and session == Session.VIEW:
+	if item != null and item.item_location == RetrieverInventory.NOTARY_BOX and session == Session.VIEW and not s04_mode:
 		return name + tr(&"INVENTORY_REASON_WITHDRAW_LOCKED")
 	return name + tr("INVENTORY_REASON_" + InventoryReason.Value.keys()[int(result.reason)])
 
@@ -416,6 +529,145 @@ func _clear() -> void:
 	_rotate = null
 	_footprint_chip = null
 	_footprint_shape_cue = null
+	_notary_status = null
+	_drop_or_withdraw = null
+	_confirmation = null
+
+
+func _pickup_source_key() -> StringName:
+	if not s04_mode:
+		return &"INVENTORY_PICKUP_SOURCE_CACHE"
+	return &"INVENTORY_PICKUP_SOURCE_GROUND" if cache != null and cache.cache_id == &"ground_drop" else &"INVENTORY_PICKUP_SOURCE_D"
+
+
+func _refresh_s04_controls(item: ItemInstance) -> void:
+	if not s04_mode:
+		return
+	if _notary_status != null:
+		_notary_status.text = ""
+		if session == Session.PICKUP and item != null and not item.definition.sealable:
+			_notary_status.text = "▣ " + tr(&"CARD_FIT_NOTARY_BOX_NOT_SEALABLE")
+		else:
+			for box_item: ItemInstance in inventory.notary_box.all_items():
+				if box_item.definition.item_category == ItemDef.Category.EVIDENCE:
+					_notary_status.text = "▣ " + tr(&"INVENTORY_SEAL_LABEL_SEALED_NOT_EXTRACTED")
+					break
+	if _drop_or_withdraw == null:
+		return
+	_drop_or_withdraw.visible = item != null and session == Session.VIEW
+	if item == null or session != Session.VIEW:
+		return
+	var in_box := item.item_location == RetrieverInventory.NOTARY_BOX
+	var no_withdraw_fit := in_box and not _has_withdraw_fit()
+	_drop_or_withdraw.text = _withdraw_button_text(no_withdraw_fit) if in_box else tr(&"INVENTORY_BUTTON_DROP")
+	_drop_or_withdraw.disabled = _confirmation != null
+
+
+func _on_drop_or_withdraw_pressed() -> void:
+	var item := _selected_item()
+	if item == null:
+		return
+	if item.item_location == RetrieverInventory.NOTARY_BOX:
+		request_withdraw()
+	else:
+		request_drop()
+
+
+func _selected_notary_item() -> bool:
+	var found := _find_selected()
+	return not found.is_empty() and found.grid.grid_kind == RetrieverInventory.NOTARY_BOX
+
+
+func _can_withdraw_to(target: StringName) -> bool:
+	if target != RetrieverInventory.BACKPACK or not s04_mode or session != Session.VIEW:
+		return false
+	return _selected_notary_item()
+
+
+func _should_open_withdraw_confirmation(target: StringName) -> bool:
+	return _can_withdraw_to(target)
+
+
+func _has_withdraw_fit() -> bool:
+	var item := _selected_item()
+	if item == null:
+		return false
+	for y in inventory.backpack.size.y:
+		for x in inventory.backpack.size.x:
+			if inventory.preview_withdraw(item.uid, Vector2i(x, y), pending_rotated).ok:
+				return true
+	return false
+
+
+func _withdraw_button_text(no_fit: bool) -> String:
+	var label := tr(&"INVENTORY_BUTTON_WITHDRAW")
+	return "⊘ 🔒 " + label if no_fit else label
+
+
+func _open_confirmation(kind: StringName, anchor: Vector2i, rotated: bool) -> void:
+	var item := _selected_item()
+	if item == null:
+		return
+	_pending_confirmation = {"kind": kind, "uid": item.uid, "anchor": anchor, "rotated": rotated}
+	_confirmation = INVENTORY_CONFIRM_SCENE.instantiate() as InventoryConfirmPanel
+	if _confirmation == null:
+		_pending_confirmation.clear()
+		return
+	_confirmation.name = "InventoryConfirm"
+	_confirmation.configure(item, kind, anchor, rotated)
+	_confirmation.accepted.connect(_commit_confirmation)
+	_confirmation.cancelled.connect(_cancel_confirmation)
+	_confirmation.danger_close_requested.connect(danger_close)
+	add_child(_confirmation)
+	_pending_source_widget(kind).show_pending_source(item.uid, kind)
+	_refresh_s04_controls(item)
+
+
+func _cancel_confirmation() -> void:
+	if _confirmation == null:
+		return
+	_confirmation.queue_free()
+	_confirmation = null
+	_pending_confirmation.clear()
+	_withdraw_targeting = false
+	_clear_pending_confirmation_presentation()
+	_refresh_grid_markers()
+
+
+func _commit_confirmation() -> void:
+	if _confirmation == null:
+		return
+	var kind := _pending_confirmation.get("kind", &"") as StringName
+	var uid := int(_pending_confirmation.get("uid", 0))
+	var anchor := _pending_confirmation.get("anchor", Vector2i.ZERO) as Vector2i
+	var rotated := bool(_pending_confirmation.get("rotated", false))
+	var result := inventory.commit_withdraw(uid, anchor, rotated) if kind == &"withdraw" else inventory.commit_drop(uid)
+	_confirmation.queue_free()
+	_confirmation = null
+	_pending_confirmation.clear()
+	_withdraw_targeting = false
+	_clear_pending_confirmation_presentation()
+	if not result.ok:
+		_show_preview(result, RetrieverInventory.BACKPACK, anchor)
+		return
+	if kind == &"withdraw":
+		item_withdraw_confirmed.emit(uid, anchor)
+	else:
+		item_drop_confirmed.emit(uid)
+	selected_uid = 0
+	pending_rotated = false
+	_refresh_grid_markers()
+
+
+func _pending_source_widget(kind: StringName) -> InventoryGridWidget:
+	return _notary_box if kind == &"withdraw" else _backpack
+
+
+func _clear_pending_confirmation_presentation() -> void:
+	if _backpack != null:
+		_backpack.clear_pending_source()
+	if _notary_box != null:
+		_notary_box.clear_pending_source()
 
 
 func _label(node_name: String, key: StringName, font_size: int) -> Label:

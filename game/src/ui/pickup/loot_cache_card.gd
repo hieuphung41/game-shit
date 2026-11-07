@@ -125,6 +125,7 @@ func _render_details() -> void:
 	_add_detail("NameCue", "■ " + definition.localized_display_name() + _quantity(item))
 	_add_detail("FootprintCue", _footprint_cue(definition) + " " + tr(_card_key(definition, "FOOTPRINT")) + "\n" + _fit_text(item))
 	_add_detail("Use", tr(_card_key(definition, "USE")))
+	_add_relative_value_details(definition)
 	_add_detail("ClaimCue", "⚑ " + tr(_card_key(definition, "CLAIM")))
 	_add_detail("RarityCue", _rarity_marks(definition.appraisal_class) + " " + tr(_card_key(definition, "RARITY")))
 	_add_detail("Lore", tr(definition.lore_key))
@@ -138,6 +139,41 @@ func _add_detail(node_name: String, value: String) -> void:
 	label.custom_minimum_size = Vector2(0, 38)
 	label.add_theme_font_size_override("font_size", 24)
 	_details.add_child(label)
+
+
+## ItemDef owns this optional presentation datum. Zone D's registry entries set
+## it; a zero value intentionally keeps legacy cache cards on their old layout.
+func _add_relative_value_details(definition: ItemDef) -> void:
+	var total := int(definition.get_meta(&"relative_value_total", 0))
+	if total <= 0:
+		return
+	var values := HBoxContainer.new()
+	values.name = "RelativeValues"
+	values.custom_minimum_size = Vector2(0, 38)
+	values.add_theme_constant_override("separation", 16)
+	_details.add_child(values)
+	var total_label := _value_label("ValueTotal", &"CARD_VALUE_TOTAL", str(total))
+	total_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	values.add_child(total_label)
+	var area := definition.size.x * definition.size.y
+	var per_cell_label := _value_label("ValuePerCell", &"CARD_VALUE_PER_CELL", _format_value_per_cell(float(total) / float(area)))
+	per_cell_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	values.add_child(per_cell_label)
+
+
+func _value_label(node_name: String, key: StringName, value: String) -> Label:
+	var label := Label.new()
+	label.name = node_name
+	label.text = tr(key).format({"value_total": value, "value_per_cell": value})
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.add_theme_font_size_override("font_size", 24)
+	return label
+
+
+func _format_value_per_cell(value: float) -> String:
+	if is_equal_approx(value, roundf(value)):
+		return str(int(value))
+	return String.num(value, 1).replace(".", ",")
 
 
 func _fit_text(item: ItemInstance) -> String:

@@ -24,6 +24,8 @@ var error_cells: Array[Vector2i] = []
 var touch_preview_cells: Array[Vector2i] = []
 var touch_preview_ok := false
 var touch_preview_edge_direction := Vector2i.ZERO
+var pending_source_uid := 0
+var pending_source_kind: StringName = &""
 
 var _grid: InventoryGrid
 var _cells: Dictionary = {}
@@ -93,6 +95,22 @@ func show_touch_preview(item: ItemInstance, anchor: Vector2i, rotated: bool, res
 	_render()
 
 
+## A pending O5 action leaves its source visibly distinct without mutating the
+## inventory. The owning dock clears this as soon as O5 closes or commits.
+func show_pending_source(uid: int, kind: StringName) -> void:
+	pending_source_uid = uid
+	pending_source_kind = kind
+	_render()
+
+
+func clear_pending_source() -> void:
+	if pending_source_uid == 0 and pending_source_kind.is_empty():
+		return
+	pending_source_uid = 0
+	pending_source_kind = &""
+	_render()
+
+
 func press_item(uid: int) -> void:
 	if not read_only:
 		item_pressed.emit(uid)
@@ -149,6 +167,9 @@ func _render() -> void:
 			_cells[anchor] = cell
 	for item: ItemInstance in _grid.all_items():
 		_add_item(item, cell_size)
+	var pending_item := _grid.items.get(pending_source_uid) as ItemInstance
+	if pending_item != null:
+		_add_pending_source_overlay(pending_item, cell_size)
 	_add_touch_preview_edge_indicator(cell_size)
 
 
@@ -231,9 +252,70 @@ func _add_item(item: ItemInstance, cell_size: float) -> void:
 		button.add_theme_color_override("font_color", UiTheme.STAMP_RED)
 	if grid_kind == RetrieverInventory.NOTARY_BOX:
 		button.text += "\n" + _seal_label(item.uid)
+	if item.uid == pending_source_uid:
+		button.text = _pending_source_cue() + button.text
 	button.pressed.connect(press_item.bind(item.uid))
 	add_child(button)
 	_items[item.uid] = button
+
+
+## O5 keeps the source item in place until the user confirms. A separate
+## overlay, added after item buttons, makes that pending state legible for every
+## occupied source cell instead of relying on the button's text prefix alone.
+func _add_pending_source_overlay(item: ItemInstance, cell_size: float) -> void:
+	var overlay := Control.new()
+	overlay.name = "PendingSourceOverlay_%d" % item.uid
+	overlay.position = Vector2(item.anchor.x * cell_size, item.anchor.y * cell_size)
+	var footprint := item.effective_size()
+	overlay.size = Vector2(footprint.x * cell_size, footprint.y * cell_size)
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for y in footprint.y:
+		for x in footprint.x:
+			var cell := Control.new()
+			cell.name = "Cell_%d_%d" % [x, y]
+			cell.position = Vector2(x * cell_size, y * cell_size)
+			cell.size = Vector2(cell_size, cell_size)
+			cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			_add_pending_source_border(cell, cell_size)
+			var cue := Label.new()
+			cue.name = "PendingSourceCue"
+			cue.text = "↓" if pending_source_kind == &"drop" else "🔓"
+			cue.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			cue.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			cue.size = Vector2(cell_size, cell_size)
+			cue.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			cue.add_theme_font_size_override("font_size", max(24, int(28 * cell_scale)))
+			cue.add_theme_color_override("font_color", UiTheme.STAMP_RED)
+			cell.add_child(cue)
+			overlay.add_child(cell)
+	add_child(overlay)
+
+
+func _add_pending_source_border(cell: Control, cell_size: float) -> void:
+	var inset := 4.0
+	var horizontal_size := Vector2(cell_size - inset * 2.0, 24.0)
+	_add_pending_border_label(cell, "TopDottedBorder", "┄┄┄", Vector2(inset, 0), horizontal_size)
+	_add_pending_border_label(cell, "BottomDottedBorder", "┄┄┄", Vector2(inset, cell_size - 24.0), horizontal_size)
+	_add_pending_border_label(cell, "LeftDottedBorder", "·\n·\n·", Vector2(0, 18), Vector2(24, cell_size - 36.0))
+	_add_pending_border_label(cell, "RightDottedBorder", "·\n·\n·", Vector2(cell_size - 24.0, 18), Vector2(24, cell_size - 36.0))
+
+
+func _add_pending_border_label(parent: Control, node_name: String, value: String, at: Vector2, dimensions: Vector2) -> void:
+	var border := Label.new()
+	border.name = node_name
+	border.text = value
+	border.position = at
+	border.size = dimensions
+	border.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	border.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	border.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	border.add_theme_font_size_override("font_size", max(24, int(24 * cell_scale)))
+	border.add_theme_color_override("font_color", UiTheme.STAMP_RED)
+	parent.add_child(border)
+
+
+func _pending_source_cue() -> String:
+	return "┄↓ " if pending_source_kind == &"drop" else "┄🔓 "
 
 
 func _item_label(item: ItemInstance) -> String:
