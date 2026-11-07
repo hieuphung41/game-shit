@@ -94,16 +94,29 @@ func test_hold_director_emits_entry_only_after_actor_crosses_camera_inset(t) -> 
 	root.add_child(director)
 	t.tree.root.add_child(root)
 	await t.tree.process_frame
-	var entry_positions: Array[float] = []
-	director.enemy_entered_camera.connect(func(_role_id: StringName) -> void: entry_positions.append(director._enemies[entry_positions.size()].global_position.z))
+	var entry_times := {}
+	var entry_positions := {}
+	director.enemy_entered_camera.connect(func(role_id: StringName) -> void:
+		entry_times[role_id] = director.elapsed
+		for enemy: EnemyActor in director._enemies:
+			if enemy.role_def.role_id == role_id:
+				entry_positions[role_id] = enemy.global_position.z
+				break
+	)
 	director.on_hold_started(20.0)
 	t.ok(director._enemies[0].global_position.z >= 0.0, "hold actor begins at the authored off-camera spawn marker")
-	director._enemies[0].global_position = Vector3(0.0, 0.0, -0.1)
-	director._enemies[0].brain.set_position(director._enemies[0].global_position)
-	director.tick(0.1)
-	t.ok(not entry_positions.is_empty(), "a hold enemy physically crosses the camera inset")
-	for position_z: float in entry_positions:
-		t.ok(position_z < 0.0, "entry signal is emitted only after the physical inset predicate becomes true")
+	for _step: int in range(205):
+		for enemy: EnemyActor in director._enemies:
+			enemy.brain.tick(0.05)
+			enemy.global_position += enemy.brain.motion_delta
+			enemy.brain.set_position(enemy.global_position)
+		director.tick(0.05)
+	t.ok(entry_times.has(&"tax_guard"), "guard physically crosses the camera inset")
+	t.ok(entry_times.has(&"foreman"), "foreman physically crosses the camera inset")
+	t.ok(absf(float(entry_times.get(&"tax_guard", 0.0)) - 3.0) <= 0.25, "guard reaches the camera edge at the authored t=3 beat")
+	t.ok(absf(float(entry_times.get(&"foreman", 0.0)) - 10.0) <= 0.25, "foreman reaches the camera edge at the authored t=10 beat")
+	t.ok(float(entry_positions.get(&"tax_guard", 0.0)) < 0.0, "guard entry signal follows its real inset transition")
+	t.ok(float(entry_positions.get(&"foreman", 0.0)) < 0.0, "foreman entry signal follows its real inset transition")
 	root.queue_free()
 	await t.tree.process_frame
 	return true

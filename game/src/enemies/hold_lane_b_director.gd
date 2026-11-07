@@ -121,6 +121,7 @@ func _spawn_guard() -> bool:
 	route.append(guard_post)
 	guard.configure_anchor(guard_post, _node_position(spawn_marker_path, guard.global_position))
 	guard.begin_patrol(route)
+	_configure_pre_alert_approach(guard, route, wave.guard_enter_camera_at, wave.guard_approach_speed)
 	return true
 
 
@@ -141,6 +142,7 @@ func _spawn_foreman() -> bool:
 		if lane_start != null:
 			route.append(lane_start.global_position)
 	foreman.begin_patrol(route)
+	_configure_pre_alert_approach(foreman, route, wave.foreman_enter_camera_at, wave.foreman_approach_speed)
 	return true
 
 
@@ -173,6 +175,7 @@ func _observe_camera_entries() -> void:
 		var was_inside: bool = _camera_inside.get(instance_id, false)
 		_camera_inside[instance_id] = inside
 		if inside and not was_inside:
+			enemy.clear_patrol_approach_speed()
 			enemy_entered_camera.emit(enemy.role_def.role_id)
 
 
@@ -180,6 +183,47 @@ func _is_inside_camera_inset(enemy: EnemyActor) -> bool:
 	if camera_entry_predicate.is_valid():
 		return bool(camera_entry_predicate.call(enemy))
 	return enemy.is_inside_camera_inset()
+
+
+func _configure_pre_alert_approach(enemy: EnemyActor, route: Array[Vector3], enter_at: float, configured_speed: float) -> void:
+	if enter_at <= 0.0:
+		return
+	var approach_speed := configured_speed
+	if approach_speed <= 0.0:
+		var distance := _distance_to_camera_inset(enemy, route)
+		approach_speed = distance / enter_at if distance > 0.0 else 0.0
+	if approach_speed > 0.0:
+		enemy.set_patrol_approach_speed(approach_speed)
+
+
+func _distance_to_camera_inset(enemy: EnemyActor, route: Array[Vector3]) -> float:
+	var from := enemy.global_position
+	var travelled := 0.0
+	for to: Vector3 in route:
+		var segment_length := from.distance_to(to)
+		if segment_length <= 0.0001:
+			from = to
+			continue
+		var steps := ceili(segment_length / 0.05)
+		for index: int in range(1, steps + 1):
+			var candidate := from.lerp(to, float(index) / float(steps))
+			if _position_is_inside_camera_inset(enemy, candidate):
+				return travelled + from.distance_to(candidate)
+		travelled += segment_length
+		from = to
+	return 0.0
+
+
+func _position_is_inside_camera_inset(enemy: EnemyActor, position: Vector3) -> bool:
+	if not camera_entry_predicate.is_valid():
+		return enemy.is_world_position_inside_camera_inset(position)
+	# The predicate is a test seam with the same actor contract as production.
+	# Restore the transform immediately so sampling does not move the spawned body.
+	var original_position := enemy.global_position
+	enemy.global_position = position
+	var inside := bool(camera_entry_predicate.call(enemy))
+	enemy.global_position = original_position
+	return inside
 
 
 func _common_hold_path() -> Array[Vector3]:

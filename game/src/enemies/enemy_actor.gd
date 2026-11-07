@@ -69,6 +69,16 @@ func begin_patrol(points: Array[Vector3]) -> void:
 		brain.start_patrol(points)
 
 
+func set_patrol_approach_speed(speed: float) -> void:
+	if brain != null:
+		brain.set_patrol_approach_speed(speed)
+
+
+func clear_patrol_approach_speed() -> void:
+	if brain != null:
+		brain.clear_patrol_approach_speed()
+
+
 func force_withdraw() -> void:
 	if brain != null:
 		brain.stop_new_windups()
@@ -95,7 +105,16 @@ func get_combat_state() -> StringName:
 
 
 func is_inside_camera_inset() -> bool:
-	return _inside_camera_inset()
+	return is_world_position_inside_camera_inset(global_position)
+
+
+func is_world_position_inside_camera_inset(world_position: Vector3) -> bool:
+	var camera := get_viewport().get_camera_3d()
+	if camera == null or camera.is_position_behind(world_position) or not camera.is_position_in_frustum(world_position):
+		return false
+	var rect := get_viewport().get_visible_rect()
+	var inset := Rect2(rect.position + rect.size * 0.05, rect.size * 0.90)
+	return inset.has_point(camera.unproject_position(world_position))
 
 
 func _update_perception(delta: float) -> void:
@@ -123,12 +142,7 @@ func _has_line_of_sight(player_position: Vector3) -> bool:
 
 
 func _inside_camera_inset() -> bool:
-	var camera := get_viewport().get_camera_3d()
-	if camera == null or camera.is_position_behind(global_position) or not camera.is_position_in_frustum(global_position):
-		return false
-	var rect := get_viewport().get_visible_rect()
-	var inset := Rect2(rect.position + rect.size * 0.05, rect.size * 0.90)
-	return inset.has_point(camera.unproject_position(global_position))
+	return is_world_position_inside_camera_inset(global_position)
 
 
 func _try_charge_hit() -> void:

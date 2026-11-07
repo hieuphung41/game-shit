@@ -49,6 +49,7 @@ var _patrol_route: Array[Vector3] = []
 var _patrol_index := 0
 var _patrol_forward := true
 var _patrol_enabled := false
+var _patrol_approach_speed := 0.0
 var _prevent_new_windups := false
 
 
@@ -97,6 +98,14 @@ func set_patrol_enabled(enabled: bool) -> void:
 	_patrol_enabled = enabled
 	if enabled and state == STATE_IDLE:
 		_set_state(STATE_PATROL)
+
+
+func set_patrol_approach_speed(speed: float) -> void:
+	_patrol_approach_speed = maxf(speed, 0.0)
+
+
+func clear_patrol_approach_speed() -> void:
+	_patrol_approach_speed = 0.0
 
 
 func stop_new_windups() -> void:
@@ -203,7 +212,8 @@ func _tick_patrol(step: float) -> void:
 		_set_state(STATE_IDLE)
 		return
 	var target := _patrol_route[_patrol_index]
-	_move_toward(target, role.move_speed, step)
+	var patrol_speed := _patrol_approach_speed if _patrol_approach_speed > 0.0 else role.move_speed
+	_move_toward(target, patrol_speed, step)
 	if position.distance_to(target) <= 0.05:
 		if _patrol_forward:
 			_patrol_index += 1
