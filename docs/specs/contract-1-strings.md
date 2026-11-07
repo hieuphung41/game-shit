@@ -376,6 +376,50 @@ trị. Trong 14 key S04 của TASK-71: 9 key dùng (`HUD_OBJECTIVE_PICK_UP_MANIF
 **Key không còn hiện từ S04** (giữ trong CSV, UX §9.3): `COMBAT_STUB_HP_ZERO`, `COMBAT_STUB_BUTTON_BOOT`,
 `INVENTORY_REASON_WITHDRAW_LOCKED`, `INVENTORY_PREVIEW_FITS_NOTARY_BOX`, `SUMMARY_DEATH_BUTTON_RECOVERY` (để cho S05).
 
+### S05 — Recovery Contract, recovery briefing/loadout, bàn dispatch A, S10 và fixture C1–C3 (TASK-105) `proposed`
+
+Trả đủ và chỉ các key do [Recovery Contract / S12](recovery-contract-spec.md) §8 giao. Cột **Dài** đếm theo §1;
+không có placeholder. `SUMMARY_DEATH_RECOVERY_UNAVAILABLE` và `SUMMARY_DEATH_BUTTON_BOOT` vẫn ở CSV để test cũ
+không đỏ, nhưng **không dùng từ S05** ở S11 `after_manifest`: action hợp lệ là
+`SUMMARY_DEATH_BUTTON_RECOVERY` → S12. Các key `DEBUG_FIXTURE_*` chỉ là nhãn dev/staging, không là chữ
+người chơi của bản production.
+
+| Key | Màn hình / state | Tối đa | Dài | Nguồn / ghi chú |
+|---|---|---:|---:|---|
+| `SUMMARY_DEATH_BUTTON_RECOVERY` | S11 `after_manifest`, action → S12 | 24 | 20 | Đổi từ trạng thái không hiện sang action. `Mở Recovery Contract`; không dùng Boot. |
+| `RECOVERY_HEADER_TITLE` | S12 tiêu đề | 32 | 17 | `Recovery Contract`. |
+| `RECOVERY_BODY_LOCATION` | S12 dòng 1 | 72 | 53 | `Manifest Hàng Hóa R-17` **chưa thu hồi** ở bàn dispatch A. |
+| `RECOVERY_BODY_RULE` | S12 dòng 2 | 90 | 61 | Tự thu hồi, xếp hợp lệ; gọi/giữ/lên thuyền ở Cầu tàu A; không gọi recovery là thành công. |
+| `RECOVERY_BODY_KIT` | S12 dòng 3 | 72 | 36 | Kit cơ bản; đồ đã mất không trở lại, không mua hay hoàn lại đồ. |
+| `RECOVERY_BUTTON_BRIEFING` | Nút duy nhất S12 → S1 recovery | 24 | 17 | `Chuẩn bị recovery`; không Back/Cancel. |
+| `SUMMARY_DEATH_RECOVERY_UNAVAILABLE` | CSV legacy; ẩn ở S11 `after_manifest` | 72 | 43 | **Không dùng từ S05.** Giữ vì nghĩa cũ là recovery chưa có và test cũ còn gọi key. |
+| `SUMMARY_DEATH_BUTTON_BOOT` | CSV legacy; ẩn ở S11 Recovery Contract | 24 | 10 | **Không dùng từ S05** cho nhánh `after_manifest`; giữ cho test cũ. |
+| `RECOVERY_BRIEFING_HEADER_TITLE` | S1 recovery tiêu đề | 32 | 17 | `Recovery Contract`, nhận diện run recovery chứ không completion. |
+| `RECOVERY_BRIEFING_OBJECTIVE` | S1 recovery mục tiêu | 80 | 57 | Quay về bàn dispatch A để thu hồi `Manifest Hàng Hóa R-17`; không nêu route/map mới. |
+| `RECOVERY_BRIEFING_RULES_LINE` | S1 recovery dòng luật | 90 | 46 | Easy, Cầu tàu A mở; đồ đã mất không trở lại. |
+| `RECOVERY_LOADOUT_SUMMARY` | S1/O1 recovery kit và trạng thái slot | 110 | 80 | Kit cơ bản; đồ niêm không phải vật chứng còn giữ, đồ mất/ô trống không tự bù. |
+| `RECOVERY_LOADOUT_LABEL_KEPT` | S1/O1 nhãn đồ niêm không phải vật chứng | 24 | 7 | `Còn giữ`. |
+| `RECOVERY_LOADOUT_LABEL_LOST` | S1/O1 nhãn gear/loot mất | 24 | 6 | `Đã mất`. |
+| `RECOVERY_LOADOUT_LABEL_EMPTY` | S1/O1 nhãn slot trống | 24 | 7 | `Ô trống`. |
+| `WORLD_INTERACT_RECOVER_DISPATCH` | S2 context bàn dispatch A, chỉ `UNRECOVERED` | 24 | 16 | `Thu hồi Manifest`; không dùng đồng thời với nhãn pickup đầu run. |
+| `CARD_ACTION_RECOVER_MANIFEST` | O2 recovery action | 24 | 15 | `Nhặt để thu hồi`; mở placement, không tự đặt/niêm. |
+| `HUD_OBJECTIVE_RECOVER_MANIFEST` | S2 recovery trước placement | 48 | 35 | Thu hồi `Manifest Hàng Hóa R-17` ở A. |
+| `HUD_OBJECTIVE_DELIVER_PIER_A` | S2 recovery sau placement, route/extract | 48 | 26 | Dùng lại nguyên chữ: `Đưa Manifest ra Cầu tàu A.` |
+| `SUMMARY_RECOVERY_TITLE` | S10 recovery title variant | 32 | 19 | `Extract sau thu hồi`: chỉ S10 sau board mới là success; recovery không phải extract. |
+| `SUMMARY_RECOVERY_NEXT` | S10 recovery next/action semantic | 72 | 64 | Contract 1 hoàn tất; Contract 2 chỉ được nêu là chưa có trong vertical slice, không có action chơi. |
+| `DEBUG_FIXTURE_MENU_TITLE` | Menu fixture dev/staging | 32 | 16 | `Fixture hợp đồng`; không expose production. |
+| `DEBUG_FIXTURE_C1_LABEL` | Menu fixture dev/staging C1 | 24 | 12 | `C1 — rút sớm`; mô tả state, không là chữ player-facing. |
+| `DEBUG_FIXTURE_C2_LABEL` | Menu fixture dev/staging C2 | 24 | 12 | `C2 — run mới`; mô tả state, không là chữ player-facing. |
+| `DEBUG_FIXTURE_C3_LABEL` | Menu fixture dev/staging C3 | 24 | 22 | `C3 — chết sau Manifest`; mô tả state chết thật sau Manifest, dẫn sang S11 → S12 recovery. |
+| `DEBUG_FIXTURE_RECOVERY_LABEL` | Menu fixture dev/staging, alias action S11 thật | 24 | 20 | `Mở Recovery Contract`; chỉ enabled sau S11 `after_manifest` thật. |
+
+### Thay đổi TASK-105
+
+- Thêm 16 key S05 mới vào CSV: 7 key S1/O1 recovery, 2 key bàn dispatch/O2, 2 key S10 recovery và 5 nhãn fixture
+  debug-only. Bảy key đã có đổi câu theo nghĩa S12; `HUD_OBJECTIVE_DELIVER_PIER_A`,
+  `SUMMARY_DEATH_RECOVERY_UNAVAILABLE` và `SUMMARY_DEATH_BUTTON_BOOT` giữ nguyên câu/key.
+- `SUMMARY_DEATH_RECOVERY_UNAVAILABLE` không dùng từ S05 ở nhánh `after_manifest`; không xóa CSV để test cũ không đỏ.
+
 ### Thay đổi TASK-98
 
 - 43 key mới ở mục S04 trên (append cuối CSV): 42 key của UX §9.1 (6+6 key card hai món tính riêng) và

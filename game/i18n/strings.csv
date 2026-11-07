@@ -32,7 +32,7 @@ HUD_OBJECTIVE_CROSS_TAX_POST,Qua trạm thuế.
 HUD_OBJECTIVE_DELIVER_PIER_A,Đưa Manifest ra Cầu tàu A.
 HUD_OBJECTIVE_HOLD_PIER_A,Giữ khu Cầu tàu A đến khi thuyền cập bến.
 HUD_OBJECTIVE_BOARD_BOAT,Lên thuyền ở Cầu tàu A.
-HUD_OBJECTIVE_RECOVER_MANIFEST,Thu hồi Manifest R-17 ở bàn dispatch A.
+HUD_OBJECTIVE_RECOVER_MANIFEST,Thu hồi Manifest Hàng Hóa R-17 ở A.
 HUD_OBJECTIVE_PICK_UP_MANIFEST,Nhặt lại Manifest R-17 dưới đất.
 HUD_BUTTON_INVENTORY,Đồ mang theo
 WORLD_INTERACT_DISPATCH_DESK,Bàn dispatch
@@ -115,12 +115,28 @@ SUMMARY_DEATH_EVIDENCE_AT_DESK,Manifest R-17 vẫn ở bàn dispatch A. Contract
 SUMMARY_DEATH_EVIDENCE_UNRECOVERED,"Manifest R-17 · chưa thu hồi. Không về hub, kể cả khi đã niêm."
 SUMMARY_DEATH_NOT_EXTRACTED,Chưa extract · giấy phép chưa được giữ.
 SUMMARY_DEATH_BUTTON_PREPARE,Chuẩn bị lại
-SUMMARY_DEATH_BUTTON_RECOVERY,Xem Recovery Contract
+SUMMARY_DEATH_BUTTON_RECOVERY,Mở Recovery Contract
 RECOVERY_HEADER_TITLE,Recovery Contract
-RECOVERY_BODY_LOCATION,Manifest R-17 chưa thu hồi · vị trí: bàn dispatch A.
-RECOVERY_BODY_RULE,"Tự lấy lại và xếp hợp lệ, rồi gọi, giữ khu và lên thuyền ở Cầu tàu A."
-RECOVERY_BODY_KIT,Có kit thu hồi cơ bản; không cần mua lại đồ.
-RECOVERY_BUTTON_BRIEFING,Vào briefing
+RECOVERY_BODY_LOCATION,Manifest Hàng Hóa R-17 chưa thu hồi · bàn dispatch A.
+RECOVERY_BODY_RULE,"Tự thu hồi, xếp hợp lệ; gọi, giữ khu, lên thuyền ở Cầu tàu A."
+RECOVERY_BODY_KIT,Kit cơ bản; đồ đã mất không trở lại.
+RECOVERY_BUTTON_BRIEFING,Chuẩn bị recovery
+RECOVERY_BRIEFING_HEADER_TITLE,Recovery Contract
+RECOVERY_BRIEFING_OBJECTIVE,Quay về bàn dispatch A để thu hồi Manifest Hàng Hóa R-17.
+RECOVERY_BRIEFING_RULES_LINE,Easy · Cầu tàu A mở · Đồ đã mất không trở lại.
+RECOVERY_LOADOUT_SUMMARY,Kit cơ bản. Đồ niêm không phải vật chứng còn giữ; đồ mất và ô trống không tự bù.
+RECOVERY_LOADOUT_LABEL_KEPT,Còn giữ
+RECOVERY_LOADOUT_LABEL_LOST,Đã mất
+RECOVERY_LOADOUT_LABEL_EMPTY,Ô trống
+WORLD_INTERACT_RECOVER_DISPATCH,Thu hồi Manifest
+CARD_ACTION_RECOVER_MANIFEST,Nhặt để thu hồi
+SUMMARY_RECOVERY_TITLE,Extract sau thu hồi
+SUMMARY_RECOVERY_NEXT,Contract 1 đã hoàn tất. Contract 2 chưa có trong vertical slice.
+DEBUG_FIXTURE_MENU_TITLE,Fixture hợp đồng
+DEBUG_FIXTURE_C1_LABEL,C1 — rút sớm
+DEBUG_FIXTURE_C2_LABEL,C2 — run mới
+DEBUG_FIXTURE_C3_LABEL,C3 — chết sau Manifest
+DEBUG_FIXTURE_RECOVERY_LABEL,Mở Recovery Contract
 HUD_BUTTON_ATTACK,Đánh
 HUD_BUTTON_DODGE,Né
 HUD_BUTTON_GUARD,Giữ khiên
