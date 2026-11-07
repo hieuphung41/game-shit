@@ -203,6 +203,16 @@ func close() -> void:
 		close_overlay()
 
 
+## D1 is deliberately exceptional while O5i owns pointer capture: it cancels
+## the pending inventory action and then closes the entire dock in one tap.
+func danger_close() -> void:
+	if session == Session.CLOSED:
+		return
+	if _confirmation != null:
+		_cancel_confirmation()
+	close_overlay()
+
+
 func close_overlay() -> void:
 	session = Session.CLOSED
 	selected_uid = 0
@@ -607,6 +617,7 @@ func _open_confirmation(kind: StringName, anchor: Vector2i, rotated: bool) -> vo
 	_confirmation.configure(item, kind, anchor, rotated)
 	_confirmation.accepted.connect(_commit_confirmation)
 	_confirmation.cancelled.connect(_cancel_confirmation)
+	_confirmation.danger_close_requested.connect(danger_close)
 	add_child(_confirmation)
 	_pending_source_widget(kind).show_pending_source(item.uid, kind)
 	_refresh_s04_controls(item)

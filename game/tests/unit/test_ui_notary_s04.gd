@@ -308,6 +308,88 @@ func test_ui_notary_o5_uses_real_input_guard_cancel_and_single_confirm(t) -> boo
 	return true
 
 
+func test_ui_notary_o5_refocus_restarts_accept_guard(t) -> bool:
+	var inventory := _inventory_with_box_fixture()
+	var source := LootCache.new()
+	source.load_single_ground_item(ItemInstance.new(30, inventory.registry.get_def(&"tax_stamp_d")))
+	var panel := RUN_PANEL.instantiate() as NotaryRunPanel
+	var withdrawals: Array[int] = []
+	panel.item_withdraw_confirmed.connect(func(uid: int, _anchor: Vector2i) -> void: withdrawals.append(uid))
+	panel.configure(inventory, source)
+	t.tree.root.add_child(panel)
+	await t.tree.process_frame
+	panel.open_view()
+	var remedy := inventory.notary_box.items[1] as ItemInstance
+	panel._on_item_pressed(remedy.uid)
+	var before := inventory.snapshot()
+	_tap_grid_cell(panel.get_node("LootGridPanel/Backpack") as InventoryGridWidget, Vector2i(0, 0))
+	await t.tree.process_frame
+	var confirmation := panel._confirmation
+	t.ok(confirmation != null, "given a pending O5i before application refocus")
+	if confirmation == null:
+		panel.queue_free()
+		await t.tree.process_frame
+		return false
+	confirmation._opened_at_msec = Time.get_ticks_msec() - 301
+	t.ok(not confirmation._input_guard_active(), "the original O5i guard has expired before refocus")
+	confirmation.notification(Node.NOTIFICATION_APPLICATION_FOCUS_OUT)
+	confirmation.notification(Node.NOTIFICATION_APPLICATION_FOCUS_IN)
+	t.ok(confirmation._input_guard_active(), "application refocus restarts the O5i accept guard")
+	_push_action(t.tree.root.get_viewport(), &"ui_accept")
+	await t.tree.process_frame
+	t.ok(panel._confirmation == confirmation, "the immediate refocus accept leaves O5i open")
+	t.eq(inventory.snapshot(), before, "the immediate refocus accept does not mutate inventory")
+	t.eq(withdrawals.size(), 0, "the immediate refocus accept emits no withdrawal")
+	confirmation._opened_at_msec = Time.get_ticks_msec() - 301
+	_push_action(t.tree.root.get_viewport(), &"ui_accept")
+	await t.tree.process_frame
+	t.ok(panel._confirmation == null, "accept succeeds after the restarted refocus guard")
+	t.ok(inventory.backpack.items.has(remedy.uid), "the post-guard accept commits the pending withdraw")
+	t.eq(withdrawals, [remedy.uid], "the post-guard accept emits one withdrawal")
+	panel.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func test_ui_notary_d1_input_cancels_o5_and_closes_dock_without_mutation(t) -> bool:
+	var inventory := _inventory_with_box_fixture()
+	var source := LootCache.new()
+	source.load_single_ground_item(ItemInstance.new(30, inventory.registry.get_def(&"tax_stamp_d")))
+	var panel := RUN_PANEL.instantiate() as NotaryRunPanel
+	var closed: Array[bool] = []
+	var withdrawals: Array[int] = []
+	panel.closed.connect(func() -> void: closed.append(true))
+	panel.item_withdraw_confirmed.connect(func(uid: int, _anchor: Vector2i) -> void: withdrawals.append(uid))
+	panel.configure(inventory, source)
+	t.tree.root.add_child(panel)
+	await t.tree.process_frame
+	panel.open_view()
+	var remedy := inventory.notary_box.items[1] as ItemInstance
+	panel._on_item_pressed(remedy.uid)
+	var before := inventory.snapshot()
+	var backpack := panel.get_node("LootGridPanel/Backpack") as InventoryGridWidget
+	_tap_grid_cell(backpack, Vector2i(0, 0))
+	await t.tree.process_frame
+	var confirmation := panel._confirmation
+	t.ok(confirmation != null, "given a pending withdraw O5i")
+	if confirmation == null:
+		panel.queue_free()
+		await t.tree.process_frame
+		return false
+	var d1_center := InventoryConfirmPanel.DANGER_CLOSE_RECT.get_center()
+	_push_touch(t.tree.root.get_viewport(), d1_center, true)
+	_push_touch(t.tree.root.get_viewport(), d1_center, false)
+	await t.tree.process_frame
+	t.ok(panel._confirmation == null, "a real D1 tap removes O5i despite its fullscreen pointer capture")
+	t.eq(panel.session, LootCachePanel.Session.CLOSED, "the same D1 tap closes the dock to HUD")
+	t.eq(closed.size(), 1, "D1 emits the dock-close intent exactly once")
+	t.eq(inventory.snapshot(), before, "D1 cancels pending withdraw without inventory mutation")
+	t.eq(withdrawals.size(), 0, "D1 emits no withdraw confirmation")
+	panel.queue_free()
+	await t.tree.process_frame
+	return true
+
+
 func test_ui_notary_full_backpack_withdraw_shows_lock_cue_and_feedback(t) -> bool:
 	var inventory := _inventory_with_full_backpack()
 	var source := LootCache.new()

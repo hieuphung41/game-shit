@@ -5,8 +5,12 @@ extends Control
 
 signal accepted()
 signal cancelled()
+signal danger_close_requested()
 
 const UI_OPEN_GUARD_SECONDS := 0.3
+# D1 remains reachable while this full-viewport control captures ordinary
+# outside-O5 touches. This matches CombatHud's touch target in the same canvas.
+const DANGER_CLOSE_RECT := Rect2(Vector2(16, 192), Vector2(288, 96))
 
 var _item: ItemInstance
 var _kind: StringName = &"drop"
@@ -55,6 +59,29 @@ func _input(event: InputEvent) -> void:
 		if accept_button != null and get_viewport().gui_get_focus_owner() == accept_button:
 			confirm()
 			get_viewport().set_input_as_handled()
+
+
+func _notification(what: int) -> void:
+	# A resumed touch can carry the confirmation action that backgrounded the app.
+	# Treat every refocus as a fresh O5i open while this panel remains on screen.
+	if what == NOTIFICATION_APPLICATION_FOCUS_IN or what == NOTIFICATION_APPLICATION_RESUMED or what == NOTIFICATION_WM_WINDOW_FOCUS_IN:
+		if is_visible_in_tree():
+			_opened_at_msec = Time.get_ticks_msec()
+
+
+func _gui_input(event: InputEvent) -> void:
+	if not _is_danger_close_press(event):
+		return
+	danger_close_requested.emit()
+	accept_event()
+
+
+func _is_danger_close_press(event: InputEvent) -> bool:
+	if event is InputEventScreenTouch:
+		return event.pressed and DANGER_CLOSE_RECT.has_point(event.position)
+	if event is InputEventMouseButton:
+		return event.pressed and event.button_index == MOUSE_BUTTON_LEFT and DANGER_CLOSE_RECT.has_point(event.position)
+	return false
 
 
 func _build() -> void:
