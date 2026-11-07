@@ -23,6 +23,9 @@ func test_ui_combat_hud_projects_health_actions_warning_and_stub(t) -> bool:
 	await t.tree.process_frame
 	t.ok((hud.get_node("DepletedStub") as Panel).visible, "depleted signal opens blocking stub")
 	t.ok(not (hud.get_node("AttackButton") as Button).visible, "combat buttons hide in stub")
+	t.ok(not (hud.get_node("Objective") as Label).visible, "depleted stub hides the objective")
+	t.ok(not (hud.get_node("HealthPanel") as Panel).visible, "depleted stub hides the complete health panel")
+	t.ok((hud.get_node("DepletedInputBlocker") as Control).visible, "depleted stub enables its dedicated input blocker")
 	hud._stub_elapsed = CombatHud.STUB_END_MESSAGE_SECONDS + 0.1
 	hud._refresh_stub()
 	t.ok(hud._stub_open, "stub state is active")
@@ -121,3 +124,136 @@ func test_ui_combat_hud_s03_text_uses_the_reference_font_floor(t) -> bool:
 	hud.queue_free()
 	await t.tree.process_frame
 	return true
+
+
+func test_ui_combat_hud_hides_danger_when_an_overlay_closes(t) -> bool:
+	var hud := HUD_SCENE.instantiate() as CombatHud
+	t.tree.root.add_child(hud)
+	await t.tree.process_frame
+	var danger := hud.get_node("DangerClose") as Button
+	hud.set_overlay_open(true)
+	hud.set_danger_near(true, true)
+	t.ok(danger.visible, "danger close is visible for a windup while an overlay is open")
+	hud.set_overlay_open(false)
+	t.ok(not danger.visible, "danger close hides when its overlay closes")
+	hud.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func test_ui_combat_hud_remedy_refusals_show_localized_status_without_replacing_warning(t) -> bool:
+	var full_inventory := StarterInventoryFactory.create()
+	var full_combat := RetrieverCombat.new(null, full_inventory)
+	var full_hud := HUD_SCENE.instantiate() as CombatHud
+	full_hud.set_combat(full_combat)
+	t.tree.root.add_child(full_hud)
+	await t.tree.process_frame
+	full_hud.show_warning(&"HUD_ALERT_PATROL_B")
+	var full_remedy := full_hud.get_node("RemedyButton") as Button
+	_tap_remedy_touch(full_hud, full_remedy)
+	t.ok(Input.is_action_pressed(&"use_remedy"), "full-health screen touch emits the named C4 action")
+	full_combat.press(&"use_remedy")
+	t.eq((full_hud.get_node("Status") as Label).text, tr("COMBAT_REMEDY_REFUSED_HP_FULL"), "full-health refusal uses the localized status")
+	t.ok((full_hud.get_node("Status") as Label).visible, "full-health refusal is visible")
+	t.eq((full_hud.get_node("Warning") as Label).text, "▲ " + tr("HUD_ALERT_PATROL_B"), "remedy status preserves the lane warning")
+	full_hud.queue_free()
+	await t.tree.process_frame
+
+	var empty_inventory := StarterInventoryFactory.create()
+	empty_inventory.consume(2)
+	var empty_combat := RetrieverCombat.new(null, empty_inventory)
+	var empty_hud := HUD_SCENE.instantiate() as CombatHud
+	empty_hud.set_combat(empty_combat)
+	t.tree.root.add_child(empty_hud)
+	await t.tree.process_frame
+	var empty_remedy := empty_hud.get_node("RemedyButton") as Button
+	t.ok(not empty_remedy.disabled, "empty-pouch C4 remains tappable to explain the refusal")
+	_tap_remedy_touch(empty_hud, empty_remedy)
+	t.ok(Input.is_action_pressed(&"use_remedy"), "empty-pouch screen touch emits the named C4 action")
+	empty_combat.press(&"use_remedy")
+	t.eq((empty_hud.get_node("Status") as Label).text, tr("COMBAT_REMEDY_REFUSED_NO_REMEDY"), "empty-pouch refusal uses the localized status")
+	t.ok((empty_hud.get_node("Status") as Label).visible, "empty-pouch refusal is visible")
+	empty_hud.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func test_ui_combat_hud_normal_root_passes_r6_touch_drag_to_joystick(t) -> bool:
+	var joystick := TouchJoystick.new()
+	joystick.position = Vector2(0.0, 460.0)
+	joystick.size = Vector2(260.0, 260.0)
+	var directions: Array[Vector2] = []
+	joystick.direction_changed.connect(func(direction: Vector2) -> void: directions.append(direction))
+	var hud := HUD_SCENE.instantiate() as CombatHud
+	t.tree.root.add_child(joystick)
+	t.tree.root.add_child(hud)
+	await t.tree.process_frame
+	t.eq(hud.mouse_filter, Control.MOUSE_FILTER_IGNORE, "normal full-screen HUD root ignores touches outside its controls")
+	_push_touch(t.tree.root.get_viewport(), Vector2(130.0, 590.0), true)
+	await t.tree.process_frame
+	directions.clear()
+	_push_drag(t.tree.root.get_viewport(), Vector2(248.0, 590.0))
+	await t.tree.process_frame
+	t.eq(directions.size(), 1, "R6 drag reaches the joystick while CombatHud is present")
+	hud.queue_free()
+	joystick.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func test_ui_combat_hud_remedy_channel_and_each_interruption_show_status(t) -> bool:
+	for interruption in [&"damage", &"dodge", &"guard", &"overlay"]:
+		var inventory := StarterInventoryFactory.create()
+		var combat := RetrieverCombat.new(null, inventory)
+		combat.health.damage(1)
+		var hud := HUD_SCENE.instantiate() as CombatHud
+		hud.set_combat(combat)
+		t.tree.root.add_child(hud)
+		await t.tree.process_frame
+		combat.press(&"use_remedy")
+		var remedy := hud.get_node("RemedyButton") as Button
+		t.ok(remedy.text.contains("◌"), "%s displays the active remedy-channel indicator" % interruption)
+		match interruption:
+			&"damage":
+				combat.receive_hit(HitInfo.new(0, &"test", 1, Vector3.FORWARD, Vector3.BACK, 0.0, true))
+			&"dodge":
+				combat.press(&"combat_dodge")
+			&"guard":
+				combat.press(&"combat_guard")
+			&"overlay":
+				hud.set_overlay_open(true)
+		t.ok(not remedy.text.contains("◌"), "%s clears the active remedy-channel indicator" % interruption)
+		var status := hud.get_node("Status") as Label
+		t.eq(status.text, tr("COMBAT_REMEDY_INTERRUPTED"), "%s interruption shows the localized remedy toast" % interruption)
+		t.ok(status.visible, "%s interruption makes the remedy toast visible" % interruption)
+		hud.queue_free()
+		await t.tree.process_frame
+	return true
+
+
+func _tap_remedy_touch(hud: CombatHud, remedy: Button) -> void:
+	var press := InputEventScreenTouch.new()
+	press.index = 0
+	press.position = remedy.get_global_rect().get_center()
+	press.pressed = true
+	hud._input(press)
+	var release := InputEventScreenTouch.new()
+	release.index = 0
+	release.position = press.position
+	release.pressed = false
+	hud._input(release)
+
+
+func _push_touch(viewport: Viewport, position: Vector2, pressed: bool) -> void:
+	var event := InputEventScreenTouch.new()
+	event.index = 0
+	event.position = position
+	event.pressed = pressed
+	viewport.push_input(event, true)
+
+
+func _push_drag(viewport: Viewport, position: Vector2) -> void:
+	var event := InputEventScreenDrag.new()
+	event.index = 0
+	event.position = position
+	viewport.push_input(event, true)

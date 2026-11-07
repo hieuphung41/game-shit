@@ -152,6 +152,26 @@ func test_ui_pickup_zone_b_s03_text_uses_the_reference_font_floor(t) -> bool:
 	return true
 
 
+func test_ui_pickup_zone_b_grid_renders_read_only_sling_remedy(t) -> bool:
+	var inventory := StarterInventoryFactory.create()
+	var cache := LootCache.new(inventory.registry)
+	var panel := CARD_SCENE.instantiate() as LootCachePanel
+	panel.configure(inventory, cache)
+	t.tree.root.add_child(panel)
+	await t.tree.process_frame
+	panel.open_pickup()
+	var sling_item := inventory.sling_pouch.all_items()[0] as ItemInstance
+	var sling_label := panel.get_node("LootGridPanel/SlingPouch") as Label
+	var sling_cue := panel.get_node("LootGridPanel/SlingPouchCue") as Label
+	var sling_item_label := panel.get_node("LootGridPanel/SlingPouchItem") as Label
+	t.eq(sling_label.text, tr("LOADOUT_LABEL_SLING_POUCH"), "grid identifies the read-only sling pouch")
+	t.eq(sling_cue.text, "✚", "sling remedy has a non-colour recovery cue")
+	t.eq(sling_item_label.text, sling_item.definition.localized_display_name() + " " + tr("CARD_QUANTITY_SUFFIX").format({"quantity": sling_item.quantity}), "grid reads sling remedy name and quantity from inventory")
+	panel.queue_free()
+	await t.tree.process_frame
+	return true
+
+
 func test_ui_pickup_zone_b_view_rotates_only_through_inventory_and_locks_withdraw(t) -> bool:
 	var inventory := StarterInventoryFactory.create()
 	var cache := LootCache.new(inventory.registry)

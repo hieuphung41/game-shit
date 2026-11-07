@@ -7,6 +7,7 @@ signal boot_requested
 signal danger_close_requested
 
 const STUB_END_MESSAGE_SECONDS := 2.5
+const STATUS_MESSAGE_SECONDS := 3.0
 const NO_GUARD_OWNER := -1
 const MOUSE_GUARD_OWNER := -2
 const API_GUARD_OWNER := -3
@@ -15,23 +16,32 @@ var combat: RetrieverCombat
 var health: Health
 var _objective_key: StringName = &"HUD_OBJECTIVE_DELIVER_PIER_A"
 var _warning_key: StringName = &""
+var _status_key: StringName = &""
 var _overlay_open := false
 var _stub_open := false
 var _stub_elapsed := 0.0
+var _status_remaining := 0.0
 var _boot_loading := false
 var _dodge_remaining := 0.0
 var _guard_owner := NO_GUARD_OWNER
+var _remedy_touch_owner := NO_GUARD_OWNER
+var _remedy_channel_active := false
+var _danger_near := false
+var _danger_windup := false
 
 var _objective: Label
+var _health_panel: Panel
 var _health_value: Label
 var _health_segments: Label
 var _health_low: Label
 var _warning: Label
+var _status: Label
 var _danger: Button
 var _attack: Button
 var _dodge: Button
 var _guard: Button
 var _remedy: Button
+var _stub_blocker: Control
 var _stub: Panel
 var _stub_button: Button
 
@@ -64,6 +74,7 @@ func set_objective(key: StringName) -> void:
 	_objective_key = key
 	if _objective != null:
 		_objective.text = tr(key)
+		_objective.visible = not _stub_open
 
 
 func show_warning(key: StringName) -> void:
@@ -83,14 +94,20 @@ func set_overlay_open(open: bool) -> void:
 		_release_guard_owner()
 	if combat != null:
 		combat.set_overlay_open(open)
+	_refresh_danger()
 	_refresh_buttons()
 
 
 func set_danger_near(near: bool, windup: bool = false) -> void:
-	if _danger == null:
-		return
-	_danger.visible = near and _overlay_open and not _stub_open
-	_danger.text = "▲ " + tr(&"HUD_DANGER_WINDUP" if windup else &"HUD_DANGER_NEAR") + "\n" + tr(&"HUD_DANGER_CLOSE_HINT")
+	_danger_near = near
+	_danger_windup = windup
+	_refresh_danger()
+
+
+func show_status(key: StringName) -> void:
+	_status_key = key
+	_status_remaining = STATUS_MESSAGE_SECONDS if not key.is_empty() else 0.0
+	_refresh_status()
 
 
 func remedy_count() -> int:
@@ -145,6 +162,7 @@ func request_boot() -> void:
 
 func _input(event: InputEvent) -> void:
 	_handle_guard_input(event)
+	_handle_combat_touch(event)
 	if not _stub_open or _stub_elapsed < STUB_END_MESSAGE_SECONDS:
 		return
 	if event.is_action_pressed(&"ui_cancel"):
@@ -159,6 +177,9 @@ func _process(delta: float) -> void:
 	if _stub_open:
 		_stub_elapsed = minf(STUB_END_MESSAGE_SECONDS, _stub_elapsed + maxf(0.0, delta))
 		_refresh_stub()
+	if _status_remaining > 0.0:
+		_status_remaining = maxf(0.0, _status_remaining - maxf(0.0, delta))
+		_refresh_status()
 
 
 func _exit_tree() -> void:
@@ -167,32 +188,42 @@ func _exit_tree() -> void:
 
 
 func _build() -> void:
+	_stub_blocker = Control.new()
+	_stub_blocker.name = "DepletedInputBlocker"
+	_stub_blocker.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_stub_blocker.mouse_filter = Control.MOUSE_FILTER_STOP
+	_stub_blocker.visible = false
+	add_child(_stub_blocker)
 	_objective = _label("Objective", _objective_key, 24)
 	_objective.position = Vector2(16, 16)
 	_objective.size = Vector2(640, 56)
 	add_child(_objective)
-	var health_panel := Panel.new()
-	health_panel.name = "HealthPanel"
-	health_panel.position = Vector2(16, 80)
-	health_panel.size = Vector2(320, 40)
-	add_child(health_panel)
+	_health_panel = Panel.new()
+	_health_panel.name = "HealthPanel"
+	_health_panel.position = Vector2(16, 80)
+	_health_panel.size = Vector2(320, 40)
+	add_child(_health_panel)
 	_health_segments = _label("Segments", &"", 26)
 	_health_segments.position = Vector2(0, 0)
 	_health_segments.size = Vector2(192, 40)
-	health_panel.add_child(_health_segments)
+	_health_panel.add_child(_health_segments)
 	_health_value = _label("HealthValue", &"HUD_HEALTH_VALUE", 28)
 	_health_value.position = Vector2(196, 0)
 	_health_value.size = Vector2(124, 40)
-	health_panel.add_child(_health_value)
+	_health_panel.add_child(_health_value)
 	_health_low = _label("LowHealth", &"HUD_HEALTH_LOW", 24)
 	_health_low.position = Vector2(0, 40)
 	_health_low.size = Vector2(220, 32)
-	health_panel.add_child(_health_low)
+	_health_panel.add_child(_health_low)
 	_warning = _label("Warning", &"", 24)
 	_warning.position = Vector2(16, 128)
 	_warning.size = Vector2(352, 48)
 	_warning.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(_warning)
+	_status = _label("Status", &"", 24)
+	_anchor_bottom_left(_status, 296, 16, Vector2(392, 112))
+	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	add_child(_status)
 	_danger = _button("DangerClose", &"HUD_DANGER_NEAR", Vector2(16, 192), Vector2(288, 96))
 	_danger.visible = false
 	_danger.pressed.connect(func() -> void: danger_close_requested.emit())
@@ -244,6 +275,26 @@ func _handle_guard_input(event: InputEvent) -> void:
 			_release_guard_owner()
 
 
+func _handle_combat_touch(event: InputEvent) -> void:
+	if not event is InputEventScreenTouch:
+		return
+	if event.pressed:
+		if _touches_combat_button(event.position, _attack):
+			press_action(&"combat_attack")
+		elif _touches_combat_button(event.position, _dodge):
+			press_action(&"combat_dodge")
+		elif _touches_combat_button(event.position, _remedy):
+			_remedy_touch_owner = event.index
+	elif event.index == _remedy_touch_owner:
+		_remedy_touch_owner = NO_GUARD_OWNER
+		if not event.canceled and _touches_combat_button(event.position, _remedy):
+			press_action(&"use_remedy")
+
+
+func _touches_combat_button(position: Vector2, button: Button) -> bool:
+	return button != null and button.visible and not button.disabled and button.get_global_rect().has_point(position)
+
+
 func _begin_guard(owner: int) -> void:
 	if _guard_owner != NO_GUARD_OWNER or _stub_open or _overlay_open or not InputMap.has_action(&"combat_guard"):
 		return
@@ -262,6 +313,9 @@ func _release_guard_owner() -> void:
 func _refresh() -> void:
 	if _objective != null:
 		_objective.text = tr(_objective_key)
+		_objective.visible = not _stub_open
+	if _health_panel != null:
+		_health_panel.visible = not _stub_open
 	if health != null and _health_value != null:
 		_health_value.text = tr("HUD_HEALTH_VALUE").format({"hp": health.hp, "max_hp": health.max_hp})
 		var total := ceili(float(health.max_hp) / 10.0)
@@ -270,6 +324,8 @@ func _refresh() -> void:
 		_health_low.visible = health.hp <= ceili(float(health.max_hp) * 0.3)
 	if _warning != null:
 		_warning.visible = not _warning_key.is_empty() and not _stub_open
+	_refresh_status()
+	_refresh_danger()
 	_refresh_buttons()
 	_refresh_stub()
 
@@ -289,13 +345,29 @@ func _refresh_buttons() -> void:
 	if _guard != null:
 		_guard.disabled = false
 	if _remedy != null:
-		_remedy.disabled = combat.state == RetrieverCombat.STATE_GUARDING or remedy_count() == 0
-		_remedy.text = tr("HUD_BUTTON_REMEDY") + " ×" + str(remedy_count())
+		_remedy.disabled = combat.state == RetrieverCombat.STATE_GUARDING
+		_remedy.text = tr("HUD_BUTTON_REMEDY") + (" ◌" if _remedy_channel_active else "") + " ×" + str(remedy_count())
+
+
+func _refresh_danger() -> void:
+	if _danger == null:
+		return
+	_danger.visible = _danger_near and _overlay_open and not _stub_open
+	_danger.text = "▲ " + tr(&"HUD_DANGER_WINDUP" if _danger_windup else &"HUD_DANGER_NEAR") + "\n" + tr(&"HUD_DANGER_CLOSE_HINT")
+
+
+func _refresh_status() -> void:
+	if _status == null:
+		return
+	_status.text = tr(_status_key)
+	_status.visible = not _status_key.is_empty() and _status_remaining > 0.0 and not _stub_open
 
 
 func _refresh_stub() -> void:
 	if _stub == null:
 		return
+	if _stub_blocker != null:
+		_stub_blocker.visible = _stub_open
 	_stub.visible = _stub_open
 	if not _stub_open:
 		return
@@ -309,7 +381,13 @@ func _on_health_changed(_hp: int, _max_hp: int) -> void:
 	_refresh()
 
 
-func _on_combat_state_changed(_state: StringName) -> void:
+
+func _on_combat_state_changed(next_state: StringName) -> void:
+	if next_state == RetrieverCombat.STATE_USING_REMEDY:
+		_remedy_channel_active = true
+	elif _remedy_channel_active:
+		_remedy_channel_active = false
+		show_status(&"COMBAT_REMEDY_INTERRUPTED")
 	_refresh_buttons()
 
 
@@ -318,11 +396,19 @@ func _on_dodge_cooldown_changed(_remaining: float) -> void:
 	_refresh_buttons()
 
 
-func _on_remedy_refused(_reason: StringName) -> void:
+func _on_remedy_refused(reason: StringName) -> void:
+	if _remedy_channel_active:
+		_remedy_channel_active = false
+	match reason:
+		&"no_remedy":
+			show_status(&"COMBAT_REMEDY_REFUSED_NO_REMEDY")
+		&"hp_full":
+			show_status(&"COMBAT_REMEDY_REFUSED_HP_FULL")
 	_refresh_buttons()
 
 
 func _on_remedy_used(_healed: int) -> void:
+	_remedy_channel_active = false
 	_refresh()
 
 
@@ -371,4 +457,15 @@ func _anchor_bottom_right(control: Control, right: float, bottom: float, dimensi
 	control.offset_left = -right - dimensions.x
 	control.offset_top = -bottom - dimensions.y
 	control.offset_right = -right
+	control.offset_bottom = -bottom
+
+
+func _anchor_bottom_left(control: Control, left: float, bottom: float, dimensions: Vector2) -> void:
+	control.anchor_left = 0.0
+	control.anchor_top = 1.0
+	control.anchor_right = 0.0
+	control.anchor_bottom = 1.0
+	control.offset_left = left
+	control.offset_top = -bottom - dimensions.y
+	control.offset_right = left + dimensions.x
 	control.offset_bottom = -bottom

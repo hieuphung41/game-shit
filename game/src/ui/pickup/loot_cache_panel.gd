@@ -181,8 +181,18 @@ func _build_grid() -> void:
 		panel.add_child(_rotate)
 	var sling := _label("SlingPouch", &"LOADOUT_LABEL_SLING_POUCH", 24)
 	sling.position = Vector2(352, 440)
-	sling.size = Vector2(192, 48)
+	sling.size = Vector2(192, 24)
 	panel.add_child(sling)
+	var sling_item := _sling_pouch_item()
+	if sling_item != null:
+		var sling_cue := _static_label("SlingPouchCue", "✚", 24)
+		sling_cue.position = Vector2(352, 464)
+		sling_cue.size = Vector2(24, 24)
+		panel.add_child(sling_cue)
+		var sling_item_label := _static_label("SlingPouchItem", sling_item.definition.localized_display_name() + " " + tr(&"CARD_QUANTITY_SUFFIX").format({"quantity": sling_item.quantity}), 24)
+		sling_item_label.position = Vector2(376, 464)
+		sling_item_label.size = Vector2(168, 24)
+		panel.add_child(sling_item_label)
 	var close_button := _button("CloseButton", &"CARD_ACTION_CLOSE")
 	_anchor_top_right(close_button, DOCK_RIGHT_INSET, CLOSE_BUTTON_TOP, CLOSE_BUTTON_SIZE)
 	close_button.pressed.connect(close)
@@ -320,6 +330,14 @@ func _selected_item() -> ItemInstance:
 	return found.item as ItemInstance if not found.is_empty() else null
 
 
+func _sling_pouch_item() -> ItemInstance:
+	if inventory == null:
+		return null
+	for item: ItemInstance in inventory.sling_pouch.all_items():
+		return item
+	return null
+
+
 func _find_selected() -> Dictionary:
 	if inventory == null or selected_uid == 0:
 		return {}
@@ -354,9 +372,13 @@ func _clear() -> void:
 
 
 func _label(node_name: String, key: StringName, font_size: int) -> Label:
+	return _static_label(node_name, tr(key), font_size)
+
+
+func _static_label(node_name: String, value: String, font_size: int) -> Label:
 	var label := Label.new()
 	label.name = node_name
-	label.text = tr(key)
+	label.text = value
 	label.add_theme_font_size_override("font_size", font_size)
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	return label
