@@ -525,3 +525,18 @@ func test_validate_preserves_duplicate_uid_in_loaded_grid(t) -> bool:
 	t.ok(errors.any(func(result: InventoryResult) -> bool: return result.uid == 1 and result.reason == InventoryReason.Value.CELLS_OCCUPIED), "duplicate uid is reported")
 	t.eq(inventory.snapshot(), before, "validate does not repair duplicate entries")
 	return true
+
+
+func test_consume_only_allows_sling_pouch_consumables_and_removes_final_item(t) -> bool:
+	var inventory := _inventory()
+	inventory.registry.add(SlingRemedyDefinition.new())
+	_load(inventory, [], [_entry(1, &"starter_remedy", Vector2i.ZERO)], [_entry(2, &"sling_remedy", Vector2i.ZERO)])
+	var removed: Array = []
+	inventory.item_removed.connect(func(uid: int, location: StringName) -> void: removed.append([uid, location]))
+	var wrong_source := inventory.commit_consume(1)
+	t.eq(wrong_source.reason, InventoryReason.Value.WRONG_SOURCE, "sealed starter remedy cannot be consumed")
+	var consumed := inventory.consume(2)
+	t.ok(consumed.ok, "the public consume API consumes a sling pouch consumable")
+	t.ok(not inventory.sling_pouch.items.has(2), "final quantity is removed")
+	t.eq(removed, [[2, RetrieverInventory.SLING_POUCH]], "final consume emits item_removed once")
+	return true
