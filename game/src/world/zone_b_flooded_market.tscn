@@ -93,11 +93,14 @@ shader_parameter/paper_grain_strength = 0.06
 shader_parameter/paper_fiber_scale = 7.0
 shader_parameter/paper_speckle_density = 5.0
 shader_parameter/hatch_enabled = true
-shader_parameter/hatch_density = 2.0
-shader_parameter/hatch_line_width = 0.28
-shader_parameter/hatch_strength = 0.9
+shader_parameter/hatch_density = 2.4
+shader_parameter/hatch_line_width = 0.1
+shader_parameter/hatch_strength = 0.6
 shader_parameter/hatch_irregularity = 1.0
-shader_parameter/hatch_dash_frequency = 0.42
+shader_parameter/hatch_dash_frequency = 0.33
+shader_parameter/hatch_cluster_enabled = true
+shader_parameter/hatch_cluster_coverage = 0.18
+shader_parameter/hatch_cluster_cell_size = 2.4
 shader_parameter/hatch_gouge_colour = Color(0.92549, 0.890196, 0.811765, 1)
 
 [sub_resource type="ShaderMaterial" id="BAwningWoodcut"]
@@ -109,12 +112,12 @@ shader_parameter/paper_grain_enabled = true
 shader_parameter/paper_grain_strength = 0.06
 shader_parameter/paper_fiber_scale = 7.0
 shader_parameter/paper_speckle_density = 5.0
-shader_parameter/hatch_enabled = true
+shader_parameter/hatch_enabled = false
 shader_parameter/hatch_density = 2.4
-shader_parameter/hatch_line_width = 0.24
-shader_parameter/hatch_strength = 0.9
+shader_parameter/hatch_line_width = 0.1
+shader_parameter/hatch_strength = 0.6
 shader_parameter/hatch_irregularity = 1.0
-shader_parameter/hatch_dash_frequency = 0.46
+shader_parameter/hatch_dash_frequency = 0.33
 shader_parameter/hatch_gouge_colour = Color(0.92549, 0.890196, 0.811765, 1)
 
 [sub_resource type="BoxMesh" id="BlockedGateSlatMesh"]
@@ -501,7 +504,7 @@ metadata/greybox_role = "route_d_missing_plank_water_gap_1_5m"
 position = Vector3(4.75, 2.0, -35.25)
 rotation_degrees = Vector3(0, -3, 0)
 mesh = SubResource("DistantWarehouseMesh")
-material_override = SubResource("BFacadeWoodcut")
+material_override = ExtResource("3_wood_dark")
 material_overlay = SubResource("InkLandmark")
 metadata/greybox_role = "route_d_distant_warehouse_silhouette_placeholder"
 

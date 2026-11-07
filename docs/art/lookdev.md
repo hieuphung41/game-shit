@@ -26,6 +26,8 @@ không phải một khu playable.
   `hatch_gouge_colour` mặc định là `ink` cho gỗ sáng; mặt `env_wood_dark` dưới
   khoảng 35% value dùng `paper_light` để các vệt đục sáng còn tách được trong dải bóng chàm. Mái dùng density
   `5.5`, mặc định width `0.052`, strength `0.31`. Tắt cho vật dưới 0.5 m và toàn bộ sàn telegraph.
+- Mặt tiền Chợ Ngập (B) mới bật `hatch_cluster_enabled`: ô world-space cứng `2.4 m`, coverage `0.18`; chỉ vài cụm
+  vệt đục nằm trong dải bóng, còn phần tường trơn rõ. Mặc định của shader là tắt, nên khu A và thư viện không đổi.
 - `ink_outline.gdshader` dùng mực `ink` theo ba hạng vật lý: `0.055 m` cho Người Thu Hồi/vật tương tác,
   `0.045 m` cho landmark và `0.035 m` cho prop thường. Sàn không có `next_pass` nét mực.
 - Cảnh kiểm dùng `ShaderMaterial` tô màu theo palette và `next_pass` nét mực theo đúng hạng trên cho cargo 2×2,
@@ -83,6 +85,12 @@ và một vạch lane charge đông cứng ở `progress = 0.6` chỉ để ki�
 - `game-shit/build/lookdev/zone_b_probe.json` — nền, sàn sáng, sàn bóng, lane yên, **lõi danger của vạch charge** và
   mái đỏ son B; mọi điểm ngoài nền ray-check mesh gần camera nhất nên điểm bị che làm gate lỗi. Hai probe sàn B đặt
   trên mặt nhìn thấy (một mặt sáng, một bóng thật) theo quyết định Producer, không ép vào toạ độ gợi ý của spec.
+- `game-shit/build/lookdev/zone_b_route_d_game.png` — góc game 1280×720 của lối D. Capture đọc
+  `BlockedRouteD.global_position` từ scene rồi áp dụng offset camera isometric riêng đã khoá; khung orthographic
+  size 7.0 ưu tiên mặt cổng đủ lớn để thấy từng song, xích chữ X và dấu niêm, vẫn giữ khe nước và silhouette kho D,
+  không chép một toạ độ đoán.
+- `game-shit/build/lookdev/zone_b_route_d_gray.png` và `zone_b_route_d_phone.png` — cùng khung ở thang xám và
+  640×360 để review song/xích, dấu niêm, khe nước thiếu ván và silhouette kho D.
 
 `zone_b_flooded_market.tscn` là greybox placeholder tự dựng từ primitive và vật liệu thư viện; không có file dưới
 `game/assets/`, vì vậy manifest asset không cần dòng mới cho TASK-20261106-85.
