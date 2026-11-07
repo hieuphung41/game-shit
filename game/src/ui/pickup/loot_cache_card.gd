@@ -23,6 +23,9 @@ const CLOSE_BUTTON_SIZE := Vector2(96, 96)
 func _ready() -> void:
 	theme = UiTheme.create()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# Only the dock controls receive pointer input; the full-screen card root must
+	# leave the exposed R6 joystick available while the card is open.
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if inventory != null and cache != null:
 		_build()
 

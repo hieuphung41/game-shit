@@ -147,6 +147,8 @@ func close_overlay() -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if session == Session.CLOSED:
+		return
 	if event.is_action_pressed(&"ui_cancel"):
 		close()
 		get_viewport().set_input_as_handled()
@@ -159,37 +161,37 @@ func _build_grid() -> void:
 	add_child(panel)
 	var source_key: StringName = &"INVENTORY_PICKUP_SOURCE_CACHE" if session == Session.PICKUP else &"INVENTORY_PANEL_TITLE"
 	var source := _label("Source", source_key, 24)
-	source.position = Vector2(16, 8)
+	source.position = Vector2(16, 6)
 	source.size = Vector2(528, 24)
 	panel.add_child(source)
 	var item := _selected_item()
 	var held_key: StringName = item.definition.display_name_key if item != null else &"INVENTORY_PANEL_TITLE"
 	var held := _label("HeldItem", held_key, 24)
-	held.position = Vector2(16, 32)
+	held.position = Vector2(16, 40)
 	held.size = Vector2(320, 28)
 	panel.add_child(held)
 	_footprint_shape_cue = Control.new()
 	_footprint_shape_cue.name = "FootprintShapeCue"
 	_footprint_shape_cue.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_footprint_shape_cue.position = Vector2(352, 26)
+	_footprint_shape_cue.position = Vector2(352, 34)
 	_footprint_shape_cue.size = Vector2(48, 36)
 	panel.add_child(_footprint_shape_cue)
 	_footprint_chip = _label("FootprintChip", &"INVENTORY_FOOTPRINT_CHIP", 24)
-	_footprint_chip.position = Vector2(408, 32)
+	_footprint_chip.position = Vector2(408, 40)
 	_footprint_chip.size = Vector2(120, 28)
 	_footprint_chip.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	panel.add_child(_footprint_chip)
 	_refresh_footprint_chip()
 	_status = _label("Status", &"INVENTORY_PICKUP_HINT_ITEM" if session == Session.PICKUP else &"LOADOUT_HINT_SELECT", 24)
-	# The item strip ends before the labels at local y=92. Keep preview reasons on
-	# its second line rather than allowing an invalid preview to cover either label.
-	_status.position = Vector2(16, 64)
+	# A 24 px label has a 34 px minimum Control height in the shared theme. Keep
+	# the three strip rows and grid labels adjacent without overlapping their rects.
+	_status.position = Vector2(16, 74)
 	_status.size = Vector2(528, 24)
 	_status.autowrap_mode = TextServer.AUTOWRAP_OFF
 	_status.clip_text = true
 	panel.add_child(_status)
-	_backpack = _grid(panel, "Backpack", &"LOADOUT_LABEL_BACKPACK", RetrieverInventory.BACKPACK, Vector2(16, 92))
-	_notary_box = _grid(panel, "NotaryBox", &"LOADOUT_LABEL_NOTARY_BOX", RetrieverInventory.NOTARY_BOX, Vector2(352, 92))
+	_backpack = _grid(panel, "Backpack", &"LOADOUT_LABEL_BACKPACK", RetrieverInventory.BACKPACK, Vector2(16, 108))
+	_notary_box = _grid(panel, "NotaryBox", &"LOADOUT_LABEL_NOTARY_BOX", RetrieverInventory.NOTARY_BOX, Vector2(352, 108))
 	if item != null and item.definition.rotatable and not item.definition.is_square():
 		_rotate = _button("RotateButton", &"INVENTORY_BUTTON_ROTATE")
 		_rotate.position = Vector2(352, 328)

@@ -3,6 +3,16 @@ extends RefCounted
 const CARD_SCENE := preload("res://src/ui/pickup/loot_cache_panel.tscn")
 
 
+class UnhandledCancelObserver extends Node:
+	var received := 0
+	var was_handled := true
+
+	func _unhandled_input(event: InputEvent) -> void:
+		if event.is_action_pressed(&"ui_cancel"):
+			received += 1
+			was_handled = get_viewport().is_input_handled()
+
+
 func test_ui_pickup_zone_b_card_has_non_colour_cues_and_skip_is_pure(t) -> bool:
 	var inventory := StarterInventoryFactory.create()
 	var cache := LootCache.new(inventory.registry)
@@ -21,6 +31,33 @@ func test_ui_pickup_zone_b_card_has_non_colour_cues_and_skip_is_pure(t) -> bool:
 	t.eq(inventory.snapshot(), before, "skip does not mutate inventory")
 	t.eq(cache.cache_state(), &"full", "skip does not mutate cache")
 	panel.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func test_ui_pickup_zone_b_open_card_passes_r6_touch_and_drag_to_joystick(t) -> bool:
+	var inventory := StarterInventoryFactory.create()
+	var cache := LootCache.new(inventory.registry)
+	var panel := CARD_SCENE.instantiate() as LootCachePanel
+	panel.configure(inventory, cache)
+	var joystick := TouchJoystick.new()
+	joystick.position = Vector2(0.0, 460.0)
+	joystick.size = Vector2(260.0, 260.0)
+	var directions: Array[Vector2] = []
+	joystick.direction_changed.connect(func(direction: Vector2) -> void: directions.append(direction))
+	t.tree.root.add_child(joystick)
+	t.tree.root.add_child(panel)
+	await t.tree.process_frame
+	t.eq(panel._card.mouse_filter, Control.MOUSE_FILTER_IGNORE, "full-screen cache card root ignores exposed input")
+	var viewport: Viewport = t.tree.root.get_viewport()
+	_push_screen_touch(viewport, 11, Vector2(80.0, 590.0), true)
+	await t.tree.process_frame
+	_push_screen_drag(viewport, 11, Vector2(180.0, 590.0))
+	await t.tree.process_frame
+	t.eq(directions.size(), 2, "open cache card leaves R6 touch and drag with the joystick")
+	t.ok(directions[0].x < 0.0 and directions[1].x > 0.0, "R6 touch and drag retain joystick direction")
+	panel.queue_free()
+	joystick.queue_free()
 	await t.tree.process_frame
 	return true
 
@@ -315,11 +352,40 @@ func test_ui_pickup_zone_b_dock_uses_the_specified_right_side_regions(t) -> bool
 	return true
 
 
+func test_ui_pickup_zone_b_closed_standalone_panel_passes_cancel_to_the_viewport(t) -> bool:
+	var inventory := StarterInventoryFactory.create()
+	var cache := LootCache.new(inventory.registry)
+	var panel := CARD_SCENE.instantiate() as LootCachePanel
+	panel.configure(inventory, cache)
+	var observer := UnhandledCancelObserver.new()
+	t.tree.root.add_child(panel)
+	t.tree.root.add_child(observer)
+	await t.tree.process_frame
+	panel.close_overlay()
+	t.eq(panel.session, LootCachePanel.Session.CLOSED, "standalone panel remains closed after Close")
+	t.ok(panel.is_inside_tree(), "standalone panel stays in the tree without an owner callback")
+	_push_action(t.tree.root.get_viewport(), &"ui_cancel", true)
+	await t.tree.process_frame
+	t.eq(observer.received, 1, "closed standalone panel does not consume ui_cancel")
+	t.ok(not observer.was_handled, "closed standalone panel leaves viewport input unhandled")
+	panel.queue_free()
+	observer.queue_free()
+	await t.tree.process_frame
+	return true
+
+
 func _push_screen_touch(viewport: Viewport, index: int, position: Vector2, pressed: bool) -> void:
 	var event := InputEventScreenTouch.new()
 	event.index = index
 	event.position = position
 	event.pressed = pressed
+	viewport.push_input(event, true)
+
+
+func _push_screen_drag(viewport: Viewport, index: int, position: Vector2) -> void:
+	var event := InputEventScreenDrag.new()
+	event.index = index
+	event.position = position
 	viewport.push_input(event, true)
 
 
