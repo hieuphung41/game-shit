@@ -1,0 +1,485 @@
+[gd_scene load_steps=42 format=3]
+
+[ext_resource type="Script" path="res://src/lookdev/zone_d_lookdev_capture.gd" id="1_capture"]
+[ext_resource type="Material" path="res://art/materials/env_wood.tres" id="2_wood"]
+[ext_resource type="Material" path="res://art/materials/env_wood_dark.tres" id="3_wood_dark"]
+[ext_resource type="Material" path="res://art/materials/env_iron.tres" id="4_iron"]
+[ext_resource type="Material" path="res://art/materials/env_foam.tres" id="5_foam"]
+[ext_resource type="Material" path="res://art/materials/env_water_deep_wet.tres" id="6_water_deep"]
+[ext_resource type="Material" path="res://art/materials/water_wet.tres" id="7_water"]
+[ext_resource type="Shader" path="res://art/shaders/ink_outline.gdshader" id="8_ink"]
+[ext_resource type="Shader" path="res://art/shaders/toon_matte.gdshader" id="9_toon"]
+
+[sub_resource type="ShaderMaterial" id="InkLandmark"]
+shader = ExtResource("8_ink")
+shader_parameter/ink = Color(0.121569, 0.101961, 0.090196, 1)
+shader_parameter/outline_width = 0.045
+
+[sub_resource type="ShaderMaterial" id="InkInteract"]
+shader = ExtResource("8_ink")
+shader_parameter/ink = Color(0.121569, 0.101961, 0.090196, 1)
+shader_parameter/outline_width = 0.055
+
+[sub_resource type="ShaderMaterial" id="InkProp"]
+shader = ExtResource("8_ink")
+shader_parameter/ink = Color(0.121569, 0.101961, 0.090196, 1)
+shader_parameter/outline_width = 0.035
+
+[sub_resource type="ShaderMaterial" id="CageWestWoodcut"]
+resource_name = "zone_d_west_cage_sparse_gouges_placeholder"
+shader = ExtResource("9_toon")
+shader_parameter/albedo_color = Color(0.243137, 0.258824, 0.27451, 1)
+shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
+shader_parameter/paper_grain_enabled = true
+shader_parameter/paper_grain_strength = 0.04
+shader_parameter/paper_fiber_scale = 14.0
+shader_parameter/paper_speckle_density = 7.0
+shader_parameter/hatch_enabled = true
+shader_parameter/hatch_density = 2.4
+shader_parameter/hatch_line_width = 0.1
+shader_parameter/hatch_strength = 0.6
+shader_parameter/hatch_irregularity = 1.0
+shader_parameter/hatch_dash_frequency = 0.33
+shader_parameter/hatch_cluster_enabled = true
+shader_parameter/hatch_cluster_coverage = 0.18
+shader_parameter/hatch_cluster_cell_size = 2.4
+shader_parameter/hatch_gouge_colour = Color(0.92549, 0.890196, 0.811765, 1)
+
+[sub_resource type="ShaderMaterial" id="CageWestPaperGouge"]
+resource_name = "zone_d_west_cage_paper_gouge_placeholder"
+shader = ExtResource("9_toon")
+shader_parameter/albedo_color = Color(0.92549, 0.890196, 0.811765, 1)
+shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
+shader_parameter/paper_grain_enabled = false
+shader_parameter/hatch_enabled = false
+shader_parameter/paper_gouge_override = true
+
+[sub_resource type="PlaneMesh" id="WaterMesh"]
+size = Vector2(16, 18)
+
+[sub_resource type="PlaneMesh" id="WaterInnerMesh"]
+size = Vector2(12, 14)
+
+[sub_resource type="BoxMesh" id="DockFloorMesh"]
+size = Vector3(5.5, 0.18, 3.0)
+
+[sub_resource type="BoxShape3D" id="DockFloorShape"]
+size = Vector3(5.5, 0.18, 3.0)
+
+[sub_resource type="BoxMesh" id="MainFloorMesh"]
+size = Vector3(9.5, 0.18, 8.5)
+
+[sub_resource type="BoxShape3D" id="MainFloorShape"]
+size = Vector3(9.5, 0.18, 8.5)
+
+[sub_resource type="BoxMesh" id="NorthFloorMesh"]
+size = Vector3(8.5, 0.18, 1.0)
+
+[sub_resource type="BoxShape3D" id="NorthFloorShape"]
+size = Vector3(8.5, 0.18, 1.0)
+
+[sub_resource type="BoxMesh" id="RailLongMesh"]
+size = Vector3(0.12, 0.55, 9.5)
+
+[sub_resource type="BoxShape3D" id="RailLongShape"]
+size = Vector3(0.12, 0.55, 9.5)
+
+[sub_resource type="BoxMesh" id="RailShortMesh"]
+size = Vector3(2.0, 0.55, 0.12)
+
+[sub_resource type="BoxShape3D" id="RailShortShape"]
+size = Vector3(2.0, 0.55, 0.12)
+
+[sub_resource type="BoxMesh" id="CageBeamMesh"]
+size = Vector3(7.0, 0.24, 1.5)
+
+[sub_resource type="BoxMesh" id="CageSlatMesh"]
+size = Vector3(0.18, 3.0, 0.18)
+
+[sub_resource type="BoxShape3D" id="CageRowShape"]
+size = Vector3(7.0, 3.0, 1.5)
+
+[sub_resource type="BoxMesh" id="CageWestMesh"]
+size = Vector3(1.0, 2.6, 7.0)
+
+[sub_resource type="BoxShape3D" id="CageWestShape"]
+size = Vector3(1.0, 2.6, 7.0)
+
+[sub_resource type="PlaneMesh" id="CageWestGouge01Mesh"]
+size = Vector2(0.11, 1.16)
+
+[sub_resource type="PlaneMesh" id="CageWestGouge02Mesh"]
+size = Vector2(0.09, 0.74)
+
+[sub_resource type="PlaneMesh" id="CageWestGouge03Mesh"]
+size = Vector2(0.13, 1.42)
+
+[sub_resource type="PlaneMesh" id="CageWestGouge04Mesh"]
+size = Vector2(0.1, 0.88)
+
+[sub_resource type="PlaneMesh" id="CageWestGouge05Mesh"]
+size = Vector2(0.08, 0.62)
+
+[sub_resource type="BoxMesh" id="PalletMesh"]
+size = Vector3(1.2, 0.12, 1.2)
+
+[sub_resource type="BoxShape3D" id="PalletShape"]
+size = Vector3(1.2, 0.12, 1.2)
+
+[sub_resource type="BoxMesh" id="CargoItemMesh"]
+size = Vector3(1.0, 0.78, 1.0)
+
+[sub_resource type="BoxShape3D" id="CargoItemShape"]
+size = Vector3(1.0, 0.78, 1.0)
+
+[sub_resource type="BoxMesh" id="DeskMesh"]
+size = Vector3(0.8, 0.75, 1.2)
+
+[sub_resource type="BoxShape3D" id="DeskShape"]
+size = Vector3(0.8, 0.75, 1.2)
+
+[sub_resource type="BoxMesh" id="StampItemMesh"]
+size = Vector3(0.3, 0.25, 0.6)
+
+[sub_resource type="BoxShape3D" id="StampItemShape"]
+size = Vector3(0.3, 0.25, 0.6)
+
+[sub_resource type="BoxShape3D" id="CalmZoneShape"]
+size = Vector3(7.5, 2.0, 7.5)
+
+[sub_resource type="SphereShape3D" id="InteractShape"]
+radius = 1.5
+
+[sub_resource type="BoxMesh" id="FoamMesh"]
+size = Vector3(0.14, 0.025, 12.5)
+
+[node name="ZoneDFloatingWarehouse" type="Node3D"]
+script = ExtResource("1_capture")
+metadata/zone = "zone_d_floating_warehouse"
+metadata/placement_contract = "Parent at world (11.75, 0.0, -36.95), rotation zero."
+metadata/greybox_status = "placeholder"
+
+[node name="WaterD" type="MeshInstance3D" parent="."]
+position = Vector3(0, -0.12, -7)
+mesh = SubResource("WaterMesh")
+material_override = ExtResource("6_water_deep")
+metadata/greybox_role = "zone_d_water_deep_placeholder"
+
+[node name="WaterInnerD" type="MeshInstance3D" parent="."]
+position = Vector3(-6.0, -0.115, -13.5)
+mesh = SubResource("WaterInnerMesh")
+material_override = ExtResource("7_water")
+metadata/greybox_role = "zone_d_water_mid_placeholder"
+
+[node name="FloorD" type="Node3D" parent="."]
+metadata/greybox_role = "continuous_walkable_floating_warehouse_floor_placeholder"
+
+[node name="Dock" type="MeshInstance3D" parent="FloorD"]
+position = Vector3(0.25, 0, -1.5)
+mesh = SubResource("DockFloorMesh")
+material_override = ExtResource("2_wood")
+
+[node name="Main" type="MeshInstance3D" parent="FloorD"]
+position = Vector3(-0.25, 0, -7.25)
+mesh = SubResource("MainFloorMesh")
+material_override = ExtResource("3_wood_dark")
+
+[node name="North" type="MeshInstance3D" parent="FloorD"]
+position = Vector3(-0.75, 0, -12.0)
+mesh = SubResource("NorthFloorMesh")
+material_override = ExtResource("3_wood_dark")
+
+[node name="FloorCollisionD" type="StaticBody3D" parent="."]
+collision_layer = 2
+metadata/greybox_role = "world_static_continuous_walkable_floor"
+
+[node name="Dock" type="CollisionShape3D" parent="FloorCollisionD"]
+position = Vector3(0.25, 0, -1.5)
+shape = SubResource("DockFloorShape")
+
+[node name="Main" type="CollisionShape3D" parent="FloorCollisionD"]
+position = Vector3(-0.25, 0, -7.25)
+shape = SubResource("MainFloorShape")
+
+[node name="North" type="CollisionShape3D" parent="FloorCollisionD"]
+position = Vector3(-0.75, 0, -12.0)
+shape = SubResource("NorthFloorShape")
+
+[node name="DExitToB" type="Marker3D" parent="."]
+position = Vector3(0, 0.09, 0)
+metadata/width_m = 2.5
+metadata/facing = "+z"
+
+[node name="DEntry" type="Marker3D" parent="."]
+position = Vector3(0, 0.09, -1.0)
+metadata/facing = "-z"
+
+[node name="CalmZoneD" type="Area3D" parent="."]
+position = Vector3(-0.25, 1.0, -6.75)
+collision_layer = 0
+collision_mask = 1
+metadata/greybox_role = "calm_zone_trigger"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="CalmZoneD"]
+shape = SubResource("CalmZoneShape")
+
+[node name="CageRowNorthD" type="StaticBody3D" parent="."]
+position = Vector3(-1.5, 1.5, -11.75)
+collision_layer = 2
+metadata/greybox_role = "north_warehouse_cage_landmark_placeholder"
+
+[node name="Base" type="MeshInstance3D" parent="CageRowNorthD"]
+position = Vector3(0, -1.38, 0)
+mesh = SubResource("CageBeamMesh")
+material_override = ExtResource("3_wood_dark")
+material_overlay = SubResource("InkLandmark")
+
+[node name="Top" type="MeshInstance3D" parent="CageRowNorthD"]
+position = Vector3(0, 1.38, 0)
+rotation_degrees = Vector3(0, 0, -3)
+mesh = SubResource("CageBeamMesh")
+material_override = ExtResource("3_wood_dark")
+material_overlay = SubResource("InkLandmark")
+
+[node name="SlatWest" type="MeshInstance3D" parent="CageRowNorthD"]
+position = Vector3(-3.35, 0, 0)
+mesh = SubResource("CageSlatMesh")
+material_override = ExtResource("4_iron")
+material_overlay = SubResource("InkLandmark")
+
+[node name="Slat01" type="MeshInstance3D" parent="CageRowNorthD"]
+position = Vector3(-2.35, 0, 0)
+mesh = SubResource("CageSlatMesh")
+material_override = ExtResource("4_iron")
+material_overlay = SubResource("InkLandmark")
+
+[node name="Slat02" type="MeshInstance3D" parent="CageRowNorthD"]
+position = Vector3(-1.35, 0, 0)
+mesh = SubResource("CageSlatMesh")
+material_override = ExtResource("4_iron")
+material_overlay = SubResource("InkLandmark")
+
+[node name="Slat03" type="MeshInstance3D" parent="CageRowNorthD"]
+position = Vector3(1.35, 0, 0)
+mesh = SubResource("CageSlatMesh")
+material_override = ExtResource("4_iron")
+material_overlay = SubResource("InkLandmark")
+
+[node name="Slat04" type="MeshInstance3D" parent="CageRowNorthD"]
+position = Vector3(2.35, 0, 0)
+mesh = SubResource("CageSlatMesh")
+material_override = ExtResource("4_iron")
+material_overlay = SubResource("InkLandmark")
+
+[node name="SlatEast" type="MeshInstance3D" parent="CageRowNorthD"]
+position = Vector3(3.35, 0, 0)
+mesh = SubResource("CageSlatMesh")
+material_override = ExtResource("4_iron")
+material_overlay = SubResource("InkLandmark")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="CageRowNorthD"]
+shape = SubResource("CageRowShape")
+
+[node name="CageOpenD" type="Node3D" parent="CageRowNorthD"]
+position = Vector3(-1.25, -0.1, -0.78)
+rotation_degrees = Vector3(0, -68, 0)
+metadata/greybox_role = "open_cage_door_placeholder"
+
+[node name="Door" type="MeshInstance3D" parent="CageRowNorthD/CageOpenD"]
+position = Vector3(0, 0.1, 0)
+mesh = SubResource("CageSlatMesh")
+material_override = ExtResource("4_iron")
+material_overlay = SubResource("InkLandmark")
+
+[node name="CageWestD" type="StaticBody3D" parent="."]
+position = Vector3(-4.5, 1.3, -7.0)
+rotation_degrees = Vector3(0, 0, 2)
+collision_layer = 2
+metadata/greybox_role = "west_cage_stack_placeholder"
+
+[node name="Mesh" type="MeshInstance3D" parent="CageWestD"]
+mesh = SubResource("CageWestMesh")
+material_override = SubResource("CageWestWoodcut")
+material_overlay = SubResource("InkLandmark")
+
+[node name="PaperGouges" type="Node3D" parent="CageWestD"]
+position = Vector3(0.506, 0.0, 0.0)
+metadata/greybox_role = "five_authored_paper_light_gouges_at_west_cage_shadow_boundary"
+metadata/wear_reason = "scraped_tax_tally_marks_on_abandoned_cage_stack"
+
+[node name="Gouge01" type="MeshInstance3D" parent="CageWestD/PaperGouges"]
+position = Vector3(0.0, 0.18, -2.28)
+rotation_degrees = Vector3(0.0, -4.0, -90.0)
+mesh = SubResource("CageWestGouge01Mesh")
+material_override = SubResource("CageWestPaperGouge")
+
+[node name="Gouge02" type="MeshInstance3D" parent="CageWestD/PaperGouges"]
+position = Vector3(0.0, 0.42, -0.92)
+rotation_degrees = Vector3(0.0, 3.0, -90.0)
+mesh = SubResource("CageWestGouge02Mesh")
+material_override = SubResource("CageWestPaperGouge")
+
+[node name="Gouge03" type="MeshInstance3D" parent="CageWestD/PaperGouges"]
+position = Vector3(0.0, -0.08, 0.42)
+rotation_degrees = Vector3(0.0, -2.0, -90.0)
+mesh = SubResource("CageWestGouge03Mesh")
+material_override = SubResource("CageWestPaperGouge")
+
+[node name="Gouge04" type="MeshInstance3D" parent="CageWestD/PaperGouges"]
+position = Vector3(0.0, 0.29, 1.86)
+rotation_degrees = Vector3(0.0, 5.0, -90.0)
+mesh = SubResource("CageWestGouge04Mesh")
+material_override = SubResource("CageWestPaperGouge")
+
+[node name="Gouge05" type="MeshInstance3D" parent="CageWestD/PaperGouges"]
+position = Vector3(0.0, -0.19, 2.62)
+rotation_degrees = Vector3(0.0, -6.0, -90.0)
+mesh = SubResource("CageWestGouge05Mesh")
+material_override = SubResource("CageWestPaperGouge")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="CageWestD"]
+shape = SubResource("CageWestShape")
+
+[node name="RailD" type="Node3D" parent="."]
+metadata/greybox_role = "low_water_edge_rail_placeholder"
+
+[node name="East" type="StaticBody3D" parent="RailD"]
+position = Vector3(4.5, 0.275, -7.25)
+collision_layer = 2
+
+[node name="Mesh" type="MeshInstance3D" parent="RailD/East"]
+mesh = SubResource("RailLongMesh")
+material_override = ExtResource("3_wood_dark")
+material_overlay = SubResource("InkProp")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RailD/East"]
+shape = SubResource("RailLongShape")
+
+[node name="North" type="StaticBody3D" parent="RailD"]
+position = Vector3(2.75, 0.275, -12.5)
+collision_layer = 2
+
+[node name="Mesh" type="MeshInstance3D" parent="RailD/North"]
+mesh = SubResource("RailShortMesh")
+material_override = ExtResource("3_wood_dark")
+material_overlay = SubResource("InkProp")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RailD/North"]
+shape = SubResource("RailShortShape")
+
+[node name="FoamEdgeD" type="Node3D" parent="."]
+metadata/greybox_role = "waterline_foam_edge_placeholder"
+
+[node name="East" type="MeshInstance3D" parent="FoamEdgeD"]
+position = Vector3(4.72, -0.095, -7.0)
+mesh = SubResource("FoamMesh")
+material_override = ExtResource("5_foam")
+
+[node name="West" type="MeshInstance3D" parent="FoamEdgeD"]
+position = Vector3(-5.05, -0.095, -7.0)
+mesh = SubResource("FoamMesh")
+material_override = ExtResource("5_foam")
+
+[node name="CargoD" type="Node3D" parent="."]
+position = Vector3(-2.5, 0, -9.0)
+metadata/source_id = "cargo_d_2x2"
+metadata/greybox_role = "cargo_2x2_source_placeholder"
+
+[node name="Pallet" type="StaticBody3D" parent="CargoD"]
+position = Vector3(0, 0.06, 0)
+rotation_degrees = Vector3(0, 0, 10)
+collision_layer = 2
+
+[node name="Mesh" type="MeshInstance3D" parent="CargoD/Pallet"]
+mesh = SubResource("PalletMesh")
+material_override = ExtResource("2_wood")
+material_overlay = SubResource("InkProp")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="CargoD/Pallet"]
+shape = SubResource("PalletShape")
+
+[node name="ItemBlock" type="StaticBody3D" parent="CargoD"]
+position = Vector3(0, 0.51, 0)
+collision_layer = 2
+metadata/footprint = "2x2"
+
+[node name="Mesh" type="MeshInstance3D" parent="CargoD/ItemBlock"]
+mesh = SubResource("CargoItemMesh")
+material_override = ExtResource("3_wood_dark")
+material_overlay = SubResource("InkInteract")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="CargoD/ItemBlock"]
+shape = SubResource("CargoItemShape")
+
+[node name="InteractArea" type="Area3D" parent="CargoD"]
+position = Vector3(0, 1.0, 0)
+collision_layer = 0
+collision_mask = 1
+metadata/radius_m = 1.5
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="CargoD/InteractArea"]
+shape = SubResource("InteractShape")
+
+[node name="TaxStampD" type="Node3D" parent="."]
+position = Vector3(2.0, 0, -6.5)
+metadata/source_id = "tax_stamp_d"
+metadata/greybox_role = "tax_stamp_1x2_source_placeholder"
+
+[node name="Desk" type="StaticBody3D" parent="TaxStampD"]
+position = Vector3(0, 0.375, 0)
+collision_layer = 2
+
+[node name="Mesh" type="MeshInstance3D" parent="TaxStampD/Desk"]
+mesh = SubResource("DeskMesh")
+material_override = ExtResource("2_wood")
+material_overlay = SubResource("InkProp")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TaxStampD/Desk"]
+shape = SubResource("DeskShape")
+
+[node name="ItemBlock" type="StaticBody3D" parent="TaxStampD"]
+position = Vector3(0, 0.875, 0)
+collision_layer = 2
+metadata/footprint = "1x2"
+
+[node name="Mesh" type="MeshInstance3D" parent="TaxStampD/ItemBlock"]
+mesh = SubResource("StampItemMesh")
+material_override = ExtResource("4_iron")
+material_overlay = SubResource("InkInteract")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TaxStampD/ItemBlock"]
+shape = SubResource("StampItemShape")
+
+[node name="InteractArea" type="Area3D" parent="TaxStampD"]
+position = Vector3(0, 1.0, 0)
+collision_layer = 0
+collision_mask = 1
+metadata/radius_m = 1.5
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TaxStampD/InteractArea"]
+shape = SubResource("InteractShape")
+
+[node name="ProbeZoneDFloorLit" type="Marker3D" parent="." groups=["zone_d_lookdev_probe"]]
+position = Vector3(1.0, 0.095, -5.0)
+metadata/role = "lit_face"
+metadata/surface_path = "FloorD/Main"
+metadata/expected_hex = "#4A3426"
+metadata/tolerance = 10.0
+
+[node name="ProbeZoneDFloorShadow" type="Marker3D" parent="." groups=["zone_d_lookdev_probe"]]
+position = Vector3(-3.6, 0.095, -7.0)
+metadata/role = "shadow"
+metadata/surface_path = "FloorD/Main"
+metadata/tolerance = 12.0
+
+[node name="ProbeZoneDWater" type="Marker3D" parent="." groups=["zone_d_lookdev_probe"]]
+position = Vector3(6.0, -0.115, -7.0)
+metadata/role = "lit_face"
+metadata/surface_path = "WaterD"
+metadata/expected_hex = "#1E3836"
+metadata/tolerance = 10.0
+
+[node name="ProbeZoneDBackground" type="Marker3D" parent="." groups=["zone_d_lookdev_probe"]]
+metadata/role = "background"
+metadata/expected_hex = "#4E6570"
+metadata/tolerance = 5.0

@@ -87,10 +87,24 @@ và một vạch lane charge đông cứng ở `progress = 0.6` chỉ để ki�
   trên mặt nhìn thấy (một mặt sáng, một bóng thật) theo quyết định Producer, không ép vào toạ độ gợi ý của spec.
 - `game-shit/build/lookdev/zone_b_route_d_game.png` — góc game 1280×720 của lối D. Capture đọc
   `BlockedRouteD.global_position` từ scene rồi áp dụng offset camera isometric riêng đã khoá; khung orthographic
-  size 7.0 ưu tiên mặt cổng đủ lớn để thấy từng song, xích chữ X và dấu niêm, vẫn giữ khe nước và silhouette kho D,
-  không chép một toạ độ đoán.
+  size 7.0 ưu tiên mặt cổng đủ lớn để thấy từng song, xích chữ X, dấu niêm và khe nước, không chép một toạ độ đoán.
 - `game-shit/build/lookdev/zone_b_route_d_gray.png` và `zone_b_route_d_phone.png` — cùng khung ở thang xám và
-  640×360 để review song/xích, dấu niêm, khe nước thiếu ván và silhouette kho D.
+  640×360 để review song/xích, dấu niêm và khe nước thiếu ván.
+
+Gate cũng chụp **Kho Nổi (D)** và hai trạng thái của lối D bằng camera gameplay trực giao `size = 20`, không dùng
+camera cận riêng. Scene D là greybox primitive tự dựng với vật liệu thư viện; nó không có file dưới `game/assets/`.
+
+- `game-shit/build/lookdev/zone_d_game.png` — 1280×720 từ `DEntry`, kiểm lồng kho, pallet cargo vuông, bàn cân với
+  Dấu Thuế dẹt, nước xanh lục tối và đường quay lại B.
+- `game-shit/build/lookdev/zone_d_gray.png` — cùng khung thang xám để kiểm hai nguồn khác silhouette mà không dựa vào
+  màu.
+- `game-shit/build/lookdev/zone_d_phone.png` — cùng khung 640×360, giảm nearest-neighbour.
+- `game-shit/build/lookdev/zone_d_probe.json` — probe nền, sàn D mặt sáng, sàn trong bóng lồng tây và nước sâu theo
+  PRT-01.
+- `game-shit/build/lookdev/zone_b_route_d_closed_{game,phone}.png` — từ tâm `CalmZoneB`: khung đỏ son, bảy song,
+  xích chữ X, niêm và collision đóng.
+- `game-shit/build/lookdev/zone_b_route_d_open_{game,phone}.png` — cùng chỗ đứng sau `set_route_d_open(true)`: khung
+  rỗng, cầu ván gỗ và xích/niêm rách; collision cổng tắt và collision cầu bật.
 
 `zone_b_flooded_market.tscn` là greybox placeholder tự dựng từ primitive và vật liệu thư viện; không có file dưới
 `game/assets/`, vì vậy manifest asset không cần dòng mới cho TASK-20261106-85.

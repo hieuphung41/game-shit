@@ -1,0 +1,11 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+
+[ext_resource type="Shader" path="res://art/shaders/water_print.gdshader" id="1_water_print"]
+
+[resource]
+resource_name = "env_water_deep_wet"
+shader = ExtResource("1_water_print")
+shader_parameter/albedo_color = Color(0.117647, 0.219608, 0.211765, 1)
+shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
+shader_parameter/wet_roughness = 0.88
+shader_parameter/wet_specular_strength = 0.08

@@ -12,6 +12,12 @@ const ROUTE_D_CAPTURE_FOCUS_OFFSET := Vector3(0.0, 0.3, -1.7)
 const ROUTE_D_CAPTURE_CAMERA_SIZE := 7.0
 const B_ENTRY_PATH := ^"BEntry"
 const BLOCKED_ROUTE_D_PATH := ^"BlockedRouteD"
+const ROUTE_D_PLANKS_PATH := ^"RouteDPlanks"
+const ROUTE_D_DEBRIS_PATH := ^"RouteDOpenDebris"
+const CLOSED_ROUTE_PARTS := [
+	"SlatWest", "Slat01", "Slat02", "Slat03", "Slat04", "Slat05", "Slat06",
+	"Chain", "ChainCross", "TaxSealNotice", "TaxSeal", "TaxSealRibbon",
+]
 const RETRIEVER_SCENE := preload("res://src/player/retriever.tscn")
 const ENVIRONMENT := preload("res://art/env_default.tres")
 const BACKGROUND_PROBE_PIXEL := Vector2(96.0, 96.0)
@@ -20,11 +26,37 @@ var _camera: Camera3D
 
 
 func _ready() -> void:
+	set_route_d_open(false)
 	for argument: String in OS.get_cmdline_user_args():
 		if argument.begins_with("--capture-zone-b="):
 			_prepare_capture_camera()
 			call_deferred("_capture", argument.trim_prefix("--capture-zone-b="))
 			return
+
+
+## Public greybox state for the S04 route. Gameplay owns when it opens; this
+## scene only owns the honest visible/collision representation of each state.
+func set_route_d_open(open: bool) -> void:
+	var blocked_route := get_node_or_null(BLOCKED_ROUTE_D_PATH) as StaticBody3D
+	if blocked_route != null:
+		for part_name: String in CLOSED_ROUTE_PARTS:
+			var part := blocked_route.get_node_or_null(part_name) as MeshInstance3D
+			if part != null:
+				part.visible = not open
+		var blocker := blocked_route.get_node_or_null("CollisionShape3D") as CollisionShape3D
+		if blocker != null:
+			blocker.set_deferred("disabled", open)
+		blocked_route.collision_layer = 0 if open else 2
+	var planks := get_node_or_null(ROUTE_D_PLANKS_PATH) as StaticBody3D
+	if planks != null:
+		planks.visible = open
+		var plank_collision := planks.get_node_or_null("CollisionShape3D") as CollisionShape3D
+		if plank_collision != null:
+			plank_collision.set_deferred("disabled", not open)
+		planks.collision_layer = 2 if open else 0
+	var debris := get_node_or_null(ROUTE_D_DEBRIS_PATH) as Node3D
+	if debris != null:
+		debris.visible = open
 
 
 func _prepare_capture_camera() -> void:

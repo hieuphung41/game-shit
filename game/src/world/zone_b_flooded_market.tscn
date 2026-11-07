@@ -1,4 +1,4 @@
-[gd_scene load_steps=38 format=3]
+[gd_scene load_steps=46 format=3]
 
 [ext_resource type="Script" path="res://src/lookdev/zone_b_lookdev_capture.gd" id="1_capture"]
 [ext_resource type="Material" path="res://art/materials/env_wood.tres" id="2_wood"]
@@ -81,7 +81,7 @@ size = Vector3(0.24, 2.4, 0.24)
 size = Vector3(2.5, 1.8, 0.16)
 
 [sub_resource type="BoxShape3D" id="BlockedGateShape"]
-size = Vector3(2.5, 1.8, 0.16)
+size = Vector3(4.1, 1.8, 0.16)
 
 [sub_resource type="ShaderMaterial" id="BFacadeWoodcut"]
 resource_name = "zone_b_facade_woodcut_placeholder"
@@ -146,6 +146,30 @@ size = Vector3(6.4, 4.0, 0.8)
 
 [sub_resource type="PlaneMesh" id="MissingPlankWaterMesh"]
 size = Vector2(4.6, 2.0)
+
+[sub_resource type="BoxMesh" id="RouteDPlankMesh"]
+size = Vector3(2.5, 0.18, 2.0)
+
+[sub_resource type="BoxShape3D" id="RouteDPlankShape"]
+size = Vector3(2.5, 0.18, 2.0)
+
+[sub_resource type="BoxMesh" id="RouteDRailMesh"]
+size = Vector3(0.12, 0.5, 2.0)
+
+[sub_resource type="BoxShape3D" id="RouteDRailShape"]
+size = Vector3(0.12, 0.5, 2.0)
+
+[sub_resource type="BoxMesh" id="NorthEdgeRailMesh"]
+size = Vector3(2.7, 0.5, 0.12)
+
+[sub_resource type="BoxShape3D" id="NorthEdgeRailShape"]
+size = Vector3(2.7, 0.5, 0.12)
+
+[sub_resource type="BoxMesh" id="RouteDLintelMesh"]
+size = Vector3(4.6, 0.45, 0.12)
+
+[sub_resource type="BoxShape3D" id="PatrolTriggerShape"]
+size = Vector3(2.5, 2.0, 0.5)
 
 [sub_resource type="BoxMesh" id="CacheMesh"]
 size = Vector3(0.7, 0.7, 1.0)
@@ -390,7 +414,7 @@ shape = SubResource("CacheShape")
 [node name="BlockedRouteD" type="StaticBody3D" parent="."]
 position = Vector3(4.75, 0.9, -32)
 collision_layer = 2
-metadata/greybox_role = "blocked_route_d_placeholder"
+metadata/greybox_role = "blocked_route_d_closed_frame_placeholder"
 
 [node name="FrameTop" type="MeshInstance3D" parent="BlockedRouteD"]
 position = Vector3(0, 1.15, 0)
@@ -494,19 +518,117 @@ material_overlay = SubResource("InkLandmark")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="BlockedRouteD"]
 shape = SubResource("BlockedGateShape")
 
+[node name="RouteDLintel" type="MeshInstance3D" parent="."]
+position = Vector3(4.75, 2.975, -32)
+rotation_degrees = Vector3(0, 0, -3)
+mesh = SubResource("RouteDLintelMesh")
+material_override = ExtResource("4_canvas_red")
+material_overlay = SubResource("InkLandmark")
+metadata/greybox_role = "route_d_return_lintel_placeholder"
+
+[node name="RouteDPlanks" type="StaticBody3D" parent="."]
+visible = false
+position = Vector3(4.75, 0, -33.5)
+rotation_degrees = Vector3(0, 0, 2)
+collision_layer = 2
+metadata/greybox_role = "route_d_open_walkable_planks_placeholder"
+
+[node name="Mesh" type="MeshInstance3D" parent="RouteDPlanks"]
+mesh = SubResource("RouteDPlankMesh")
+material_override = ExtResource("2_wood")
+material_overlay = SubResource("InkProp")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RouteDPlanks"]
+disabled = true
+shape = SubResource("RouteDPlankShape")
+
+[node name="RouteDSideRails" type="Node3D" parent="."]
+metadata/greybox_role = "route_d_low_guard_rails_placeholder"
+
+[node name="West" type="StaticBody3D" parent="RouteDSideRails"]
+position = Vector3(3.5, 0.25, -33.5)
+collision_layer = 2
+
+[node name="Mesh" type="MeshInstance3D" parent="RouteDSideRails/West"]
+mesh = SubResource("RouteDRailMesh")
+material_override = ExtResource("3_wood_dark")
+material_overlay = SubResource("InkProp")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RouteDSideRails/West"]
+shape = SubResource("RouteDRailShape")
+
+[node name="East" type="StaticBody3D" parent="RouteDSideRails"]
+position = Vector3(6.0, 0.25, -33.5)
+collision_layer = 2
+
+[node name="Mesh" type="MeshInstance3D" parent="RouteDSideRails/East"]
+mesh = SubResource("RouteDRailMesh")
+material_override = ExtResource("3_wood_dark")
+material_overlay = SubResource("InkProp")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RouteDSideRails/East"]
+shape = SubResource("RouteDRailShape")
+
+[node name="NorthEdgeRailsD" type="Node3D" parent="."]
+metadata/greybox_role = "route_d_closed_edge_guard_placeholder"
+
+[node name="West" type="StaticBody3D" parent="NorthEdgeRailsD"]
+position = Vector3(1.35, 0.25, -32.5)
+collision_layer = 2
+
+[node name="Mesh" type="MeshInstance3D" parent="NorthEdgeRailsD/West"]
+mesh = SubResource("NorthEdgeRailMesh")
+material_override = ExtResource("3_wood_dark")
+material_overlay = SubResource("InkProp")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="NorthEdgeRailsD/West"]
+shape = SubResource("NorthEdgeRailShape")
+
+[node name="East" type="StaticBody3D" parent="NorthEdgeRailsD"]
+position = Vector3(7.9, 0.25, -32.5)
+collision_layer = 2
+
+[node name="Mesh" type="MeshInstance3D" parent="NorthEdgeRailsD/East"]
+mesh = SubResource("NorthEdgeRailMesh")
+material_override = ExtResource("3_wood_dark")
+material_overlay = SubResource("InkProp")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="NorthEdgeRailsD/East"]
+shape = SubResource("NorthEdgeRailShape")
+
+[node name="RouteDOpenDebris" type="Node3D" parent="."]
+visible = false
+position = Vector3(4.75, 0.0, -32.0)
+metadata/greybox_role = "route_d_open_chain_and_seal_debris_placeholder"
+
+[node name="BrokenChain" type="MeshInstance3D" parent="RouteDOpenDebris"]
+position = Vector3(-1.85, 0.42, 0)
+rotation_degrees = Vector3(0, 0, -38)
+mesh = SubResource("BlockedGateChainMesh")
+material_override = ExtResource("6_iron")
+material_overlay = SubResource("InkProp")
+
+[node name="TornSeal" type="MeshInstance3D" parent="RouteDOpenDebris"]
+position = Vector3(1.85, 0.06, 0.3)
+rotation_degrees = Vector3(90, 0, 0)
+mesh = SubResource("BlockedGateSealMesh")
+material_override = ExtResource("4_canvas_red")
+material_overlay = SubResource("InkProp")
+
 [node name="MissingPlankWaterGapD" type="MeshInstance3D" parent="."]
 position = Vector3(4.75, 0.01, -33.45)
 mesh = SubResource("MissingPlankWaterMesh")
 material_override = ExtResource("9_water")
 metadata/greybox_role = "route_d_missing_plank_water_gap_1_5m"
 
-[node name="DistantWarehouseSilhouetteD" type="MeshInstance3D" parent="."]
-position = Vector3(4.75, 2.0, -35.25)
-rotation_degrees = Vector3(0, -3, 0)
-mesh = SubResource("DistantWarehouseMesh")
-material_override = ExtResource("3_wood_dark")
-material_overlay = SubResource("InkLandmark")
-metadata/greybox_role = "route_d_distant_warehouse_silhouette_placeholder"
+[node name="PatrolTriggerB" type="Area3D" parent="."]
+position = Vector3(4.5, 1.0, -25.25)
+collision_layer = 0
+collision_mask = 1
+metadata/greybox_role = "return_patrol_trigger_placeholder"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PatrolTriggerB"]
+shape = SubResource("PatrolTriggerShape")
 
 [node name="PatrolReturnPath" type="Node3D" parent="."]
 
