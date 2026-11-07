@@ -26,6 +26,8 @@ không phải một khu playable.
   `hatch_gouge_colour` mặc định là `ink` cho gỗ sáng; mặt `env_wood_dark` dưới
   khoảng 35% value dùng `paper_light` để các vệt đục sáng còn tách được trong dải bóng chàm. Mái dùng density
   `5.5`, mặc định width `0.052`, strength `0.31`. Tắt cho vật dưới 0.5 m và toàn bộ sàn telegraph.
+- Mặt tiền Chợ Ngập (B) mới bật `hatch_cluster_enabled`: ô world-space cứng `2.4 m`, coverage `0.18`; chỉ vài cụm
+  vệt đục nằm trong dải bóng, còn phần tường trơn rõ. Mặc định của shader là tắt, nên khu A và thư viện không đổi.
 - `ink_outline.gdshader` dùng mực `ink` theo ba hạng vật lý: `0.055 m` cho Người Thu Hồi/vật tương tác,
   `0.045 m` cho landmark và `0.035 m` cho prop thường. Sàn không có `next_pass` nét mực.
 - Cảnh kiểm dùng `ShaderMaterial` tô màu theo palette và `next_pass` nét mực theo đúng hạng trên cho cargo 2×2,

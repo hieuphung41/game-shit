@@ -32,6 +32,8 @@ func test_art_material_library_is_matte(t) -> bool:
 		t.eq(material.get_shader_parameter("paper_grain_strength"), GRAIN_STRENGTH, "%s keeps visible 4 percent grain" % path)
 		t.ok(material.get_shader_parameter("hatch_enabled") is bool, "%s exposes the hatch toggle" % path)
 		t.ok(float(material.get_shader_parameter("hatch_density")) >= 2.0, "%s exposes hatch density" % path)
+		var cluster_enabled = material.get_shader_parameter("hatch_cluster_enabled")
+		t.ok(cluster_enabled == null or cluster_enabled == false, "%s keeps sparse gouge clusters opt-in through the shader default" % path)
 	var water := load("res://art/materials/water_wet.tres") as ShaderMaterial
 	if t.ok(water != null, "water_wet loads as a printed ShaderMaterial"):
 		t.ok(water.shader != null, "water_wet uses the printed-water shader")
@@ -63,6 +65,10 @@ func test_toon_shader_exposes_triplanar_paper_and_shadow_hatch(t) -> bool:
 	t.ok("triplanar_paper" in code, "paper grain is triplanar and world-space")
 	t.ok("paper_fiber_scale" in code and "paper_speckle_density" in code, "paper grain has fibre and speckle controls")
 	t.ok("hatch_enabled" in code and "hatch_density" in code and "hatch_line_width" in code and "hatch_gouge_colour" in code, "hatch can be enabled, coloured, and tuned per material")
+	t.ok("uniform bool hatch_cluster_enabled = false;" in code, "sparse gouge clusters default off for every existing material")
+	t.ok("hatch_cluster_coverage : hint_range(0.0, 1.0) = 1.0" in code and "hatch_cluster_cell_size : hint_range(1.5, 3.0) = 2.4" in code, "cluster mask exposes bounded coverage and metre-scale cells")
+	t.ok("float hatch_cluster_plane(vec2 plane)" in code and "floor(plane / hatch_cluster_cell_size)" in code, "cluster mask is hard-edged and world-space")
+	t.ok("triplanar_hatch(world_position, world_normal) * hatch_cluster" in code, "cluster mask limits the world-space hatch rather than changing its stroke shape")
 	t.ok("hatch_irregularity : hint_range(0.0, 1.0) = 0.0" in code, "new hand-cut variation defaults to the legacy hatch output")
 	t.ok("hatch_dash_frequency : hint_range(0.20, 1.20) = 0.82" in code, "new gouge cadence defaults to the legacy hatch spacing")
 	t.ok("float cut_length = mix(0.44, 0.99, cut_seed);" in code, "opt-in gouges span at least a two-to-one length range")

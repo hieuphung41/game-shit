@@ -131,7 +131,7 @@ func test_zone_b_probes_keep_visible_surfaces_and_signal_lane(t) -> bool:
 		if blocked_route != null:
 			blocked_route.position += Vector3(0.25, 0.0, -0.5)
 			t.ok(bool(zone.call("_position_camera_at_blocked_route_d")), "Route D capture resolves the blocked-gate node")
-			t.ok((camera.global_position - blocked_route.global_position).is_equal_approx(Vector3(6.3, 5.25, 6.3)), "Route D camera follows the actual blocked-gate transform rather than a guessed coordinate")
+			t.ok((camera.global_position - blocked_route.global_position).is_equal_approx(Vector3(7.35, 6.3, 5.65)), "Route D camera follows the actual blocked-gate transform and frames the closure beyond it")
 			t.eq(camera.size, 7.0, "Route D capture gives the gate closure evidence readable phone-scale framing")
 	var lane := zone.get_node_or_null("ChargeLaneTelegraph") as Node3D
 	t.ok(lane != null and lane.get_meta("visual_role") == "signal_danger_floor_telegraph", "B lane uses the signal-only charge telegraph")
@@ -151,18 +151,19 @@ func test_zone_b_facade_cuts_stay_sparse_and_irregular(t) -> bool:
 	var material := facade.material_override as ShaderMaterial if facade != null else null
 	t.ok(material != null, "Zone B facade uses the sparse shadow-cut material")
 	if material != null:
-		t.eq(material.get_shader_parameter("hatch_density"), 2.6, "Facade makes separated paper-coloured shadow gouges visible at game scale")
-		t.eq(material.get_shader_parameter("hatch_line_width"), 0.13, "Facade cuts leave clear unmarked shadow between narrow strokes")
-		t.eq(material.get_shader_parameter("hatch_strength"), 0.85, "Facade cuts remain restrained relief rather than a full pattern")
+		t.eq(material.get_shader_parameter("hatch_density"), 2.4, "Facade makes only a few paper-coloured shadow gouges visible at game scale")
+		t.eq(material.get_shader_parameter("hatch_line_width"), 0.1, "Facade cuts leave broad unmarked shadow between narrow strokes")
+		t.eq(material.get_shader_parameter("hatch_strength"), 0.6, "Facade cuts remain restrained relief rather than a full pattern")
 		t.eq(material.get_shader_parameter("hatch_irregularity"), 1.0, "Facade cuts retain varied hard-edged lengths")
 		t.eq(material.get_shader_parameter("hatch_dash_frequency"), 0.33, "Facade cuts form isolated long marks instead of a repeated cadence")
+		t.eq(material.get_shader_parameter("hatch_cluster_enabled"), true, "Facade alone opts into sparse world-space gouge clusters")
+		t.eq(material.get_shader_parameter("hatch_cluster_coverage"), 0.18, "Facade clusters mark at most roughly one fifth of the shadow band")
+		t.eq(material.get_shader_parameter("hatch_cluster_cell_size"), 2.4, "Facade clusters use metre-scale world cells")
 	var awning := zone.get_node_or_null("WestFacade/AwningB") as MeshInstance3D
 	var awning_material := awning.material_override as ShaderMaterial if awning != null else null
-	t.ok(awning_material != null, "Zone B awning uses the same restrained cut coverage")
+	t.ok(awning_material != null, "Zone B awning keeps its plain canvas material")
 	if awning_material != null:
-		t.eq(awning_material.get_shader_parameter("hatch_density"), 2.6, "Awning carries readable but separated paper-coloured shadow gouges")
-		t.eq(awning_material.get_shader_parameter("hatch_line_width"), 0.13, "Awning avoids a dense decorative hatch")
-		t.eq(awning_material.get_shader_parameter("hatch_dash_frequency"), 0.33, "Awning retains uneven long cuts instead of a dot cadence")
+		t.eq(awning_material.get_shader_parameter("hatch_enabled"), false, "Awning remains plain so only the broad shadow facade carries sparse gouges")
 	zone.queue_free()
 	await t.tree.process_frame
 	return true

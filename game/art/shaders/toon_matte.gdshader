@@ -21,6 +21,12 @@ uniform float hatch_strength : hint_range(0.0, 0.90) = 0.34;
 // library materials that already use this shader.
 uniform float hatch_irregularity : hint_range(0.0, 1.0) = 0.0;
 uniform float hatch_dash_frequency : hint_range(0.20, 1.20) = 0.82;
+// Broad walls can opt into a low-frequency, world-space cell mask. It keeps
+// the chiselled lines in a few hard-edged groups instead of decorating every
+// part of the shadow band. Default off preserves every existing material.
+uniform bool hatch_cluster_enabled = false;
+uniform float hatch_cluster_coverage : hint_range(0.0, 1.0) = 1.0;
+uniform float hatch_cluster_cell_size : hint_range(1.5, 3.0) = 2.4;
 // Lighter materials cut toward ink; dark materials may cut toward paper so
 // their sparse relief remains distinct inside the indigo shadow band.
 uniform vec3 hatch_gouge_colour : source_color = vec3(0.121569, 0.101961, 0.090196);
@@ -103,6 +109,20 @@ float triplanar_hatch(vec3 position, vec3 normal) {
 		+ hatch_plane(position.xy, hatch_density) * weights.z;
 }
 
+float hatch_cluster_plane(vec2 plane) {
+	vec2 cell = floor(plane / hatch_cluster_cell_size);
+	float cluster_seed = hash21(cell + vec2(1.0, 63.0));
+	return step(1.0 - hatch_cluster_coverage, cluster_seed);
+}
+
+float triplanar_hatch_cluster(vec3 position, vec3 normal) {
+	vec3 weights = pow(abs(normalize(normal)), vec3(4.0));
+	weights /= max(weights.x + weights.y + weights.z, 0.0001);
+	return hatch_cluster_plane(position.yz) * weights.x
+		+ hatch_cluster_plane(position.xz) * weights.y
+		+ hatch_cluster_plane(position.xy) * weights.z;
+}
+
 void vertex() {
 	world_position = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	world_normal = normalize(MODEL_NORMAL_MATRIX * NORMAL);
@@ -110,7 +130,8 @@ void vertex() {
 
 void fragment() {
 	paper_mark = paper_grain_enabled ? triplanar_paper(world_position, world_normal) : 0.0;
-	hatch_mark = hatch_enabled ? triplanar_hatch(world_position, world_normal) : 0.0;
+	float hatch_cluster = hatch_cluster_enabled ? triplanar_hatch_cluster(world_position, world_normal) : 1.0;
+	hatch_mark = hatch_enabled ? triplanar_hatch(world_position, world_normal) * hatch_cluster : 0.0;
 	ALBEDO = clamp(albedo_color.rgb * (1.0 + paper_mark * paper_grain_strength), vec3(0.0), vec3(1.0));
 	ROUGHNESS = 1.0;
 }

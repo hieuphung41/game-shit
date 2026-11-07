@@ -7,7 +7,8 @@ const PROBE_GROUP := &"zone_b_lookdev_probe"
 const PROBE_SURFACE_OFFSET := 0.04
 const TRIANGLE_EPSILON := 0.00001
 const CAPTURE_CAMERA_OFFSET := Vector3(15.45, 13.05, 11.6)
-const ROUTE_D_CAPTURE_CAMERA_OFFSET := Vector3(6.3, 5.25, 6.3)
+const ROUTE_D_CAPTURE_CAMERA_OFFSET := Vector3(7.35, 6.0, 7.35)
+const ROUTE_D_CAPTURE_FOCUS_OFFSET := Vector3(0.0, 0.3, -1.7)
 const ROUTE_D_CAPTURE_CAMERA_SIZE := 7.0
 const B_ENTRY_PATH := ^"BEntry"
 const BLOCKED_ROUTE_D_PATH := ^"BlockedRouteD"
@@ -116,11 +117,13 @@ func _position_camera_at_blocked_route_d() -> bool:
 		push_error("Zone B look-dev capture requires BlockedRouteD")
 		return false
 	# Keep the locked isometric angle, but frame the actual gate node rather than
-	# reusing the wide Zone B composition. The nearer node-relative offset gives
-	# the gate plane enough screen area for every physical closure signal to read
-	# separately, while retaining the water gap and warehouse behind it.
+	# reusing the wide Zone B composition. Center one and seven-tenths metres
+	# through the gate so the complete gate stays in the lower half while its water
+	# gap and warehouse silhouette remain inside the same orthographic frame.
 	_camera.size = ROUTE_D_CAPTURE_CAMERA_SIZE
-	_camera.global_position = blocked_route.global_position + ROUTE_D_CAPTURE_CAMERA_OFFSET
+	_camera.global_position = blocked_route.global_position + ROUTE_D_CAPTURE_FOCUS_OFFSET + ROUTE_D_CAPTURE_CAMERA_OFFSET
+	_camera.make_current()
+	_camera.force_update_transform()
 	return true
 
 
