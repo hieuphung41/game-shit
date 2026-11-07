@@ -1,0 +1,148 @@
+class_name InventoryConfirmPanel
+extends Control
+## O5i presents a pending inventory mutation. The owner alone calls the
+## RetrieverInventory commit method after this panel emits accepted.
+
+signal accepted()
+signal cancelled()
+
+const UI_OPEN_GUARD_SECONDS := 0.3
+
+var _item: ItemInstance
+var _kind: StringName = &"drop"
+var _opened_at_msec := 0
+var _confirmation_locked := false
+
+
+func _ready() -> void:
+	theme = UiTheme.create()
+	_build()
+
+
+func configure(item: ItemInstance, kind: StringName) -> void:
+	_item = item
+	_kind = kind
+	if is_inside_tree():
+		_build()
+
+
+func confirm() -> void:
+	if _confirmation_locked or _input_guard_active():
+		return
+	_confirmation_locked = true
+	var accept_button := get_node_or_null("InventoryConfirmPanel/AcceptButton") as Button
+	if accept_button != null:
+		accept_button.disabled = true
+	accepted.emit()
+
+
+func cancel() -> void:
+	if not _input_guard_active():
+		cancelled.emit()
+
+
+func _input(event: InputEvent) -> void:
+	if event.is_action_pressed(&"ui_cancel") and not _input_guard_active():
+		cancelled.emit()
+		get_viewport().set_input_as_handled()
+
+
+func _build() -> void:
+	_confirmation_locked = false
+	for child in get_children():
+		remove_child(child)
+		child.queue_free()
+	var panel := Panel.new()
+	panel.name = "InventoryConfirmPanel"
+	panel.position = Vector2(312, 184)
+	panel.size = Vector2(296, 392)
+	add_child(panel)
+	var is_withdraw := _kind == &"withdraw"
+	var title_key: StringName = &"INVENTORY_CONFIRM_WITHDRAW_TITLE" if is_withdraw else &"INVENTORY_CONFIRM_DROP_TITLE"
+	var title := _label("Title", title_key, 28)
+	title.position = Vector2(16, 12)
+	title.size = Vector2(264, 64)
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	panel.add_child(title)
+	var item_row := _static_label("ItemRow", _item_text(), 24)
+	item_row.position = Vector2(16, 80)
+	item_row.size = Vector2(264, 40)
+	item_row.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	panel.add_child(item_row)
+	var target_key: StringName = &"INVENTORY_CONFIRM_TARGET_BACKPACK" if is_withdraw else &"INVENTORY_CONFIRM_TARGET_GROUND"
+	var target := _label("TargetRow", target_key, 24)
+	target.position = Vector2(16, 124)
+	target.size = Vector2(264, 32)
+	panel.add_child(target)
+	if is_withdraw:
+		var seal_change := _static_label("SealChange", _seal_change_text(), 24)
+		seal_change.position = Vector2(16, 156)
+		seal_change.size = Vector2(264, 32)
+		panel.add_child(seal_change)
+	var body_key := _body_key(is_withdraw)
+	var body := _label("Body", body_key, 24)
+	body.position = Vector2(16, 192)
+	body.size = Vector2(264, 88)
+	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	panel.add_child(body)
+	var cancel_button := _button("CancelButton", &"CONFIRM_BUTTON_CANCEL", Vector2(16, 288), Vector2(128, 96))
+	cancel_button.pressed.connect(cancel)
+	panel.add_child(cancel_button)
+	var accept_key: StringName = &"INVENTORY_CONFIRM_WITHDRAW_ACCEPT" if is_withdraw else &"INVENTORY_CONFIRM_DROP_ACCEPT"
+	var accept_button := _button("AcceptButton", accept_key, Vector2(160, 288), Vector2(120, 96))
+	accept_button.pressed.connect(confirm)
+	panel.add_child(accept_button)
+	_opened_at_msec = Time.get_ticks_msec()
+
+
+func _body_key(is_withdraw: bool) -> StringName:
+	if is_withdraw and _is_evidence():
+		return &"INVENTORY_CONFIRM_WITHDRAW_EVIDENCE_BODY"
+	if not is_withdraw and _is_evidence():
+		return &"INVENTORY_CONFIRM_DROP_EVIDENCE_BODY"
+	return &"INVENTORY_CONFIRM_WITHDRAW_BODY" if is_withdraw else &"INVENTORY_CONFIRM_DROP_BODY"
+
+
+func _item_text() -> String:
+	if _item == null or _item.definition == null:
+		return ""
+	var quantity := tr(&"CARD_QUANTITY_SUFFIX").format({"quantity": _item.quantity}) if _item.quantity > 1 else ""
+	return "□ " + _item.definition.localized_display_name() + quantity + " · " + tr(&"INVENTORY_FOOTPRINT_CHIP").format({"w": _item.effective_size().x, "h": _item.effective_size().y})
+
+
+func _seal_change_text() -> String:
+	var source_key: StringName = &"INVENTORY_SEAL_LABEL_SEALED_NOT_EXTRACTED" if _is_evidence() else &"INVENTORY_SEAL_LABEL_SEALED"
+	var target_key: StringName = &"INVENTORY_SEAL_LABEL_NOT_EXTRACTED" if _is_evidence() else &"INVENTORY_SEAL_LABEL_UNSEALED"
+	return "▣ " + tr(source_key) + " → " + tr(target_key)
+
+
+func _is_evidence() -> bool:
+	return _item != null and _item.definition != null and _item.definition.item_category == ItemDef.Category.EVIDENCE
+
+
+func _input_guard_active() -> bool:
+	return Time.get_ticks_msec() - _opened_at_msec < int(UI_OPEN_GUARD_SECONDS * 1000.0)
+
+
+func _label(node_name: String, key: StringName, font_size: int) -> Label:
+	return _static_label(node_name, tr(key), font_size)
+
+
+func _static_label(node_name: String, value: String, font_size: int) -> Label:
+	var label := Label.new()
+	label.name = node_name
+	label.text = value
+	label.add_theme_font_size_override("font_size", font_size)
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	return label
+
+
+func _button(node_name: String, key: StringName, at: Vector2, dimensions: Vector2) -> Button:
+	var button := Button.new()
+	button.name = node_name
+	button.text = tr(key)
+	button.position = at
+	button.size = dimensions
+	button.focus_mode = Control.FOCUS_ALL
+	button.add_theme_font_size_override("font_size", 24)
+	return button

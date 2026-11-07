@@ -18,8 +18,20 @@ func _init(registry: ItemRegistry = null) -> void:
 
 func load_cache_b(registry: ItemRegistry) -> void:
 	_items.clear()
+	cache_id = CACHE_B
 	_add(101, registry.get_def(&"scraped_tax_coin"), 2)
 	_add(102, registry.get_def(&"waterlogged_stock_ledger"), 1)
+	changed.emit(cache_state())
+
+
+## Generic one-source adapter for D and GroundDrop. World flow owns whether it
+## should remove or respawn the source after the panel emits `item_placed`.
+func load_single_ground_item(item: ItemInstance, source_id: StringName = &"zone_d") -> void:
+	_items.clear()
+	cache_id = source_id
+	if item != null:
+		item.item_location = &"ground"
+		_items.append(item)
 	changed.emit(cache_state())
 
 
