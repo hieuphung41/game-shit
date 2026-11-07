@@ -106,19 +106,19 @@ size = Vector3(1.0, 2.6, 7.0)
 size = Vector3(1.0, 2.6, 7.0)
 
 [sub_resource type="PlaneMesh" id="CageWestGouge01Mesh"]
-size = Vector2(0.11, 1.16)
+size = Vector2(0.19, 1.46)
 
 [sub_resource type="PlaneMesh" id="CageWestGouge02Mesh"]
-size = Vector2(0.09, 0.74)
+size = Vector2(0.16, 0.86)
 
 [sub_resource type="PlaneMesh" id="CageWestGouge03Mesh"]
-size = Vector2(0.13, 1.42)
+size = Vector2(0.21, 1.68)
 
 [sub_resource type="PlaneMesh" id="CageWestGouge04Mesh"]
-size = Vector2(0.1, 0.88)
+size = Vector2(0.17, 1.02)
 
 [sub_resource type="PlaneMesh" id="CageWestGouge05Mesh"]
-size = Vector2(0.08, 0.62)
+size = Vector2(0.15, 0.72)
 
 [sub_resource type="BoxMesh" id="PalletMesh"]
 size = Vector3(1.2, 0.12, 1.2)
@@ -303,7 +303,7 @@ material_override = SubResource("CageWestWoodcut")
 material_overlay = SubResource("InkLandmark")
 
 [node name="PaperGouges" type="Node3D" parent="CageWestD"]
-position = Vector3(0.506, 0.0, 0.0)
+position = Vector3(0.58, 0.0, 0.0)
 metadata/greybox_role = "five_authored_paper_light_gouges_at_west_cage_shadow_boundary"
 metadata/wear_reason = "scraped_tax_tally_marks_on_abandoned_cage_stack"
 

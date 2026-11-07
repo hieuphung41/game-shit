@@ -91,10 +91,13 @@ func test_zone_d_west_cage_keeps_sparse_paper_gouges_in_its_shadow_band(t) -> bo
 	t.ok(gouges != null, "West cage has an authored paper-light gouge cluster for game-scale WC-02 readability")
 	if gouges != null:
 		t.eq(gouges.get_child_count(), 5, "West cage keeps exactly five sparse gouges with plain gaps")
+		t.ok(gouges.position.x >= 0.56, "Paper gouges sit proud of the visible west-cage face instead of z-fighting it")
 		for gouge: Node in gouges.get_children():
 			var gouge_mesh := gouge as MeshInstance3D
 			var gouge_material := gouge_mesh.material_override as ShaderMaterial if gouge_mesh != null else null
 			t.ok(gouge_material != null and gouge_material.get_shader_parameter("paper_gouge_override") == true, "%s is a hard-edged paper-light gouge" % gouge.name)
+			var gouge_plane := gouge_mesh.mesh as PlaneMesh if gouge_mesh != null else null
+			t.ok(gouge_plane != null and gouge_plane.size.x >= 0.15, "%s keeps a phone-readable cut width" % gouge.name)
 	zone.queue_free()
 	await t.tree.process_frame
 	return true
