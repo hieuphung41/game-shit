@@ -1,0 +1,40 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://src/enemies/enemy_actor.gd" id="1_actor"]
+[ext_resource type="Script" path="res://src/enemies/enemy_role_def.gd" id="2_role"]
+[ext_resource type="PackedScene" path="res://src/vfx/telegraph_hold_ring.tscn" id="3_ring"]
+[ext_resource type="Material" path="res://art/materials/character_tax_guard.tres" id="4_material"]
+
+[sub_resource type="Resource" id="EnemyRole"]
+script = ExtResource("2_role")
+role_id = &"tax_guard"
+
+[sub_resource type="CapsuleMesh" id="BodyMesh"]
+radius = 0.32
+height = 1.7
+radial_segments = 8
+rings = 2
+
+[sub_resource type="CapsuleShape3D" id="BodyShape"]
+radius = 0.32
+height = 1.7
+
+[node name="TaxGuard" type="CharacterBody3D"]
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("1_actor")
+role_def = SubResource("EnemyRole")
+metadata/greybox_status = "placeholder"
+metadata/placeholder_reason = "TASK-20261106-88 combat silhouette; TASK-90 places it at authored markers."
+
+[node name="Body" type="MeshInstance3D" parent="."]
+mesh = SubResource("BodyMesh")
+material_override = ExtResource("4_material")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BodyShape")
+
+[node name="Visual" type="Node3D" parent="."]
+
+[node name="HoldRing" parent="." instance=ExtResource("3_ring")]
+position = Vector3(0, -0.83, 0)
