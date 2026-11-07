@@ -68,7 +68,7 @@ INVENTORY_REASON_CROSS_GRID_LOCKED,Lúc chuẩn bị chỉ sắp lại trong cù
 INVENTORY_REASON_WITHDRAW_LOCKED,Chưa rút được đồ đã niêm ra khỏi Hộp Công Chứng.
 INVENTORY_CONFIRM_DROP_TITLE,Bỏ món này xuống?
 INVENTORY_CONFIRM_DROP_BODY,Món này nằm lại dưới đất chỗ bạn đứng. Không nhặt lại trước khi extract thì mất.
-INVENTORY_CONFIRM_DROP_EVIDENCE_BODY,Manifest R-17 nằm lại dưới đất. Chưa nhặt lại thì không gọi được thuyền.
+INVENTORY_CONFIRM_DROP_EVIDENCE_BODY,Manifest R-17 nằm lại dưới đất. Đèn phao A báo chưa gọi được thuyền tới khi nhặt lại.
 INVENTORY_CONFIRM_DROP_ACCEPT,Bỏ xuống
 INVENTORY_CONFIRM_WITHDRAW_TITLE,Rút khỏi Hộp Công Chứng?
 INVENTORY_CONFIRM_WITHDRAW_BODY,"Món này hết niêm phong: nếu Phù Hiệu Hồi Hương kích hoạt, nó sẽ mất."
@@ -177,3 +177,46 @@ INVENTORY_PREVIEW_FITS_BACKPACK,Vừa. Nhấc ngón để đặt vào ba lô.
 INVENTORY_PREVIEW_FITS_NOTARY_BOX,Vừa. Nhấc ngón để niêm; trong run chưa rút ra lại được.
 INVENTORY_BUTTON_ROTATE,Xoay
 INVENTORY_FOOTPRINT_CHIP,{w}×{h}
+ITEM_CARGO_D_2X2_NAME,Vải Cứu Trợ Đổi Nhãn
+ITEM_TAX_STAMP_D_NAME,Dấu Thuế
+CARD_CARGO_D_2X2_NAME,Vải Cứu Trợ Đổi Nhãn
+CARD_CARGO_D_2X2_FOOTPRINT,2x2 · 4 ô
+CARD_CARGO_D_2X2_USE,"Cồng kềnh · tổng cao, theo ô thấp · không niêm được"
+CARD_CARGO_D_2X2_CLAIM,Claim: Nhà Hắc Thuế
+CARD_CARGO_D_2X2_RARITY,Lớp thẩm định: Trắng · 1/6
+CARD_CARGO_D_2X2_LORE,Nhãn mới biến chăn mùa mưa thành tang vật hợp pháp.
+CARD_TAX_STAMP_D_NAME,Dấu Thuế
+CARD_TAX_STAMP_D_FOOTPRINT,1x2 · 2 ô
+CARD_TAX_STAMP_D_USE,Gọn · theo ô cao hơn · niêm được
+CARD_TAX_STAMP_D_CLAIM,Claim: Nhà Hắc Thuế
+CARD_TAX_STAMP_D_RARITY,Lớp thẩm định: Trắng · 1/6
+CARD_TAX_STAMP_D_LORE,"Đóng trước khi cân, nên hàng nào lên bàn cũng thành hàng thuế."
+CARD_VALUE_TOTAL,Tổng ước lượng: {value_total}
+CARD_VALUE_PER_CELL,Theo ô: {value_per_cell}
+WORLD_INTERACT_CARGO_D,Xem kiện vải
+WORLD_INTERACT_TAX_STAMP_D,Xem dấu thuế
+WORLD_INTERACT_GROUND_DROP,Xem món dưới đất
+INVENTORY_PICKUP_SOURCE_D,"Còn ở Kho Nổi, chưa nhặt"
+INVENTORY_PICKUP_SOURCE_GROUND,"Dưới đất, chưa nhặt lại"
+INVENTORY_PREVIEW_SEAL_NOTARY_BOX,Vừa. Nhấc ngón để niêm; rút ra lại cần xác nhận.
+INVENTORY_PREVIEW_WITHDRAW_BACKPACK,Vừa. Nhấc ngón để xem xác nhận rút vào ô này.
+INVENTORY_WITHDRAW_PICK_CELL_HINT,Chạm ô ba lô có dấu vừa để chọn chỗ rút.
+INVENTORY_HINT_NOTARY_BOX_MAKE_ROOM,Hộp không đủ chỗ. Rút bớt một món ra ba lô (Đồ mang theo) rồi niêm lại.
+INVENTORY_HINT_BACKPACK_MAKE_ROOM,Ba lô không đủ chỗ. Dời hoặc bỏ một món (Đồ mang theo) rồi nhặt lại.
+INVENTORY_BUTTON_DROP,Bỏ
+INVENTORY_BUTTON_WITHDRAW,Rút
+INVENTORY_CONFIRM_TARGET_GROUND,"Xuống đất, chỗ bạn đứng"
+INVENTORY_CONFIRM_TARGET_BACKPACK,"Vào ba lô, ô có khung"
+INVENTORY_SEAL_LABEL_UNSEALED,không niêm
+INVENTORY_SEAL_LABEL_NOT_EXTRACTED,chưa extract · vật chứng
+INVENTORY_CONFIRM_WITHDRAW_EVIDENCE_BODY,"Manifest R-17 vẫn là vật chứng: không mất hẳn, vẫn gọi được thuyền, nhưng chưa extract."
+INVENTORY_CONFIRM_DROP_EVIDENCE_S8_NOTE,Đồng hồ giữ khu dừng tới khi nhặt lại Manifest.
+INVENTORY_CONFIRM_DROP_EVIDENCE_S9_NOTE,Chưa lên thuyền được tới khi nhặt lại Manifest.
+CARD_PLACED_CONFIRM_DROPPED,"{item} nằm dưới đất, nhặt lại được."
+CARD_PLACED_CONFIRM_WITHDRAWN,"{item} đã vào ba lô, không còn niêm."
+RECALL_SIGIL_MOMENT_LINE,Phù Hiệu Hồi Hương kéo bạn về.
+SUMMARY_DEATH_LOST_LEFT_BEHIND,"Đã bỏ xuống đất, chưa nhặt lại."
+SUMMARY_DEATH_LOST_EQUIPPED,Vũ khí và khiên đang mang (không niêm).
+SUMMARY_DEATH_BUTTON_BOOT,Về màn đầu
+SUMMARY_DEATH_RECOVERY_UNAVAILABLE,Thu hồi Manifest chưa có trong bản thử này.
+SUMMARY_DEATH_GROUP_EVIDENCE_UNRECOVERED,Vật chứng — chưa thu hồi
