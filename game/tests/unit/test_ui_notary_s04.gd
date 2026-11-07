@@ -203,11 +203,9 @@ func test_ui_notary_o5_blocks_grid_and_close_behind_fullscreen_capture(t) -> boo
 	panel._on_item_pressed(remedy.uid)
 	var before_direct_target := inventory.snapshot()
 	var direct_target := panel.release_cell(RetrieverInventory.BACKPACK, Vector2i(0, 0))
-	t.ok(not direct_target.ok, "a backpack target is inert until the player presses Withdraw")
-	t.ok(panel._confirmation == null, "a direct backpack target before Withdraw opens no O5i")
-	t.eq(inventory.snapshot(), before_direct_target, "a direct backpack target before Withdraw preserves the inventory snapshot")
-	panel.request_withdraw()
-	t.ok(panel.release_cell(RetrieverInventory.BACKPACK, Vector2i(0, 0)).ok, "Withdraw then a valid backpack target opens its confirmation preview")
+	t.ok(direct_target.ok, "a direct valid backpack target previews the selected sealed item")
+	t.ok(panel._confirmation != null, "a direct valid backpack target opens O5i without pressing Withdraw")
+	t.eq(inventory.snapshot(), before_direct_target, "a direct target preview keeps the inventory snapshot unchanged")
 	await t.tree.process_frame
 	var confirmation := panel._confirmation
 	t.ok(confirmation != null, "withdraw is pending in O5i")
@@ -222,6 +220,59 @@ func test_ui_notary_o5_blocks_grid_and_close_behind_fullscreen_capture(t) -> boo
 	t.eq(closed.size(), 0, "O5i blocks the dock close action behind it")
 	t.ok(panel._confirmation == confirmation, "O5i remains pending after dock actions behind it are tapped")
 	t.eq(panel.session, LootCachePanel.Session.VIEW, "O5i keeps the dock open until its own action resolves")
+	panel.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func test_ui_notary_o5_uses_real_input_guard_cancel_and_single_confirm(t) -> bool:
+	var inventory := _inventory_with_box_fixture()
+	var source := LootCache.new()
+	source.load_single_ground_item(ItemInstance.new(30, inventory.registry.get_def(&"tax_stamp_d")))
+	var panel := RUN_PANEL.instantiate() as NotaryRunPanel
+	var withdrawals: Array[int] = []
+	panel.item_withdraw_confirmed.connect(func(uid: int, _anchor: Vector2i) -> void: withdrawals.append(uid))
+	panel.configure(inventory, source)
+	t.tree.root.add_child(panel)
+	await t.tree.process_frame
+	panel.open_view()
+	var remedy := inventory.notary_box.items[1] as ItemInstance
+	panel._on_item_pressed(remedy.uid)
+	var before := inventory.snapshot()
+	t.ok(panel.release_cell(RetrieverInventory.BACKPACK, Vector2i(0, 0)).ok, "direct withdraw target opens O5i for input-guard coverage")
+	await t.tree.process_frame
+	var confirmation := panel._confirmation
+	var accept := confirmation.get_node("InventoryConfirmPanel/AcceptButton") as Button
+	accept.grab_focus()
+	_push_action(t.tree.root.get_viewport(), &"ui_accept")
+	_push_cancel(t.tree.root.get_viewport())
+	await t.tree.process_frame
+	t.ok(panel._confirmation == confirmation, "real accept and cancel touches during the 0.3-second guard are ignored")
+	t.eq(inventory.snapshot(), before, "guarded O5 touches never mutate inventory")
+	# Headless frames run faster than wall-clock milliseconds. Move past the
+	# measured guard only after the real ui_accept/ui_cancel guard path above.
+	confirmation._opened_at_msec = Time.get_ticks_msec() - 301
+	_push_cancel(t.tree.root.get_viewport())
+	await t.tree.process_frame
+	t.ok(panel._confirmation == null, "ui_cancel after the guard closes O5i")
+	t.eq(panel.session, LootCachePanel.Session.VIEW, "ui_cancel returns to the inventory view instead of closing its dock")
+	t.eq(inventory.snapshot(), before, "ui_cancel closes O5i without a withdraw mutation")
+	t.eq(withdrawals.size(), 0, "ui_cancel emits no withdraw confirmation")
+	panel.request_withdraw()
+	t.ok(panel.release_cell(RetrieverInventory.BACKPACK, Vector2i(0, 0)).ok, "Withdraw can be reopened after input-driven cancellation")
+	await t.tree.process_frame
+	confirmation = panel._confirmation
+	accept = confirmation.get_node("InventoryConfirmPanel/AcceptButton") as Button
+	accept.grab_focus()
+	t.eq(t.tree.root.get_viewport().gui_get_focus_owner(), accept, "reopened O5i accepts input through its focused confirmation button")
+	confirmation._opened_at_msec = Time.get_ticks_msec() - 301
+	t.ok(not confirmation._input_guard_active(), "the O5i 0.3-second input guard expires before confirmation input")
+	_push_action(t.tree.root.get_viewport(), &"ui_accept")
+	await t.tree.process_frame
+	_push_action(t.tree.root.get_viewport(), &"ui_accept")
+	await t.tree.process_frame
+	t.eq(withdrawals, [remedy.uid], "two real accept touches commit and emit withdraw exactly once")
+	t.ok(inventory.backpack.items.has(remedy.uid), "the one accepted O5 input commits the withdraw")
 	panel.queue_free()
 	await t.tree.process_frame
 	return true
@@ -315,4 +366,15 @@ func _push_touch(viewport: Viewport, position: Vector2, pressed: bool) -> void:
 	event.index = 0
 	event.position = position
 	event.pressed = pressed
+	viewport.push_input(event, true)
+
+
+func _push_cancel(viewport: Viewport) -> void:
+	_push_action(viewport, &"ui_cancel")
+
+
+func _push_action(viewport: Viewport, action: StringName) -> void:
+	var event := InputEventAction.new()
+	event.action = action
+	event.pressed = true
 	viewport.push_input(event, true)

@@ -49,6 +49,12 @@ func _input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"ui_cancel") and not _input_guard_active():
 		cancelled.emit()
 		get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed(&"ui_accept"):
+		var accept_button := get_node_or_null("InventoryConfirmPanel/AcceptButton") as Button
+		if accept_button != null and get_viewport().gui_get_focus_owner() == accept_button:
+			confirm()
+			get_viewport().set_input_as_handled()
 
 
 func _build() -> void:

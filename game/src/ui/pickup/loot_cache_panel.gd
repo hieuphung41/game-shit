@@ -214,11 +214,13 @@ func close_overlay() -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if session == Session.CLOSED:
+	if session == Session.CLOSED or get_viewport().is_input_handled():
 		return
 	if event.is_action_pressed(&"ui_cancel"):
 		if _confirmation != null:
-			_cancel_confirmation()
+			# Let O5i own its guard and cancellation path before this dock may
+			# consider closing itself.
+			_confirmation.cancel()
 		else:
 			close()
 		get_viewport().set_input_as_handled()
@@ -372,7 +374,13 @@ func _preview_map(target: StringName) -> Dictionary:
 	for y in grid.size.y:
 		for x in grid.size.x:
 			var anchor := Vector2i(x, y)
-			output[anchor] = _preview_for(target, anchor)
+			# Direct touch on a backpack cell is a valid S04 withdraw entry, but
+			# only the explicit Rút state paints every valid anchor in advance.
+			# A direct touch still receives its own preview in preview_cell().
+			if _selected_notary_item() and target == RetrieverInventory.BACKPACK and not _withdraw_targeting:
+				output[anchor] = InventoryResult.failure(InventoryReason.Value.WRONG_TARGET, selected_uid)
+			else:
+				output[anchor] = _preview_for(target, anchor)
 	return output
 
 
@@ -388,7 +396,7 @@ func _preview_for(target: StringName, anchor: Vector2i) -> InventoryResult:
 		return InventoryResult.failure(InventoryReason.Value.ITEM_NOT_FOUND, selected_uid)
 	var source: InventoryGrid = found.grid
 	if source.grid_kind == RetrieverInventory.NOTARY_BOX and target == RetrieverInventory.BACKPACK:
-		if not _is_withdrawing_to(target):
+		if not _can_withdraw_to(target):
 			return InventoryResult.failure(InventoryReason.Value.WRONG_TARGET, selected_uid)
 		return inventory.preview_withdraw(selected_uid, anchor, pending_rotated)
 	if source.grid_kind == RetrieverInventory.BACKPACK and target == RetrieverInventory.NOTARY_BOX:
@@ -415,7 +423,7 @@ func _show_preview(result: InventoryResult, target: StringName, anchor: Vector2i
 	if _status == null:
 		return
 	if result.ok:
-		if _is_withdrawing_to(target):
+		if _can_withdraw_to(target):
 			_status.text = tr(&"INVENTORY_PREVIEW_WITHDRAW_BACKPACK")
 		else:
 			_status.text = tr(&"INVENTORY_PREVIEW_FITS_BACKPACK") if target == RetrieverInventory.BACKPACK else tr(&"INVENTORY_PREVIEW_SEAL_NOTARY_BOX") if s04_mode else tr(&"INVENTORY_PREVIEW_FITS_NOTARY_BOX")
@@ -555,15 +563,19 @@ func _on_drop_or_withdraw_pressed() -> void:
 		request_drop()
 
 
-func _is_withdrawing_to(target: StringName) -> bool:
-	if target != RetrieverInventory.BACKPACK or not s04_mode or session != Session.VIEW or not _withdraw_targeting:
-		return false
+func _selected_notary_item() -> bool:
 	var found := _find_selected()
 	return not found.is_empty() and found.grid.grid_kind == RetrieverInventory.NOTARY_BOX
 
 
+func _can_withdraw_to(target: StringName) -> bool:
+	if target != RetrieverInventory.BACKPACK or not s04_mode or session != Session.VIEW:
+		return false
+	return _selected_notary_item()
+
+
 func _should_open_withdraw_confirmation(target: StringName) -> bool:
-	return _is_withdrawing_to(target)
+	return _can_withdraw_to(target)
 
 
 func _has_withdraw_fit() -> bool:
