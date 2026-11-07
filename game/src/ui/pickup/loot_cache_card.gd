@@ -68,8 +68,9 @@ func _build() -> void:
 		var item := cache.item_at(index)
 		var chip := Button.new()
 		chip.name = "ItemChip_%d" % index
-		chip.custom_minimum_size = Vector2(160, 96)
-		chip.text = "□ " + tr("INVENTORY_FOOTPRINT_CHIP").format({"w": item.definition.size.x, "h": item.definition.size.y}) + _quantity(item)
+		chip.custom_minimum_size = Vector2(256, 96)
+		chip.text = _chip_text(item, index)
+		chip.add_theme_font_size_override("font_size", 24)
 		chip.pressed.connect(select_item.bind(index))
 		chips.add_child(chip)
 	_details = VBoxContainer.new()
@@ -89,8 +90,8 @@ func _build() -> void:
 	pickup_button.pressed.connect(request_pickup)
 	actions.add_child(pickup_button)
 	var close_button := _button("CloseButton", &"CARD_ACTION_CLOSE")
-	close_button.position = Vector2(608, 16)
-	close_button.size = Vector2(96, 64)
+	close_button.position = Vector2(1168, 16)
+	close_button.size = Vector2(96, 96)
 	add_child(close_button)
 	close_button.pressed.connect(func() -> void: closed.emit())
 	_render_details()
@@ -99,6 +100,13 @@ func _build() -> void:
 func _render_details() -> void:
 	if _details == null:
 		return
+	var chips := get_node_or_null("CacheCardPanel/Rows/ItemChips") as HBoxContainer
+	if chips != null:
+		for index in chips.get_child_count():
+			var chip := chips.get_child(index) as Button
+			var chip_item := cache.item_at(index)
+			if chip != null and chip_item != null:
+				chip.text = _chip_text(chip_item, index)
 	for child in _details.get_children():
 		_details.remove_child(child)
 		child.queue_free()
@@ -107,8 +115,7 @@ func _render_details() -> void:
 		return
 	var definition := item.definition
 	_add_detail("NameCue", "■ " + definition.localized_display_name() + _quantity(item))
-	_add_detail("FootprintCue", _footprint_cue(definition) + " " + tr(_card_key(definition, "FOOTPRINT")))
-	_add_detail("FitCue", _fit_text(item))
+	_add_detail("FootprintCue", _footprint_cue(definition) + " " + tr(_card_key(definition, "FOOTPRINT")) + "\n" + _fit_text(item))
 	_add_detail("Use", tr(_card_key(definition, "USE")))
 	_add_detail("ClaimCue", "⚑ " + tr(_card_key(definition, "CLAIM")))
 	_add_detail("RarityCue", _rarity_marks(definition.appraisal_class) + " " + tr(_card_key(definition, "RARITY")))
@@ -121,7 +128,7 @@ func _add_detail(node_name: String, value: String) -> void:
 	label.text = value
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.custom_minimum_size = Vector2(0, 38)
-	label.add_theme_font_size_override("font_size", 20)
+	label.add_theme_font_size_override("font_size", 24)
 	_details.add_child(label)
 
 
@@ -162,6 +169,14 @@ func _quantity(item: ItemInstance) -> String:
 	return tr("CARD_QUANTITY_SUFFIX").format({"quantity": item.quantity}) if item.quantity > 1 else ""
 
 
+func _chip_text(item: ItemInstance, index: int) -> String:
+	var selected_marker := "▼ " if index == selected_index else "□ "
+	return selected_marker + tr("INVENTORY_FOOTPRINT_CHIP").format({
+		"w": item.definition.size.x,
+		"h": item.definition.size.y,
+	}) + _quantity(item)
+
+
 func _footprint_cue(definition: ItemDef) -> String:
 	var result := ""
 	for _y in definition.size.y:
@@ -185,5 +200,5 @@ func _button(node_name: String, key: StringName) -> Button:
 	button.name = node_name
 	button.text = tr(key)
 	button.focus_mode = Control.FOCUS_ALL
-	button.add_theme_font_size_override("font_size", 22)
+	button.add_theme_font_size_override("font_size", 24)
 	return button

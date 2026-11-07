@@ -37,15 +37,167 @@ func test_ui_pickup_zone_b_grid_previews_rotates_and_commits_only_on_valid_relea
 	var before := inventory.snapshot()
 	var invalid := panel.preview_cell(RetrieverInventory.BACKPACK, Vector2i(0, 3))
 	t.eq(invalid.reason, InventoryReason.Value.OUT_OF_BOUNDS, "vertical ledger preview reports bounds")
+	t.eq((panel.get_node("LootGridPanel/Backpack/Cell_0_3") as Button).text, "╳", "invalid touch draws a crossed footprint ghost")
 	t.eq(inventory.snapshot(), before, "preview is pure")
 	panel.toggle_rotate()
 	t.ok(panel.pending_rotated, "rotate changes pending preview only")
 	t.eq(inventory.snapshot(), before, "rotate does not mutate inventory")
+	var valid := panel.preview_cell(RetrieverInventory.BACKPACK, Vector2i(0, 3))
+	t.ok(valid.ok, "rotated preview fits before release")
+	t.eq((panel.get_node("LootGridPanel/Backpack/Cell_0_3") as Button).text, "▣", "valid touch draws a solid footprint ghost")
 	var placed := panel.release_cell(RetrieverInventory.BACKPACK, Vector2i(0, 3))
 	t.ok(placed.ok, "rotated ledger commits at bottom row")
 	t.ok(inventory.backpack.items.has(102), "ledger is in backpack")
 	t.eq(inventory.backpack.items[102].cells(), [Vector2i(0, 3), Vector2i(1, 3)], "rotated cells are committed")
 	t.eq(cache.cache_state(), &"partial", "only committed item leaves cache")
+	panel.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func test_ui_pickup_zone_b_dragging_outside_pressed_cell_cancels_pickup(t) -> bool:
+	var inventory := StarterInventoryFactory.create()
+	var cache := LootCache.new(inventory.registry)
+	var panel := CARD_SCENE.instantiate() as LootCachePanel
+	panel.configure(inventory, cache)
+	t.tree.root.add_child(panel)
+	await t.tree.process_frame
+	panel.open_card(1)
+	panel.open_pickup()
+	panel.toggle_rotate()
+	var backpack := panel.get_node("LootGridPanel/Backpack") as InventoryGridWidget
+	var anchor := Vector2i(0, 3)
+	var pressed_cell := backpack.get_node("Cell_0_3") as Button
+	var before := inventory.snapshot()
+	var press := InputEventScreenTouch.new()
+	press.index = 3
+	press.position = pressed_cell.get_global_rect().get_center()
+	press.pressed = true
+	backpack._on_cell_gui_input(press, anchor)
+	var outside := backpack.get_global_rect().end + Vector2(8.0, 8.0)
+	var drag := InputEventScreenDrag.new()
+	drag.index = 3
+	drag.position = outside
+	backpack._on_cell_gui_input(drag, anchor)
+	var release := InputEventScreenTouch.new()
+	release.index = 3
+	release.position = outside
+	release.pressed = false
+	backpack._on_cell_gui_input(release, anchor)
+	t.eq(inventory.snapshot(), before, "releasing outside the pressed cell does not commit pickup")
+	t.eq(cache.cache_state(), &"full", "releasing outside leaves the cache unchanged")
+	panel.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func test_ui_pickup_zone_b_dragging_sixteen_pixels_or_button_pressed_cancels_pickup(t) -> bool:
+	var inventory := StarterInventoryFactory.create()
+	var cache := LootCache.new(inventory.registry)
+	var panel := CARD_SCENE.instantiate() as LootCachePanel
+	panel.configure(inventory, cache)
+	t.tree.root.add_child(panel)
+	await t.tree.process_frame
+	panel.open_card(1)
+	panel.open_pickup()
+	panel.toggle_rotate()
+	var backpack := panel.get_node("LootGridPanel/Backpack") as InventoryGridWidget
+	var anchor := Vector2i(0, 3)
+	var pressed_cell := backpack.get_node("Cell_0_3") as Button
+	var before := inventory.snapshot()
+	var press := InputEventScreenTouch.new()
+	press.index = 4
+	press.position = pressed_cell.get_global_rect().get_center()
+	press.pressed = true
+	backpack._on_cell_gui_input(press, anchor)
+	pressed_cell.pressed.emit()
+	t.eq(inventory.snapshot(), before, "Button.pressed after ScreenTouch cannot bypass touch release")
+	t.eq(cache.cache_state(), &"full", "Button.pressed leaves cache unchanged")
+	var drag := InputEventScreenDrag.new()
+	drag.index = 4
+	drag.position = press.position + Vector2(16.0, 0.0)
+	backpack._on_cell_gui_input(drag, anchor)
+	t.eq(backpack.touch_preview_cells.size(), 0, "sixteen-pixel drag clears the preview immediately")
+	var release := InputEventScreenTouch.new()
+	release.index = 4
+	release.position = drag.position
+	release.pressed = false
+	backpack._on_cell_gui_input(release, anchor)
+	t.eq(inventory.snapshot(), before, "sixteen-pixel drag cannot commit within the same cell")
+	t.eq(cache.cache_state(), &"full", "cancelled touch leaves cache unchanged")
+	panel.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func test_ui_pickup_zone_b_s03_text_uses_the_reference_font_floor(t) -> bool:
+	var inventory := StarterInventoryFactory.create()
+	var cache := LootCache.new(inventory.registry)
+	var panel := CARD_SCENE.instantiate() as LootCachePanel
+	panel.configure(inventory, cache)
+	t.tree.root.add_child(panel)
+	await t.tree.process_frame
+	var details := panel._card.get_node("CacheCardPanel/Rows/Details") as VBoxContainer
+	for detail: Label in details.get_children():
+		t.ok(detail.get_theme_font_size("font_size") >= 24, "card detail %s meets the 24 px reference floor" % detail.name)
+	panel.open_card(1)
+	panel.open_pickup()
+	for node_path in [NodePath("LootGridPanel/HeldItem"), NodePath("LootGridPanel/Status"), NodePath("LootGridPanel/BackpackLabel"), NodePath("LootGridPanel/NotaryBoxLabel")]:
+		var label := panel.get_node(node_path) as Label
+		t.ok(label.get_theme_font_size("font_size") >= 24, "%s meets the 24 px reference floor" % node_path)
+	var rotate := panel.get_node("LootGridPanel/RotateButton") as Button
+	t.ok(rotate.get_theme_font_size("font_size") >= 24, "rotate button meets the 24 px reference floor")
+	panel.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func test_ui_pickup_zone_b_view_rotates_only_through_inventory_and_locks_withdraw(t) -> bool:
+	var inventory := StarterInventoryFactory.create()
+	var cache := LootCache.new(inventory.registry)
+	var ledger := cache.item_at(1)
+	t.ok(inventory.commit_pickup(ledger, RetrieverInventory.BACKPACK, Vector2i(0, 0), false).ok, "given ledger is carried")
+	cache.remove_after_pickup(ledger.uid)
+	var panel := CARD_SCENE.instantiate() as LootCachePanel
+	panel.configure(inventory, cache)
+	t.tree.root.add_child(panel)
+	await t.tree.process_frame
+	panel.open_view()
+	panel._on_item_pressed(ledger.uid)
+	var before := inventory.snapshot()
+	panel.toggle_rotate()
+	t.ok(panel.pending_rotated, "view rotate changes preview before any commit")
+	t.eq(inventory.snapshot(), before, "view rotate does not mutate inventory")
+	t.ok(panel.release_cell(RetrieverInventory.BACKPACK, Vector2i(0, 0)).ok, "view commits same-grid rotated move through inventory")
+	t.ok(inventory.backpack.items[ledger.uid].rotated, "ledger rotation is committed by RetrieverInventory")
+	var sealed := inventory.notary_box.all_items()[0] as ItemInstance
+	panel._on_item_pressed(sealed.uid)
+	var locked_before := inventory.snapshot()
+	var locked := panel.release_cell(RetrieverInventory.BACKPACK, Vector2i(2, 3))
+	t.ok(not locked.ok, "sealed item cannot be withdrawn through the S03 dock")
+	t.eq(inventory.snapshot(), locked_before, "locked withdraw keeps the inventory snapshot")
+	t.ok(panel._status.text.contains(tr("INVENTORY_REASON_WITHDRAW_LOCKED")), "locked withdraw names the reason")
+	panel.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func test_ui_pickup_zone_b_dock_uses_the_specified_right_side_regions(t) -> bool:
+	var inventory := StarterInventoryFactory.create()
+	var cache := LootCache.new(inventory.registry)
+	var panel := CARD_SCENE.instantiate() as LootCachePanel
+	panel.configure(inventory, cache)
+	t.tree.root.add_child(panel)
+	await t.tree.process_frame
+	var card_rect: Rect2 = (panel._card.get_node("CacheCardPanel") as Control).get_global_rect()
+	t.eq(card_rect.position, Vector2(704, 120), "card dock starts at R10c")
+	t.eq(card_rect.size, Vector2(560, 584), "card dock keeps R10c size")
+	panel.open_pickup()
+	var grid_rect: Rect2 = (panel.get_node("LootGridPanel") as Control).get_global_rect()
+	t.eq(grid_rect.position, Vector2(704, 176), "grid dock starts at R10g")
+	t.eq(grid_rect.size, Vector2(560, 528), "grid dock keeps R10g size")
+	var close_rect: Rect2 = (panel.get_node("CloseButton") as Control).get_global_rect()
+	t.eq(close_rect.position, Vector2(1168, 16), "dock close button occupies R3")
 	panel.queue_free()
 	await t.tree.process_frame
 	return true
