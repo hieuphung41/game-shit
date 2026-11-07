@@ -27,6 +27,7 @@ enum Category {
 @export var item_category: Category = Category.SALVAGE
 @export var claim_id: StringName = &""
 @export_range(1, 6) var appraisal_class := 1
+@export var relative_value_total := 0
 
 
 func is_square() -> bool:
@@ -35,6 +36,11 @@ func is_square() -> bool:
 
 func localized_display_name() -> String:
 	return tr(display_name_key) if not display_name_key.is_empty() else display_name_vi
+
+
+func relative_value_per_cell() -> float:
+	var cell_count := size.x * size.y
+	return float(relative_value_total) / float(cell_count) if cell_count > 0 else 0.0
 
 
 func validation_error() -> String:

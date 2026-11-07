@@ -358,6 +358,17 @@ func test_inv_24_drop_returns_item_to_ground_and_emits_removed(t) -> bool:
 	return true
 
 
+func test_inv_24_drop_normalizes_rotated_item_for_ground_drop(t) -> bool:
+	var inventory := _inventory()
+	_load(inventory, [_entry(1, &"tax_stamp_d", Vector2i.ZERO, 1, true)])
+	var result := inventory.commit_drop(1)
+	var dropped: ItemInstance = result.moved[0].item
+	t.ok(result.ok, "rotated Tax Stamp drops")
+	t.ok(not dropped.rotated, "GroundDrop retains the Tax Stamp upright")
+	t.ok(not bool(result.moved[0].rotated), "drop movement reports the upright ground footprint")
+	return true
+
+
 func test_inv_25_drop_from_notary_box_is_rejected(t) -> bool:
 	var inventory := _inventory()
 	_load(inventory, [], [_entry(1, &"starter_remedy", Vector2i.ZERO)])

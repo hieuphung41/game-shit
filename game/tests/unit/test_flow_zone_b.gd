@@ -46,7 +46,9 @@ func test_flow_zone_b_route_reaches_s10_with_cache_patrol_and_hold(t) -> bool:
 	t.ok(cache_panel.release_cell(RetrieverInventory.BACKPACK, Vector2i(1, 0)).ok, "1x1 coin stack is picked up through the real cache panel")
 	t.eq(run._cache.cache_state(), &"empty", "cache removes only successfully placed items")
 	await _leave_authored_zone_for(t, run, "CalmZoneB", "BEntryZone")
-	t.ok(run._patrol_started and run._patrol_director != null, "leaving CalmZoneB starts the one-time patrol cue")
+	t.ok(not run._patrol_started, "leaving CalmZoneB toward D does not start the patrol")
+	await _enter_authored_zone(t, run, "PatrolTriggerB")
+	t.ok(run._patrol_started and run._patrol_director != null, "returning through PatrolTriggerB starts the one-time patrol cue")
 	t.eq(run._patrol_director._elapsed, 0.0, "patrol begins with its authored warning lead")
 	await _enter_authored_zone(t, run, "BeaconZoneA")
 	run.request_call()
@@ -81,19 +83,25 @@ func test_flow_zone_b_route_reaches_s10_with_cache_patrol_and_hold(t) -> bool:
 	return true
 
 
-func test_flow_hp_zero_opens_stub_then_returns_to_boot_without_summary(t) -> bool:
+func test_flow_hp_zero_resolves_to_s11_then_returns_to_boot(t) -> bool:
 	var run := await _new_run(t)
 	if run == null:
 		return true
 	run._retriever.combat.health.damage(run._retriever.combat.health.max_hp)
 	t.eq(run.flow.extract_state, ExtractPierAFlow.ExtractState.ENDED_DEATH, "HP zero ends the run without extraction")
-	t.ok(run._combat_hud._stub_open, "HP zero opens the blocking stub")
-	t.ok(not (run._overlay is ExtractSummaryScreen), "HP zero never shows success summary")
-	run._combat_hud._stub_elapsed = CombatHud.STUB_END_MESSAGE_SECONDS
-	run._combat_hud.request_boot()
+	t.ok(run._overlay != null and run._overlay.name == "RecallSigilOverlay", "HP zero begins the Recall Sigil moment instead of the S03 stub")
+	await _advance_scene_seconds(t, OuterPierRun.RECALL_SIGIL_SECONDS + 0.1)
+	var summary := run._overlay as DeathSummaryScreen
+	t.ok(summary != null, "Recall Sigil leads to S11 rather than S10")
+	if summary == null:
+		run.queue_free()
+		return true
+	t.eq(summary.summary.death_variant, &"before_manifest", "death before Manifest keeps Contract 1 open")
+	await _advance_scene_seconds(t, DeathSummaryScreen.SUMMARY_DEATH_BUTTON_LOCK_SECONDS + 0.1)
+	summary.request_primary()
 	await t.tree.process_frame
 	await t.tree.process_frame
-	t.ok(RunSession.inventory == null and t.tree.current_scene.get_script() == BOOT_SCRIPT, "stub boot resets RunSession and returns to Boot")
+	t.ok(t.tree.current_scene is BriefingFlow and RunSession.inventory != null, "Prepare resets the run and returns to briefing")
 	run.queue_free()
 	await t.tree.process_frame
 	return true
@@ -163,8 +171,8 @@ func _pickup_manifest(t, run: OuterPierRun) -> void:
 
 func _start_patrol_from_authored_zones(t, run: OuterPierRun) -> void:
 	await _enter_authored_zone(t, run, "CalmZoneB")
-	await _leave_authored_zone_for(t, run, "CalmZoneB", "BEntryZone")
-	t.ok(run._patrol_director != null and run._patrol != null, "CalmZoneB exit creates the patrol through its authored Area3D")
+	await _leave_authored_zone_for(t, run, "CalmZoneB", "PatrolTriggerB")
+	t.ok(run._patrol_director != null and run._patrol != null, "PatrolTriggerB creates the patrol after CalmZoneB through its authored Area3D")
 
 
 func _enter_authored_zone(t, run: OuterPierRun, zone_name: String) -> void:
@@ -216,6 +224,13 @@ func _new_run(t) -> OuterPierRun:
 	t.tree.root.add_child(run)
 	await t.tree.process_frame
 	return run
+
+
+func _advance_scene_seconds(t, seconds: float) -> void:
+	var original_time_scale := Engine.time_scale
+	Engine.time_scale = 8.0
+	await t.tree.create_timer(seconds).timeout
+	Engine.time_scale = original_time_scale
 
 
 func _contains_kept(entries: Array[Dictionary], def_id: StringName) -> bool:

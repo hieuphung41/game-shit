@@ -69,6 +69,14 @@ func configure_s04(p_inventory: RetrieverInventory, p_cache: LootCache) -> void:
 		open_card()
 
 
+func is_source_bound() -> bool:
+	return session == Session.CARD or session == Session.PICKUP
+
+
+func has_pending_confirmation() -> bool:
+	return _confirmation != null
+
+
 func open_card(index: int = 0) -> void:
 	if cache == null or cache.cache_state() == &"empty":
 		close_overlay()
@@ -537,7 +545,7 @@ func _clear() -> void:
 func _pickup_source_key() -> StringName:
 	if not s04_mode:
 		return &"INVENTORY_PICKUP_SOURCE_CACHE"
-	return &"INVENTORY_PICKUP_SOURCE_GROUND" if cache != null and cache.cache_id == &"ground_drop" else &"INVENTORY_PICKUP_SOURCE_D"
+	return &"INVENTORY_PICKUP_SOURCE_GROUND" if cache != null and (cache.cache_id == &"ground_drop" or String(cache.cache_id).begins_with("ground_drop_")) else &"INVENTORY_PICKUP_SOURCE_D"
 
 
 func _refresh_s04_controls(item: ItemInstance) -> void:

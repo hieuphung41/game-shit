@@ -8,6 +8,8 @@ const SLING_POUCH: StringName = &"sling_pouch"
 signal item_placed(uid: int, location: StringName)
 signal item_removed(uid: int, location: StringName)
 signal evidence_carried_changed(def_id: StringName, carried: bool)
+signal item_dropped(item: ItemInstance)
+signal item_consumed(uid: int, def_id: StringName)
 
 var registry: ItemRegistry
 var backpack := InventoryGrid.new(BACKPACK, Vector2i(3, 4))
@@ -211,8 +213,11 @@ func commit_drop(uid: int) -> InventoryResult:
 	if result.ok:
 		var item: ItemInstance = backpack.remove(uid)
 		item.item_location = &"ground"
+		item.rotated = false
 		result.moved[0]["item"] = item
+		result.moved[0]["rotated"] = false
 		item_removed.emit(uid, BACKPACK)
+		item_dropped.emit(item)
 		if item.definition.item_category == ItemDef.Category.EVIDENCE:
 			evidence_carried_changed.emit(item.def_id, false)
 	return result
@@ -237,6 +242,7 @@ func commit_consume(uid: int) -> InventoryResult:
 	if item.quantity == 0:
 		sling_pouch.remove(uid)
 		item_removed.emit(uid, SLING_POUCH)
+		item_consumed.emit(uid, item.def_id)
 	return result
 
 

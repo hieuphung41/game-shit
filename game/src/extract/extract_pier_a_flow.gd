@@ -38,6 +38,7 @@ signal hold_started(duration: float)
 signal hold_paused_changed(paused: bool, reason: StringName)
 signal boat_ready()
 signal extract_succeeded(summary: ExtractSummary)
+signal death_resolved(summary: DeathSummary)
 
 var extract_state: int = ExtractState.E0_UNAVAILABLE
 var contract_state: int = ContractState.NOT_TAKEN
@@ -53,6 +54,7 @@ var hold_pause_reason: StringName = &""
 var _inventory: RetrieverInventory
 var _carried_ever: Dictionary = {}
 var _call_ack_remaining: float = 0.0
+var _death_summary_resolved := false
 
 
 func setup(inventory: RetrieverInventory) -> void:
@@ -61,11 +63,14 @@ func setup(inventory: RetrieverInventory) -> void:
 			_inventory.evidence_carried_changed.disconnect(on_evidence_carried_changed)
 		if _inventory.item_placed.is_connected(_on_item_placed):
 			_inventory.item_placed.disconnect(_on_item_placed)
+		if _inventory.item_consumed.is_connected(_on_item_consumed):
+			_inventory.item_consumed.disconnect(_on_item_consumed)
 	_inventory = inventory
 	_carried_ever.clear()
 	_record_existing_carried_items()
 	_inventory.evidence_carried_changed.connect(on_evidence_carried_changed)
 	_inventory.item_placed.connect(_on_item_placed)
+	_inventory.item_consumed.connect(_on_item_consumed)
 	extract_state = ExtractState.E0_UNAVAILABLE
 	contract_state = ContractState.NOT_TAKEN
 	desk_state = DeskState.HAS_MANIFEST
@@ -77,6 +82,7 @@ func setup(inventory: RetrieverInventory) -> void:
 	hold_paused = false
 	hold_pause_reason = &""
 	_call_ack_remaining = 0.0
+	_death_summary_resolved = false
 
 
 func on_evidence_carried_changed(def_id: StringName, carried: bool) -> void:
@@ -203,6 +209,40 @@ func notify_death() -> void:
 	_set_extract_state(ExtractState.ENDED_DEATH)
 
 
+func resolve_death_summary() -> DeathSummary:
+	if extract_state != ExtractState.ENDED_DEATH or _inventory == null or _death_summary_resolved:
+		return null
+	_death_summary_resolved = true
+	var summary := DeathSummary.new()
+	summary.contract_state_at_death = contract_state
+	summary.death_variant = &"before_manifest" if contract_state == ContractState.NOT_TAKEN else &"after_manifest"
+	var outcome := _inventory.resolve_death()
+	summary.kept = _entries_with_reason(outcome.get("kept", []), &"")
+	summary.lost = _entries_with_reason(outcome.get("lost", []), &"unsealed")
+	var settled_uids: Dictionary = {}
+	for entry: Dictionary in summary.kept + summary.lost:
+		settled_uids[int(entry["uid"])] = true
+	for uid: int in _carried_ever:
+		if settled_uids.has(uid):
+			continue
+		var def_id: StringName = _carried_ever[uid]
+		if def_id != MANIFEST_DEF_ID:
+			summary.lost.append({"uid": uid, "def_id": def_id, "lost_reason": &"left_behind"})
+	for evidence: Variant in outcome.get("unrecovered_evidence", []):
+		var evidence_id := StringName(evidence)
+		if not summary.unrecovered_evidence.has(evidence_id):
+			summary.unrecovered_evidence.append(evidence_id)
+	if contract_state == ContractState.DROPPED and not summary.unrecovered_evidence.has(MANIFEST_DEF_ID):
+		summary.unrecovered_evidence.append(MANIFEST_DEF_ID)
+	if contract_state != ContractState.NOT_TAKEN:
+		_set_contract_state(ContractState.UNRECOVERED)
+	summary.contract_state = contract_state
+	summary.kept.sort_custom(_entry_uid_less)
+	summary.lost.sort_custom(_entry_uid_less)
+	death_resolved.emit(summary)
+	return summary
+
+
 func can_call_guard_without_prompt() -> bool:
 	return extract_state == ExtractState.E1_CALLABLE and manifest_carried and in_beacon_zone
 
@@ -213,6 +253,10 @@ func _on_item_placed(uid: int, _location: StringName) -> void:
 	var item := _find_item(uid)
 	if item != null:
 		_carried_ever[uid] = item.def_id
+
+
+func _on_item_consumed(uid: int, _def_id: StringName) -> void:
+	_carried_ever.erase(uid)
 
 
 func _record_existing_carried_items() -> void:
@@ -316,6 +360,20 @@ func _lost_entries(summary: ExtractSummary) -> Array[Dictionary]:
 		if not extracted_uids.has(uid):
 			entries.append({"uid": uid, "def_id": _carried_ever[uid]})
 	return entries
+
+
+func _entries_with_reason(items: Array, reason: StringName) -> Array[Dictionary]:
+	var entries: Array[Dictionary] = []
+	for item: ItemInstance in items:
+		var entry := {"uid": item.uid, "def_id": item.def_id}
+		if not reason.is_empty():
+			entry["lost_reason"] = reason
+		entries.append(entry)
+	return entries
+
+
+func _entry_uid_less(first: Dictionary, second: Dictionary) -> bool:
+	return int(first["uid"]) < int(second["uid"])
 
 
 func _is_terminal() -> bool:
