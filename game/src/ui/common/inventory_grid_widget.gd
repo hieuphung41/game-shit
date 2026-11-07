@@ -23,6 +23,7 @@ var preview_reasons: Dictionary = {}
 var error_cells: Array[Vector2i] = []
 var touch_preview_cells: Array[Vector2i] = []
 var touch_preview_ok := false
+var touch_preview_edge_direction := Vector2i.ZERO
 
 var _grid: InventoryGrid
 var _cells: Dictionary = {}
@@ -69,12 +70,14 @@ func show_selection(p_uid: int, p_preview_reasons: Dictionary = {}, p_error_cell
 	preview_reasons = p_preview_reasons
 	error_cells = p_error_cells
 	touch_preview_cells.clear()
+	touch_preview_edge_direction = Vector2i.ZERO
 	_render()
 
 
 func show_touch_preview(item: ItemInstance, anchor: Vector2i, rotated: bool, result: InventoryResult) -> void:
 	touch_preview_cells.clear()
 	touch_preview_ok = result.ok
+	touch_preview_edge_direction = Vector2i.ZERO
 	if item != null and item.definition != null:
 		var footprint := item.definition.size
 		if rotated and footprint.x != footprint.y:
@@ -84,6 +87,8 @@ func show_touch_preview(item: ItemInstance, anchor: Vector2i, rotated: bool, res
 				var cell := anchor + Vector2i(x, y)
 				if cell.x >= 0 and cell.y >= 0 and cell.x < _grid.size.x and cell.y < _grid.size.y:
 					touch_preview_cells.append(cell)
+				else:
+					_record_touch_preview_edge(cell)
 	error_cells = result.blocking_cells.duplicate()
 	_render()
 
@@ -144,6 +149,60 @@ func _render() -> void:
 			_cells[anchor] = cell
 	for item: ItemInstance in _grid.all_items():
 		_add_item(item, cell_size)
+	_add_touch_preview_edge_indicator(cell_size)
+
+
+func _record_touch_preview_edge(cell: Vector2i) -> void:
+	if touch_preview_edge_direction != Vector2i.ZERO:
+		return
+	var direction := Vector2i.ZERO
+	if cell.x < 0:
+		direction.x = -1
+	elif cell.x >= _grid.size.x:
+		direction.x = 1
+	if cell.y < 0:
+		direction.y = -1
+	elif cell.y >= _grid.size.y:
+		direction.y = 1
+	touch_preview_edge_direction = direction
+
+
+func _add_touch_preview_edge_indicator(cell_size: float) -> void:
+	if touch_preview_edge_direction == Vector2i.ZERO:
+		return
+	var indicator := Label.new()
+	indicator.name = "TouchPreviewEdgeIndicator"
+	indicator.text = _edge_indicator_text(touch_preview_edge_direction)
+	indicator.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	indicator.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	indicator.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	indicator.add_theme_font_size_override("font_size", max(24, int(24 * cell_scale)))
+	var indicator_size := Vector2(24, 24)
+	var grid_size := Vector2(_grid.size.x * cell_size, _grid.size.y * cell_size)
+	indicator.position = Vector2(
+		0.0 if touch_preview_edge_direction.x < 0 else grid_size.x - indicator_size.x if touch_preview_edge_direction.x > 0 else (grid_size.x - indicator_size.x) * 0.5,
+		0.0 if touch_preview_edge_direction.y < 0 else grid_size.y - indicator_size.y if touch_preview_edge_direction.y > 0 else (grid_size.y - indicator_size.y) * 0.5
+	)
+	indicator.size = indicator_size
+	add_child(indicator)
+
+
+func _edge_indicator_text(direction: Vector2i) -> String:
+	if direction == Vector2i(0, -1):
+		return "↑"
+	if direction == Vector2i(0, 1):
+		return "↓"
+	if direction == Vector2i(-1, 0):
+		return "←"
+	if direction == Vector2i(1, 0):
+		return "→"
+	if direction == Vector2i(-1, -1):
+		return "↖"
+	if direction == Vector2i(1, -1):
+		return "↗"
+	if direction == Vector2i(-1, 1):
+		return "↙"
+	return "↘"
 
 
 func _marker_for(anchor: Vector2i) -> String:

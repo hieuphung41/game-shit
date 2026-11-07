@@ -20,6 +20,8 @@ var _backpack: InventoryGridWidget
 var _notary_box: InventoryGridWidget
 var _status: Label
 var _rotate: Button
+var _footprint_chip: Label
+var _footprint_shape_cue: Control
 
 const DOCK_RIGHT_INSET := 16.0
 const GRID_DOCK_TOP := 176.0
@@ -158,18 +160,33 @@ func _build_grid() -> void:
 	var source_key: StringName = &"INVENTORY_PICKUP_SOURCE_CACHE" if session == Session.PICKUP else &"INVENTORY_PANEL_TITLE"
 	var source := _label("Source", source_key, 24)
 	source.position = Vector2(16, 8)
-	source.size = Vector2(528, 36)
+	source.size = Vector2(528, 24)
 	panel.add_child(source)
 	var item := _selected_item()
 	var held_key: StringName = item.definition.display_name_key if item != null else &"INVENTORY_PANEL_TITLE"
 	var held := _label("HeldItem", held_key, 24)
-	held.position = Vector2(16, 44)
-	held.size = Vector2(528, 36)
+	held.position = Vector2(16, 32)
+	held.size = Vector2(320, 28)
 	panel.add_child(held)
+	_footprint_shape_cue = Control.new()
+	_footprint_shape_cue.name = "FootprintShapeCue"
+	_footprint_shape_cue.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_footprint_shape_cue.position = Vector2(352, 26)
+	_footprint_shape_cue.size = Vector2(48, 36)
+	panel.add_child(_footprint_shape_cue)
+	_footprint_chip = _label("FootprintChip", &"INVENTORY_FOOTPRINT_CHIP", 24)
+	_footprint_chip.position = Vector2(408, 32)
+	_footprint_chip.size = Vector2(120, 28)
+	_footprint_chip.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	panel.add_child(_footprint_chip)
+	_refresh_footprint_chip()
 	_status = _label("Status", &"INVENTORY_PICKUP_HINT_ITEM" if session == Session.PICKUP else &"LOADOUT_HINT_SELECT", 24)
-	_status.position = Vector2(16, 80)
-	_status.size = Vector2(528, 32)
-	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	# The item strip ends before the labels at local y=92. Keep preview reasons on
+	# its second line rather than allowing an invalid preview to cover either label.
+	_status.position = Vector2(16, 64)
+	_status.size = Vector2(528, 24)
+	_status.autowrap_mode = TextServer.AUTOWRAP_OFF
+	_status.clip_text = true
 	panel.add_child(_status)
 	_backpack = _grid(panel, "Backpack", &"LOADOUT_LABEL_BACKPACK", RetrieverInventory.BACKPACK, Vector2(16, 92))
 	_notary_box = _grid(panel, "NotaryBox", &"LOADOUT_LABEL_NOTARY_BOX", RetrieverInventory.NOTARY_BOX, Vector2(352, 92))
@@ -230,8 +247,34 @@ func _refresh_grid_markers() -> void:
 	_notary_box.show_selection(selected_uid, _preview_map(RetrieverInventory.NOTARY_BOX))
 	if _rotate != null:
 		_rotate.text = tr(&"INVENTORY_BUTTON_ROTATE") + (" ↻" if pending_rotated else "")
+	_refresh_footprint_chip()
 	if _status != null:
 		_status.text = tr(&"INVENTORY_PICKUP_HINT_ITEM") if session == Session.PICKUP else _view_hint(item)
+
+
+func _refresh_footprint_chip() -> void:
+	if _footprint_chip == null or _footprint_shape_cue == null:
+		return
+	var item := _selected_item()
+	var visible := item != null and item.definition != null
+	_footprint_chip.visible = visible
+	_footprint_shape_cue.visible = visible
+	if not visible:
+		return
+	var footprint := item.definition.size
+	if pending_rotated and footprint.x != footprint.y:
+		footprint = Vector2i(footprint.y, footprint.x)
+	_footprint_chip.text = tr(&"INVENTORY_FOOTPRINT_CHIP").format({"w": footprint.x, "h": footprint.y})
+	for child in _footprint_shape_cue.get_children():
+		_footprint_shape_cue.remove_child(child)
+		child.queue_free()
+	for y in footprint.y:
+		for x in footprint.x:
+			var footprint_cell := _static_label("Cell_%d_%d" % [x, y], "□", 18)
+			footprint_cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			footprint_cell.position = Vector2(x * 20, y * 18)
+			footprint_cell.size = Vector2(20, 18)
+			_footprint_shape_cue.add_child(footprint_cell)
 
 
 func _preview_map(target: StringName) -> Dictionary:
@@ -369,6 +412,8 @@ func _clear() -> void:
 	_notary_box = null
 	_status = null
 	_rotate = null
+	_footprint_chip = null
+	_footprint_shape_cue = null
 
 
 func _label(node_name: String, key: StringName, font_size: int) -> Label:
