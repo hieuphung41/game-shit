@@ -21,6 +21,12 @@ var _notary_box: InventoryGridWidget
 var _status: Label
 var _rotate: Button
 
+const DOCK_RIGHT_INSET := 16.0
+const GRID_DOCK_TOP := 176.0
+const GRID_DOCK_SIZE := Vector2(560, 528)
+const CLOSE_BUTTON_TOP := 16.0
+const CLOSE_BUTTON_SIZE := Vector2(96, 96)
+
 
 func _ready() -> void:
 	theme = UiTheme.create()
@@ -147,8 +153,7 @@ func _input(event: InputEvent) -> void:
 func _build_grid() -> void:
 	var panel := Panel.new()
 	panel.name = "LootGridPanel"
-	panel.position = Vector2(704, 176)
-	panel.size = Vector2(560, 528)
+	_anchor_top_right(panel, DOCK_RIGHT_INSET, GRID_DOCK_TOP, GRID_DOCK_SIZE)
 	add_child(panel)
 	var source_key: StringName = &"INVENTORY_PICKUP_SOURCE_CACHE" if session == Session.PICKUP else &"INVENTORY_PANEL_TITLE"
 	var source := _label("Source", source_key, 24)
@@ -179,8 +184,7 @@ func _build_grid() -> void:
 	sling.size = Vector2(192, 48)
 	panel.add_child(sling)
 	var close_button := _button("CloseButton", &"CARD_ACTION_CLOSE")
-	close_button.position = Vector2(1168, 16)
-	close_button.size = Vector2(96, 96)
+	_anchor_top_right(close_button, DOCK_RIGHT_INSET, CLOSE_BUTTON_TOP, CLOSE_BUTTON_SIZE)
 	close_button.pressed.connect(close)
 	add_child(close_button)
 
@@ -195,6 +199,7 @@ func _grid(parent: Control, node_name: String, key: StringName, kind: StringName
 	grid.position = at + Vector2(0, 28)
 	grid.configure(inventory, kind)
 	grid.item_pressed.connect(_on_item_pressed)
+	grid.cell_pressed.connect(_on_grid_cell_pressed)
 	grid.cell_touch_started.connect(_on_grid_touch_started)
 	grid.cell_touch_released.connect(_on_grid_touch_released)
 	parent.add_child(grid)
@@ -280,6 +285,14 @@ func _on_grid_touch_released(target: StringName, anchor: Vector2i, inside: bool)
 	release_cell(target, anchor, inside)
 
 
+func _on_grid_cell_pressed(target: StringName, anchor: Vector2i) -> void:
+	var grid := _backpack if target == RetrieverInventory.BACKPACK else _notary_box
+	if grid != null and grid.is_pointer_cell_activation(anchor):
+		return
+	preview_cell(target, anchor)
+	release_cell(target, anchor)
+
+
 func _on_item_pressed(uid: int) -> void:
 	if session != Session.VIEW:
 		return
@@ -347,6 +360,17 @@ func _label(node_name: String, key: StringName, font_size: int) -> Label:
 	label.add_theme_font_size_override("font_size", font_size)
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	return label
+
+
+func _anchor_top_right(control: Control, right_inset: float, top: float, dimensions: Vector2) -> void:
+	control.anchor_left = 1.0
+	control.anchor_top = 0.0
+	control.anchor_right = 1.0
+	control.anchor_bottom = 0.0
+	control.offset_left = -right_inset - dimensions.x
+	control.offset_top = top
+	control.offset_right = -right_inset
+	control.offset_bottom = top + dimensions.y
 
 
 func _button(node_name: String, key: StringName) -> Button:

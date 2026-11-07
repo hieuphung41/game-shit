@@ -182,6 +182,59 @@ func test_ui_pickup_zone_b_view_rotates_only_through_inventory_and_locks_withdra
 	return true
 
 
+func test_ui_pickup_zone_b_touching_selected_item_cancels_pending_rotation_without_commit(t) -> bool:
+	var inventory := StarterInventoryFactory.create()
+	var cache := LootCache.new(inventory.registry)
+	var ledger := cache.item_at(1)
+	t.ok(inventory.commit_pickup(ledger, RetrieverInventory.BACKPACK, Vector2i(0, 0), false).ok, "given ledger is carried")
+	cache.remove_after_pickup(ledger.uid)
+	var panel := CARD_SCENE.instantiate() as LootCachePanel
+	panel.configure(inventory, cache)
+	t.tree.root.add_child(panel)
+	await t.tree.process_frame
+	panel.open_view()
+	panel._on_item_pressed(ledger.uid)
+	panel.toggle_rotate()
+	var before := inventory.snapshot()
+	var item_button := panel.get_node("LootGridPanel/Backpack/Item_%d" % ledger.uid) as Button
+	var viewport: Viewport = t.tree.root.get_viewport()
+	_push_screen_touch(viewport, 8, item_button.get_global_rect().get_center(), true)
+	await t.tree.process_frame
+	_push_screen_touch(viewport, 8, item_button.get_global_rect().get_center(), false)
+	await t.tree.process_frame
+	t.eq(panel.selected_uid, 0, "touching the selected item deselects it")
+	t.eq(inventory.snapshot(), before, "deselecting a rotated item does not commit the pending move")
+	panel.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func test_ui_pickup_zone_b_focused_cell_activation_commits_selected_item(t) -> bool:
+	var inventory := StarterInventoryFactory.create()
+	var cache := LootCache.new(inventory.registry)
+	var ledger := cache.item_at(1)
+	t.ok(inventory.commit_pickup(ledger, RetrieverInventory.BACKPACK, Vector2i(0, 0), false).ok, "given ledger is carried")
+	cache.remove_after_pickup(ledger.uid)
+	var panel := CARD_SCENE.instantiate() as LootCachePanel
+	panel.configure(inventory, cache)
+	t.tree.root.add_child(panel)
+	await t.tree.process_frame
+	panel.open_view()
+	panel._on_item_pressed(ledger.uid)
+	panel.toggle_rotate()
+	var destination := panel.get_node("LootGridPanel/Backpack/Cell_0_0") as Button
+	destination.grab_focus()
+	_push_action(t.tree.root.get_viewport(), &"ui_accept", true)
+	await t.tree.process_frame
+	_push_action(t.tree.root.get_viewport(), &"ui_accept", false)
+	await t.tree.process_frame
+	t.ok(inventory.backpack.items[ledger.uid].rotated, "focused-cell activation commits the rotated move")
+	t.eq(inventory.backpack.items[ledger.uid].anchor, Vector2i(0, 0), "focused-cell activation uses the focused anchor")
+	panel.queue_free()
+	await t.tree.process_frame
+	return true
+
+
 func test_ui_pickup_zone_b_dock_uses_the_specified_right_side_regions(t) -> bool:
 	var inventory := StarterInventoryFactory.create()
 	var cache := LootCache.new(inventory.registry)
@@ -199,5 +252,51 @@ func test_ui_pickup_zone_b_dock_uses_the_specified_right_side_regions(t) -> bool
 	var close_rect: Rect2 = (panel.get_node("CloseButton") as Control).get_global_rect()
 	t.eq(close_rect.position, Vector2(1168, 16), "dock close button occupies R3")
 	panel.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func _push_screen_touch(viewport: Viewport, index: int, position: Vector2, pressed: bool) -> void:
+	var event := InputEventScreenTouch.new()
+	event.index = index
+	event.position = position
+	event.pressed = pressed
+	viewport.push_input(event, true)
+
+
+func _push_action(viewport: Viewport, action: StringName, pressed: bool) -> void:
+	var event := InputEventAction.new()
+	event.action = action
+	event.pressed = pressed
+	viewport.push_input(event, true)
+
+
+func test_ui_pickup_zone_b_dock_and_close_stay_right_inset_on_expanded_viewport(t) -> bool:
+	var viewport := SubViewport.new()
+	viewport.size = Vector2i(1600, 720)
+	t.tree.root.add_child(viewport)
+	var host := Control.new()
+	viewport.add_child(host)
+	host.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var inventory := StarterInventoryFactory.create()
+	var cache := LootCache.new(inventory.registry)
+	var panel := CARD_SCENE.instantiate() as LootCachePanel
+	panel.configure(inventory, cache)
+	host.add_child(panel)
+	await t.tree.process_frame
+	var card_rect: Rect2 = (panel._card.get_node("CacheCardPanel") as Control).get_global_rect()
+	t.eq(card_rect.position, Vector2(1024, 120), "card dock stays top-right at expanded width")
+	t.eq(1600.0 - card_rect.end.x, 16.0, "card dock keeps its R10c right inset")
+	var card_close_rect: Rect2 = (panel._card.get_node("CloseButton") as Control).get_global_rect()
+	t.eq(card_close_rect.position, Vector2(1488, 16), "card close button stays in R3 at expanded width")
+	t.eq(1600.0 - card_close_rect.end.x, 16.0, "card close button keeps its R3 right inset")
+	panel.open_pickup()
+	var grid_rect: Rect2 = (panel.get_node("LootGridPanel") as Control).get_global_rect()
+	t.eq(grid_rect.position, Vector2(1024, 176), "grid dock stays top-right at expanded width")
+	t.eq(1600.0 - grid_rect.end.x, 16.0, "grid dock keeps its R10g right inset")
+	var grid_close_rect: Rect2 = (panel.get_node("CloseButton") as Control).get_global_rect()
+	t.eq(grid_close_rect.position, Vector2(1488, 16), "grid close button stays in R3 at expanded width")
+	t.eq(1600.0 - grid_close_rect.end.x, 16.0, "grid close button keeps its R3 right inset")
+	viewport.queue_free()
 	await t.tree.process_frame
 	return true

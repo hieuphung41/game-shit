@@ -30,6 +30,7 @@ var _items: Dictionary = {}
 var _pressed_cells: Dictionary = {}
 var _touch_start_positions: Dictionary = {}
 var _cancelled_touches: Dictionary = {}
+var _pointer_cell_activations: Dictionary = {}
 var _cell_size := CELL_SIZE
 
 
@@ -59,6 +60,7 @@ func configure(p_inventory: RetrieverInventory, p_grid_kind: StringName, p_read_
 	_pressed_cells.clear()
 	_touch_start_positions.clear()
 	_cancelled_touches.clear()
+	_pointer_cell_activations.clear()
 	_render()
 
 
@@ -94,6 +96,10 @@ func press_item(uid: int) -> void:
 func press_cell(anchor: Vector2i) -> void:
 	if not read_only:
 		cell_pressed.emit(grid_kind, anchor)
+
+
+func is_pointer_cell_activation(anchor: Vector2i) -> bool:
+	return _pointer_cell_activations.has(anchor)
 
 
 func _grid_for_kind() -> InventoryGrid:
@@ -205,7 +211,7 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		if event.pressed:
 			var anchor := _anchor_at_position(event.position)
-			if anchor.x >= 0:
+			if anchor.x >= 0 and not _item_at_position(event.position):
 				_begin_touch(event.index, anchor, event.position)
 		else:
 			_finish_touch(event.index, event.position, event.canceled)
@@ -214,7 +220,7 @@ func _input(event: InputEvent) -> void:
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			var mouse_anchor := _anchor_at_position(event.position)
-			if mouse_anchor.x >= 0:
+			if mouse_anchor.x >= 0 and not _item_at_position(event.position):
 				_begin_touch(MOUSE_POINTER_INDEX, mouse_anchor, event.position)
 		else:
 			_finish_touch(MOUSE_POINTER_INDEX, event.position)
@@ -228,6 +234,7 @@ func _begin_touch(pointer_index: int, anchor: Vector2i, position: Vector2) -> vo
 	_cancelled_touches.erase(pointer_index)
 	_pressed_cells[pointer_index] = anchor
 	_touch_start_positions[pointer_index] = position
+	_pointer_cell_activations[anchor] = true
 	cell_touch_started.emit(grid_kind, anchor)
 
 
@@ -241,6 +248,7 @@ func _update_touch(pointer_index: int, position: Vector2) -> void:
 	_pressed_cells.erase(pointer_index)
 	_touch_start_positions.erase(pointer_index)
 	_cancelled_touches[pointer_index] = true
+	_pointer_cell_activations.erase(anchor)
 	if anchor.x >= 0:
 		cell_touch_released.emit(grid_kind, anchor, false)
 
@@ -255,12 +263,24 @@ func _finish_touch(pointer_index: int, position: Vector2, cancelled: bool = fals
 	_touch_start_positions.erase(pointer_index)
 	if pressed_anchor.x < 0:
 		return
+	call_deferred("_clear_pointer_cell_activation", pressed_anchor)
 	var pressed_cell := _cells.get(pressed_anchor) as Control
 	var released_inside := not cancelled \
 		and start.distance_to(position) < TOUCH_CANCEL_DISTANCE \
 		and pressed_cell != null \
 		and pressed_cell.get_global_rect().has_point(position)
 	cell_touch_released.emit(grid_kind, pressed_anchor, released_inside)
+
+
+func _clear_pointer_cell_activation(anchor: Vector2i) -> void:
+	_pointer_cell_activations.erase(anchor)
+
+
+func _item_at_position(position: Vector2) -> bool:
+	for item_control: Control in _items.values():
+		if item_control.get_global_rect().has_point(position):
+			return true
+	return false
 
 
 func _anchor_at_position(position: Vector2) -> Vector2i:

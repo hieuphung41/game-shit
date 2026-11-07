@@ -13,9 +13,16 @@ var cache: LootCache
 var selected_index := 0
 var _details: VBoxContainer
 
+const CARD_DOCK_RIGHT_INSET := 16.0
+const CARD_DOCK_TOP := 120.0
+const CARD_DOCK_SIZE := Vector2(560, 584)
+const CLOSE_BUTTON_TOP := 16.0
+const CLOSE_BUTTON_SIZE := Vector2(96, 96)
+
 
 func _ready() -> void:
 	theme = UiTheme.create()
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	if inventory != null and cache != null:
 		_build()
 
@@ -53,8 +60,7 @@ func _build() -> void:
 		child.queue_free()
 	var panel := PanelContainer.new()
 	panel.name = "CacheCardPanel"
-	panel.position = Vector2(704, 120)
-	panel.size = Vector2(560, 584)
+	_anchor_top_right(panel, CARD_DOCK_RIGHT_INSET, CARD_DOCK_TOP, CARD_DOCK_SIZE)
 	add_child(panel)
 	var rows := VBoxContainer.new()
 	rows.name = "Rows"
@@ -90,8 +96,7 @@ func _build() -> void:
 	pickup_button.pressed.connect(request_pickup)
 	actions.add_child(pickup_button)
 	var close_button := _button("CloseButton", &"CARD_ACTION_CLOSE")
-	close_button.position = Vector2(1168, 16)
-	close_button.size = Vector2(96, 96)
+	_anchor_top_right(close_button, CARD_DOCK_RIGHT_INSET, CLOSE_BUTTON_TOP, CLOSE_BUTTON_SIZE)
 	add_child(close_button)
 	close_button.pressed.connect(func() -> void: closed.emit())
 	_render_details()
@@ -193,6 +198,17 @@ func _footprint_cue(definition: ItemDef) -> String:
 
 func _rarity_marks(value: int) -> String:
 	return "●".repeat(value) + "○".repeat(6 - value)
+
+
+func _anchor_top_right(control: Control, right_inset: float, top: float, dimensions: Vector2) -> void:
+	control.anchor_left = 1.0
+	control.anchor_top = 0.0
+	control.anchor_right = 1.0
+	control.anchor_bottom = 0.0
+	control.offset_left = -right_inset - dimensions.x
+	control.offset_top = top
+	control.offset_right = -right_inset
+	control.offset_bottom = top + dimensions.y
 
 
 func _button(node_name: String, key: StringName) -> Button:
