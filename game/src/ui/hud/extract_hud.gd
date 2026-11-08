@@ -135,7 +135,7 @@ func _refresh() -> void:
 func _objective_key() -> StringName:
 	match flow.extract_state:
 		ExtractPierAFlow.ExtractState.E0_UNAVAILABLE:
-			return &"HUD_OBJECTIVE_TAKE_MANIFEST"
+			return &"HUD_OBJECTIVE_RECOVER_MANIFEST" if flow.can_recover_manifest() else &"HUD_OBJECTIVE_TAKE_MANIFEST"
 		ExtractPierAFlow.ExtractState.E1_CALLABLE, ExtractPierAFlow.ExtractState.S7_CALL_ACCEPTED:
 			return &"HUD_OBJECTIVE_DELIVER_PIER_A"
 		ExtractPierAFlow.ExtractState.S8_HOLD:
@@ -186,7 +186,7 @@ func _refresh_context() -> void:
 	if _overlay_open:
 		return
 	if flow.desk_state == ExtractPierAFlow.DeskState.HAS_MANIFEST and desk_in_range:
-		_context_button.text = tr("WORLD_INTERACT_DISPATCH_DESK")
+		_context_button.text = tr("WORLD_INTERACT_RECOVER_DISPATCH" if flow.can_recover_manifest() else "WORLD_INTERACT_DISPATCH_DESK")
 		_context_button.visible = true
 	elif flow.can_call():
 		_context_button.text = tr("EXTRACT_E1_BUTTON_CALL")

@@ -8,6 +8,7 @@ var next: Array[Dictionary] = [{"contract_id": &"contract_2", "playable": false}
 var backpack_cells_used: int = 0
 var backpack_cells_total: int = 0
 var contract_state: int = 0
+var run_kind: StringName = &"normal"
 
 
 func to_dict() -> Dictionary:
@@ -19,4 +20,5 @@ func to_dict() -> Dictionary:
 		"backpack_cells_used": backpack_cells_used,
 		"backpack_cells_total": backpack_cells_total,
 		"contract_state": contract_state,
+		"run_kind": run_kind,
 	}

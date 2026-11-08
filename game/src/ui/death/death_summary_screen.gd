@@ -5,6 +5,7 @@ extends Control
 
 signal prepare_requested()
 signal boot_requested()
+signal recovery_requested(summary: DeathSummary)
 
 const UI_OPEN_GUARD_SECONDS := 0.3
 const SUMMARY_DEATH_BUTTON_LOCK_SECONDS := 1.0
@@ -43,7 +44,7 @@ func request_primary() -> void:
 		_primary_status_key = &"UI_LOADING"
 		_refresh_primary_presentation(button)
 	if _is_after_manifest():
-		boot_requested.emit()
+		recovery_requested.emit(_safe_summary())
 	else:
 		prepare_requested.emit()
 
@@ -127,13 +128,6 @@ func _build() -> void:
 	_add_column("LostScroll", columns[1], &"SUMMARY_GROUP_LOST", _lost_lines())
 	var evidence_key: StringName = &"SUMMARY_DEATH_GROUP_EVIDENCE_UNRECOVERED" if _is_after_manifest() else &"SUMMARY_GROUP_EVIDENCE"
 	_add_column("EvidenceScroll", columns[2], evidence_key, _evidence_lines())
-	if _is_after_manifest():
-		var recovery := _label("RecoveryLine", &"SUMMARY_DEATH_RECOVERY_UNAVAILABLE", 20)
-		recovery.position = Vector2(32, 552)
-		recovery.size = Vector2(1216, 40)
-		recovery.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		recovery.add_theme_color_override("font_color", UiTheme.MUTED)
-		add_child(recovery)
 	var primary := _button("PrimaryButton", _primary_key(), Vector2(440, 608), Vector2(400, 96))
 	primary.pressed.connect(request_primary)
 	_add_lock_feedback(primary)
@@ -353,7 +347,7 @@ func _is_after_manifest() -> bool:
 
 
 func _primary_key() -> StringName:
-	return &"SUMMARY_DEATH_BUTTON_BOOT" if _is_after_manifest() else &"SUMMARY_DEATH_BUTTON_PREPARE"
+	return &"SUMMARY_DEATH_BUTTON_RECOVERY" if _is_after_manifest() else &"SUMMARY_DEATH_BUTTON_PREPARE"
 
 
 func _input_guard_active() -> bool:

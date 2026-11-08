@@ -10,6 +10,7 @@ signal cancelled(inventory: RetrieverInventory)
 const UI_OPEN_GUARD_SECONDS := 0.3
 
 var inventory: RetrieverInventory
+var recovery_mode := false
 var snapshot_open: Dictionary = {}
 var selected_uid := 0
 var _opened_at_msec := 0
@@ -27,8 +28,9 @@ func _ready() -> void:
 	_open()
 
 
-func open_with_inventory(p_inventory: RetrieverInventory) -> void:
+func open_with_inventory(p_inventory: RetrieverInventory, p_recovery_mode: bool = false) -> void:
 	inventory = p_inventory
+	recovery_mode = p_recovery_mode
 	if is_inside_tree():
 		_open()
 
@@ -125,7 +127,7 @@ func _build() -> void:
 	_backpack = _grid_with_label("Backpack", "LOADOUT_LABEL_BACKPACK", RetrieverInventory.BACKPACK, backpack_at)
 	_notary_box = _grid_with_label("NotaryBox", "LOADOUT_LABEL_NOTARY_BOX", RetrieverInventory.NOTARY_BOX, notary_box_at)
 	_sling_pouch = _grid_with_label("SlingPouch", "LOADOUT_LABEL_SLING_POUCH", RetrieverInventory.SLING_POUCH, sling_pouch_at)
-	var summary := _label("Summary", "LOADOUT_SUMMARY_DEFAULT_KIT", 20)
+	var summary := _label("Summary", "RECOVERY_LOADOUT_SUMMARY" if recovery_mode else "LOADOUT_SUMMARY_DEFAULT_KIT", 20)
 	summary.position = summary_at
 	summary.size = summary_size
 	summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

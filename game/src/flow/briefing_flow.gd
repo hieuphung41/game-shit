@@ -20,7 +20,7 @@ func _ready() -> void:
 func _show_briefing() -> void:
 	_briefing = BRIEFING_SCENE.instantiate() as BriefingScreen
 	add_child(_briefing)
-	_briefing.open_with_inventory(RunSession.inventory)
+	_briefing.open_with_inventory(RunSession.inventory, RunSession.is_recovery_briefing())
 	_briefing.loadout_requested.connect(_open_loadout)
 	_briefing.enter_outer_pier_requested.connect(_enter_outer_pier)
 	_briefing.back_requested.connect(_return_to_boot)
@@ -31,7 +31,7 @@ func _open_loadout(inventory: RetrieverInventory) -> void:
 		return
 	_loadout = LOADOUT_SCENE.instantiate() as LoadoutScreen
 	add_child(_loadout)
-	_loadout.open_with_inventory(inventory)
+	_loadout.open_with_inventory(inventory, RunSession.is_recovery_briefing())
 	_loadout.finished.connect(_close_loadout)
 	_loadout.cancelled.connect(_close_loadout)
 
@@ -45,7 +45,10 @@ func _close_loadout(_inventory: RetrieverInventory) -> void:
 
 
 func _enter_outer_pier(inventory: RetrieverInventory) -> void:
-	RunSession.begin_run(inventory)
+	var flow := RunSession.begin_recovery_run(inventory, RunSession.recovery_retained, RunSession.debug_fixture_id) if RunSession.is_recovery_briefing() else RunSession.begin_run(inventory)
+	if flow == null:
+		_briefing.show_scene_load_error()
+		return
 	get_tree().change_scene_to_file(OUTER_PIER_RUN_SCENE)
 
 

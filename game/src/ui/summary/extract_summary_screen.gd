@@ -69,7 +69,7 @@ func _build() -> void:
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(background)
-	var title := _label("Title", &"SUMMARY_SUCCESS_TITLE", 32)
+	var title := _label("Title", &"SUMMARY_RECOVERY_TITLE" if summary.run_kind == &"recovery" else &"SUMMARY_SUCCESS_TITLE", 32)
 	title.position = Vector2(368, 32)
 	title.size = Vector2(544, 56)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -157,6 +157,8 @@ func _add_next_group(parent: Container) -> void:
 		content.add_child(_label("Contract%s" % suffix, _next_contract_key(contract_id, &"TITLE"), 20))
 		if not bool(entry.get("playable", false)):
 			content.add_child(_label("Contract%sLocked" % suffix, _next_contract_key(contract_id, &"TAG"), 20))
+	if summary.run_kind == &"recovery":
+		content.add_child(_label("RecoveryLine", &"SUMMARY_RECOVERY_NEXT", 20))
 
 
 func _contract_node_suffix(contract_id: StringName) -> String:
