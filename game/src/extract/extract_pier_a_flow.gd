@@ -55,9 +55,10 @@ var _inventory: RetrieverInventory
 var _carried_ever: Dictionary = {}
 var _call_ack_remaining: float = 0.0
 var _death_summary_resolved := false
+var _recovery_run := false
 
 
-func setup(inventory: RetrieverInventory) -> void:
+func setup(inventory: RetrieverInventory, recovery_run: bool = false) -> void:
 	if _inventory != null:
 		if _inventory.evidence_carried_changed.is_connected(on_evidence_carried_changed):
 			_inventory.evidence_carried_changed.disconnect(on_evidence_carried_changed)
@@ -83,6 +84,37 @@ func setup(inventory: RetrieverInventory) -> void:
 	hold_pause_reason = &""
 	_call_ack_remaining = 0.0
 	_death_summary_resolved = false
+	_recovery_run = recovery_run
+
+
+## Initializes the recovery tuple before the flow is exposed to a scene or HUD.
+func initialize_unrecovered_at_dispatch() -> bool:
+	if _inventory == null or _inventory_contains_manifest():
+		return false
+	extract_state = ExtractState.E0_UNAVAILABLE
+	contract_state = ContractState.UNRECOVERED
+	desk_state = DeskState.HAS_MANIFEST
+	manifest_carried = false
+	in_beacon_zone = false
+	in_board_zone = false
+	call_confirm_open = false
+	hold_remaining = 0.0
+	hold_paused = false
+	hold_pause_reason = &""
+	_call_ack_remaining = 0.0
+	_death_summary_resolved = false
+	return true
+
+
+func can_recover_manifest() -> bool:
+	return contract_state == ContractState.UNRECOVERED \
+		and desk_state == DeskState.HAS_MANIFEST \
+		and not manifest_carried \
+		and extract_state == ExtractState.E0_UNAVAILABLE
+
+
+func is_recovery_run() -> bool:
+	return _recovery_run
 
 
 func on_evidence_carried_changed(def_id: StringName, carried: bool) -> void:
@@ -195,6 +227,7 @@ func board() -> ExtractSummary:
 	summary.backpack_cells_used = used_cells
 	summary.backpack_cells_total = total_cells
 	summary.contract_state = ContractState.EXTRACTED
+	summary.run_kind = &"recovery" if _recovery_run else &"normal"
 	_set_contract_state(ContractState.EXTRACTED)
 	_set_extract_state(ExtractState.S10_SUCCESS)
 	extract_succeeded.emit(summary)
@@ -232,7 +265,7 @@ func resolve_death_summary() -> DeathSummary:
 		var evidence_id := StringName(evidence)
 		if not summary.unrecovered_evidence.has(evidence_id):
 			summary.unrecovered_evidence.append(evidence_id)
-	if contract_state == ContractState.DROPPED and not summary.unrecovered_evidence.has(MANIFEST_DEF_ID):
+	if contract_state != ContractState.NOT_TAKEN and not summary.unrecovered_evidence.has(MANIFEST_DEF_ID):
 		summary.unrecovered_evidence.append(MANIFEST_DEF_ID)
 	if contract_state != ContractState.NOT_TAKEN:
 		_set_contract_state(ContractState.UNRECOVERED)
@@ -365,7 +398,13 @@ func _lost_entries(summary: ExtractSummary) -> Array[Dictionary]:
 func _entries_with_reason(items: Array, reason: StringName) -> Array[Dictionary]:
 	var entries: Array[Dictionary] = []
 	for item: ItemInstance in items:
-		var entry := {"uid": item.uid, "def_id": item.def_id}
+		var entry := {
+			"uid": item.uid,
+			"def_id": item.def_id,
+			"quantity": item.quantity,
+			"anchor": item.anchor,
+			"rotated": item.rotated,
+		}
 		if not reason.is_empty():
 			entry["lost_reason"] = reason
 		entries.append(entry)
@@ -378,3 +417,11 @@ func _entry_uid_less(first: Dictionary, second: Dictionary) -> bool:
 
 func _is_terminal() -> bool:
 	return extract_state == ExtractState.S10_SUCCESS or extract_state == ExtractState.ENDED_DEATH
+
+
+func _inventory_contains_manifest() -> bool:
+	for grid: InventoryGrid in [_inventory.backpack, _inventory.notary_box, _inventory.sling_pouch]:
+		for item: ItemInstance in grid.all_items():
+			if item.def_id == MANIFEST_DEF_ID:
+				return true
+	return false

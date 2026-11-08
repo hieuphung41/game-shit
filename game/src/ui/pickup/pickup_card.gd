@@ -9,6 +9,13 @@ signal skipped()
 const UI_OPEN_GUARD_SECONDS := 0.3
 
 var _opened_at_msec := 0
+var recovery_mode := false
+
+
+func configure(p_recovery_mode: bool) -> void:
+	recovery_mode = p_recovery_mode
+	if is_inside_tree():
+		_build()
 
 
 func _ready() -> void:
@@ -71,7 +78,8 @@ func _build() -> void:
 	var skip_button := _button("SkipButton", "CARD_ACTION_SKIP", Vector2(224, 456), Vector2(72, 96))
 	skip_button.pressed.connect(_on_skip_pressed)
 	panel.add_child(skip_button)
-	var pickup_button := _button("PickAndPlaceButton", "CARD_ACTION_PICK_AND_PLACE", Vector2(296, 456), Vector2(264, 96))
+	var pickup_key: StringName = &"CARD_ACTION_RECOVER_MANIFEST" if recovery_mode else &"CARD_ACTION_PICK_AND_PLACE"
+	var pickup_button := _button("PickAndPlaceButton", pickup_key, Vector2(296, 456), Vector2(264, 96))
 	pickup_button.pressed.connect(_on_pickup_pressed)
 	panel.add_child(pickup_button)
 

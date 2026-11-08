@@ -20,6 +20,7 @@ const CONFIRM_SCENE := preload("res://src/ui/confirm/confirm_dialog.tscn")
 const SUMMARY_SCENE := preload("res://src/ui/summary/extract_summary_screen.tscn")
 const DEATH_SUMMARY_SCENE := preload("res://src/ui/death/death_summary_screen.tscn")
 const RECALL_SIGIL_SCENE := preload("res://src/ui/death/recall_sigil_overlay.tscn")
+const RECOVERY_CONTRACT_SCENE := preload("res://src/ui/recovery/recovery_contract_screen.tscn")
 
 const BEACON_ZONE_RADIUS_M := 3.0
 const BOARD_ZONE_RADIUS_M := 1.5
@@ -132,7 +133,7 @@ func set_cache_in_range(inside: bool) -> void:
 
 
 func request_dispatch() -> void:
-	if flow.desk_state == ExtractPierAFlow.DeskState.HAS_MANIFEST and _desk_in_range:
+	if flow.desk_state == ExtractPierAFlow.DeskState.HAS_MANIFEST and _desk_in_range and _dispatch_manifest_available():
 		_open_dispatch_card()
 
 
@@ -357,7 +358,10 @@ func _connect_flow() -> void:
 
 
 func _open_dispatch_card() -> void:
+	if not _dispatch_manifest_available():
+		return
 	var card := PICKUP_CARD_SCENE.instantiate() as ManifestPickupCard
+	card.configure(flow.can_recover_manifest())
 	_present_overlay(card)
 	card.pickup_requested.connect(_open_pickup_panel)
 	card.closed.connect(_close_overlay)
@@ -637,6 +641,8 @@ func _on_extract_succeeded(summary: ExtractSummary) -> void:
 	_present_overlay(screen)
 	screen.show_summary(summary, RunSession.inventory.registry)
 	screen.hub_requested.connect(_return_to_boot)
+	if summary.run_kind == &"recovery":
+		RunSession.complete_recovery_run()
 
 
 func _on_retriever_depleted() -> void:
@@ -673,7 +679,24 @@ func _show_death_summary() -> void:
 	_present_overlay(screen)
 	screen.show_summary(summary, RunSession.inventory.registry)
 	screen.prepare_requested.connect(_return_to_briefing)
-	screen.boot_requested.connect(_return_to_boot)
+	screen.recovery_requested.connect(_open_recovery_contract)
+
+
+func _open_recovery_contract(summary: DeathSummary) -> void:
+	if not RunSession.prepare_recovery_briefing(summary):
+		return
+	if _overlay != null:
+		_overlay.queue_free()
+		_overlay = null
+	var screen := RECOVERY_CONTRACT_SCENE.instantiate() as RecoveryContractScreen
+	_present_overlay(screen)
+	screen.briefing_requested.connect(_enter_recovery_briefing)
+
+
+func _enter_recovery_briefing() -> void:
+	var result := get_tree().change_scene_to_file("res://src/flow/briefing_flow.tscn")
+	if result != OK and _overlay is RecoveryContractScreen:
+		(_overlay as RecoveryContractScreen).get_node("BriefingButton").disabled = false
 
 
 func _return_to_briefing() -> void:
@@ -694,6 +717,10 @@ func _on_desk_state_changed(state: int) -> void:
 	if _manifest_placeholder != null:
 		_manifest_placeholder.visible = state == ExtractPierAFlow.DeskState.HAS_MANIFEST
 	_hud.refresh()
+
+
+func _dispatch_manifest_available() -> bool:
+	return flow.can_recover_manifest() or flow.contract_state == ExtractPierAFlow.ContractState.NOT_TAKEN
 
 
 func _on_dispatch_entered() -> void:

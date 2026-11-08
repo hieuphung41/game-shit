@@ -14,6 +14,7 @@ const UI_OPEN_GUARD_SECONDS := 0.3
 static var _tooltip_seen_this_session := false
 
 var inventory: RetrieverInventory
+var recovery_mode := false
 var _enter_button: Button
 var _tooltip: Button
 var _status: Label
@@ -30,8 +31,9 @@ func _ready() -> void:
 	refresh()
 
 
-func open_with_inventory(p_inventory: RetrieverInventory) -> void:
+func open_with_inventory(p_inventory: RetrieverInventory, p_recovery_mode: bool = false) -> void:
 	inventory = p_inventory
+	recovery_mode = p_recovery_mode
 	if is_inside_tree():
 		_build()
 		refresh()
@@ -100,16 +102,16 @@ func _build() -> void:
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(background)
-	var title := _label("Title", "BRIEFING_HEADER_TITLE", 32)
+	var title := _label("Title", _key(&"BRIEFING_HEADER_TITLE", &"RECOVERY_BRIEFING_HEADER_TITLE"), 32)
 	title.position = Vector2(32, 32)
 	title.size = Vector2(688, 64)
 	add_child(title)
-	var objective := _label("Objective", "BRIEFING_OBJECTIVE_MAIN", 22)
+	var objective := _label("Objective", _key(&"BRIEFING_OBJECTIVE_MAIN", &"RECOVERY_BRIEFING_OBJECTIVE"), 22)
 	objective.position = Vector2(32, 104)
 	objective.size = Vector2(688, 72)
 	objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(objective)
-	var rules := _label("Rules", "BRIEFING_RULES_LINE", 20)
+	var rules := _label("Rules", _key(&"BRIEFING_RULES_LINE", &"RECOVERY_BRIEFING_RULES_LINE"), 20)
 	rules.position = Vector2(32, 184)
 	rules.size = Vector2(616, 56)
 	rules.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -138,7 +140,7 @@ func _build() -> void:
 	mentor_line.size = Vector2(688, 112)
 	mentor_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(mentor_line)
-	var summary := _label("LoadoutSummary", "LOADOUT_SUMMARY_DEFAULT_KIT", 20)
+	var summary := _label("LoadoutSummary", _key(&"LOADOUT_SUMMARY_DEFAULT_KIT", &"RECOVERY_LOADOUT_SUMMARY"), 20)
 	summary.position = Vector2(752, 32)
 	summary.size = Vector2(496, 168)
 	summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -229,6 +231,10 @@ func _invalid_item_name(uid: int) -> String:
 
 func _reason_text(reason: InventoryReason.Value) -> String:
 	return tr("INVENTORY_REASON_" + InventoryReason.Value.keys()[int(reason)])
+
+
+func _key(normal_key: StringName, recovery_key: StringName) -> StringName:
+	return recovery_key if recovery_mode else normal_key
 
 
 func _label(node_name: String, key: String, font_size: int) -> Label:

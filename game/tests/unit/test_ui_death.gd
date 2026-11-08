@@ -4,7 +4,7 @@ const DEATH_SCENE := preload("res://src/ui/death/death_summary_screen.tscn")
 const RECALL_SCENE := preload("res://src/ui/death/recall_sigil_overlay.tscn")
 
 
-func test_ui_death_after_manifest_has_three_groups_and_boot_only(t) -> bool:
+func test_ui_death_after_manifest_has_three_groups_and_recovery_only(t) -> bool:
 	var registry := _registry_with_cargo()
 	var summary := DeathSummary.new()
 	summary.kept = [{"uid": 1, "def_id": &"starter_remedy"}]
@@ -13,9 +13,9 @@ func test_ui_death_after_manifest_has_three_groups_and_boot_only(t) -> bool:
 	summary.death_variant = &"after_manifest"
 	var screen := DEATH_SCENE.instantiate() as DeathSummaryScreen
 	screen.show_summary(summary, registry)
-	var boot_requests: Array[bool] = []
+	var recovery_requests: Array[bool] = []
 	var prepare_requests: Array[bool] = []
-	screen.boot_requested.connect(func() -> void: boot_requests.append(true))
+	screen.recovery_requested.connect(func(_recovery: DeathSummary) -> void: recovery_requests.append(true))
 	screen.prepare_requested.connect(func() -> void: prepare_requests.append(true))
 	t.tree.root.add_child(screen)
 	await t.tree.process_frame
@@ -25,12 +25,12 @@ func test_ui_death_after_manifest_has_three_groups_and_boot_only(t) -> bool:
 	t.eq((screen.get_node("EvidenceScroll/Content/Heading") as Label).text, tr("SUMMARY_DEATH_GROUP_EVIDENCE_UNRECOVERED"), "after-manifest header names unrecovered evidence")
 	t.ok((screen.get_node("LostScroll/Content/Line1") as Label).text.contains(tr("ITEM_CARGO_D_2X2_NAME")), "cargo is lost rather than kept")
 	t.ok((screen.get_node("EvidenceScroll/Content/Line1") as Label).text.contains(tr("CARD_MANIFEST_R17_NAME")), "Manifest appears only as unrecovered evidence")
-	t.ok(screen.get_node_or_null("RecoveryLine") != null, "after-manifest explains recovery is unavailable")
-	t.eq((screen.get_node("PrimaryButton") as Button).text, tr("SUMMARY_DEATH_BUTTON_BOOT"), "after-manifest has the Boot action")
+	t.ok(screen.get_node_or_null("RecoveryLine") == null, "after-manifest does not show the retired recovery-unavailable copy")
+	t.eq((screen.get_node("PrimaryButton") as Button).text, tr("SUMMARY_DEATH_BUTTON_RECOVERY"), "after-manifest has the Recovery Contract action")
 	screen._elapsed_seconds = 2.0
 	screen.request_primary()
 	screen.request_primary()
-	t.eq(boot_requests.size(), 1, "Boot request is emitted once")
+	t.eq(recovery_requests.size(), 1, "Recovery request is emitted once")
 	t.eq(prepare_requests.size(), 0, "after-manifest never requests a new run directly")
 	screen.queue_free()
 	await t.tree.process_frame
@@ -207,9 +207,9 @@ func test_ui_death_presents_loading_and_errors_inside_the_primary_button(t) -> b
 	after_screen._elapsed_seconds = 1.0
 	after_screen._process(0.0)
 	var after_button := after_screen.get_node("PrimaryButton") as Button
-	t.eq((after_button.get_node("ActionIcon") as Label).text, "⇥", "Boot action replaces the lock with a door icon")
+	t.eq((after_button.get_node("ActionIcon") as Label).text, "⇥", "Recovery action replaces the lock with a door icon")
 	after_screen.show_scene_load_error()
-	t.eq((after_button.get_node("ActionStatus") as Label).text, tr("UI_ERROR_SCENE_LOAD"), "Boot scene error is also inside the primary button")
+	t.eq((after_button.get_node("ActionStatus") as Label).text, tr("UI_ERROR_SCENE_LOAD"), "Recovery scene error is also inside the primary button")
 	after_screen.queue_free()
 	await t.tree.process_frame
 	return true
