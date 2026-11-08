@@ -52,6 +52,21 @@ func test_recovery_flow_covers_full_inventory_cancel_drop_repeat_deaths_and_memo
 	RunSession.clear()
 	t.ok(RunSession.prepare_recovery_briefing(full_summary), "recovery context accepts sealed non-evidence retention")
 	var full_inventory := RunSession.inventory
+	t.ok(full_inventory != null, "recovery briefing creates an inventory for retained Notary items")
+	if full_inventory == null:
+		RunSession.clear()
+		return true
+	t.eq(full_inventory.notary_box.all_items().size(), full_retained.size(), "recovery restores all four retained Notary items")
+	for expected: Dictionary in full_retained:
+		var anchor: Vector2i = expected.get("anchor", Vector2i.ZERO)
+		var retained_item := full_inventory.notary_box.item_at(anchor)
+		t.ok(retained_item != null, "recovery restores retained item at Notary Box %s" % anchor)
+		if retained_item != null:
+			t.eq(retained_item.uid, int(expected.get("uid", -1)), "recovery preserves retained item UID at Notary Box %s" % anchor)
+			t.eq(retained_item.def_id, StringName(expected.get("def_id", &"")), "recovery preserves retained item definition at Notary Box %s" % anchor)
+			t.eq(retained_item.anchor, anchor, "recovery preserves retained item anchor at Notary Box %s" % anchor)
+			t.eq(retained_item.item_location, RetrieverInventory.NOTARY_BOX, "recovery keeps retained item sealed in the Notary Box at %s" % anchor)
+	t.eq(full_inventory.notary_box.free_cell_count(), 0, "recovery Notary Box has no free cells before Manifest pickup")
 	_fill_backpack(full_inventory)
 	var full_flow := RunSession.begin_recovery_run(full_inventory, RunSession.recovery_retained)
 	t.ok(full_flow != null and full_flow.can_recover_manifest(), "full inventory recovery begins at the unrecovered dispatch tuple")
