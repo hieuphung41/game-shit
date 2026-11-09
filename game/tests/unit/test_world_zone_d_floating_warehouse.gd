@@ -191,6 +191,48 @@ func test_open_route_d_character_body_traverses_dock_main_and_back_to_b(t) -> bo
 	return true
 
 
+func test_zone_d_cc0_cages_cargo_and_tax_desk_use_matte_library_materials(t) -> bool:
+	var scene := load(SCENE_PATH) as PackedScene
+	if not t.ok(scene != null, "Zone D scene loads for CC0 prop checks"):
+		return true
+	var zone := scene.instantiate() as Node3D
+	t.tree.root.add_child(zone)
+	await t.tree.process_frame
+	var replacements: Dictionary = {
+		"CageRowNorthD/KenneyWarehouseCage": "structure-fence-sides",
+		"CargoD/KenneyCargo": "crate-bottles",
+		"TaxStampD/KenneyTaxDesk": "structure-platform-small",
+		"TaxStampD/StampCrate": "crate",
+	}
+	for root_path: String in replacements:
+		var replacement_root := zone.get_node_or_null(root_path) as Node3D
+		if not t.ok(replacement_root != null, "%s keeps its CC0 visual root" % root_path):
+			continue
+		var expected_mesh_name: String = replacements[root_path]
+		var imported_meshes := replacement_root.find_children(expected_mesh_name, "MeshInstance3D", true, false)
+		t.ok(not imported_meshes.is_empty(), "%s contains the %s Kenney mesh" % [root_path, expected_mesh_name])
+		for node: Node in imported_meshes:
+			var mesh := node as MeshInstance3D
+			t.ok(mesh.material_override is ShaderMaterial, "%s replaces the imported material with a matte library shader" % mesh.get_path())
+	var cargo := zone.get_node_or_null("CargoD/KenneyCargo/CargoStack") as Node3D
+	var desk := zone.get_node_or_null("TaxStampD/KenneyTaxDesk") as Node3D
+	var stamp := zone.get_node_or_null("TaxStampD/StampCrate") as Node3D
+	t.ok(cargo != null and cargo.scale.x >= 2.8, "Cargo stack keeps a readable phone-scale silhouette")
+	t.ok(desk != null and desk.scale.x >= 2.15, "Tax desk keeps a readable phone-scale silhouette")
+	t.ok(stamp != null and stamp.scale.x >= 2.1, "Tax stamp keeps a readable phone-scale silhouette")
+	if cargo != null and desk != null and stamp != null:
+		t.ok(cargo.global_position.distance_to(desk.global_position) >= 5.0, "Cargo and tax desk keep separate visual roots along the phone camera axis")
+		t.ok(stamp.global_position.distance_to(desk.global_position) >= 3.2 and stamp.global_position.distance_to(cargo.global_position) >= 3.0, "Tax stamp remains a separate readable visual role")
+	for placeholder_path: String in ["CargoD/Pallet/Mesh", "CargoD/ItemBlock/Mesh", "TaxStampD/Desk/Mesh", "TaxStampD/ItemBlock/Mesh"]:
+		var placeholder := zone.get_node_or_null(placeholder_path) as MeshInstance3D
+		t.ok(placeholder != null and not placeholder.visible, "%s hides the old box visual" % placeholder_path)
+	var floor := zone.get_node_or_null("FloorD") as Node3D
+	t.ok(floor != null and floor.visible, "D keeps its continuous authored floor under the CC0 props")
+	zone.queue_free()
+	await t.tree.process_frame
+	return true
+
+
 func _create_traversal_retriever() -> CharacterBody3D:
 	var retriever := CharacterBody3D.new()
 	retriever.collision_layer = 1
