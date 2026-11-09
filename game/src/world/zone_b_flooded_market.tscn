@@ -38,6 +38,9 @@ size = Vector3(0.18, 1.2, 35)
 [sub_resource type="BoxShape3D" id="MarketWestEntryEdgeShape"]
 size = Vector3(0.18, 1.2, 1.0)
 
+[sub_resource type="BoxShape3D" id="MarketWestEntryNorthEdgeShape"]
+size = Vector3(0.18, 1.2, 1.5)
+
 [sub_resource type="PlaneMesh" id="WaterMesh"]
 size = Vector2(22, 40)
 
@@ -223,8 +226,8 @@ position = Vector3(0.09, 0.6, 2.0)
 shape = SubResource("MarketWestEntryEdgeShape")
 
 [node name="EntryNorth" type="CollisionShape3D" parent="PlayableEdgesB"]
-position = Vector3(0.09, 0.6, -2.0)
-shape = SubResource("MarketWestEntryEdgeShape")
+position = Vector3(0.09, 0.6, -2.25)
+shape = SubResource("MarketWestEntryNorthEdgeShape")
 
 [node name="SeamAB" type="Marker3D" parent="."]
 position = Vector3(0, 0.09, 0)

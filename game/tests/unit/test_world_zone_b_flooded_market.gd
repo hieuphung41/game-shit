@@ -141,6 +141,61 @@ func test_zone_b_is_instanced_from_a_at_the_locked_offset(t) -> bool:
 	return true
 
 
+func test_zone_ab_edge_collisions_block_former_water_gaps_without_closing_the_seam(t) -> bool:
+	var a_scene := load("res://src/world/zone_a_outer_pier.tscn") as PackedScene
+	if not t.ok(a_scene != null, "Zone A scene loads for physical A/B edge regression"):
+		return true
+	var world := a_scene.instantiate() as Node3D
+	t.tree.root.add_child(world)
+	await t.tree.physics_frame
+
+	var a_east_gap := _create_edge_test_retriever()
+	world.add_child(a_east_gap)
+	a_east_gap.global_position = Vector3(6.0, 0.84, 0.5)
+	await t.tree.physics_frame
+	await _move_character_for_physics_frames(t, a_east_gap, Vector3(3.0, 0.0, 0.0), 60)
+	t.ok(a_east_gap.global_position.x < 6.7, "CharacterBody3D cannot leave A through the former east water gap")
+	a_east_gap.queue_free()
+
+	var b_west_gap := _create_edge_test_retriever()
+	world.add_child(b_west_gap)
+	b_west_gap.global_position = Vector3(7.5, 0.84, -5.2)
+	await t.tree.physics_frame
+	await _move_character_for_physics_frames(t, b_west_gap, Vector3(-3.0, 0.0, 0.0), 60)
+	t.ok(b_west_gap.global_position.x > 7.1, "CharacterBody3D cannot leave B through the former west facade gap")
+	b_west_gap.queue_free()
+
+	var seam_traversal := _create_edge_test_retriever()
+	world.add_child(seam_traversal)
+	seam_traversal.global_position = Vector3(6.0, 0.84, -2.45)
+	await t.tree.physics_frame
+	await _move_character_for_physics_frames(t, seam_traversal, Vector3(3.0, 0.0, 0.0), 60)
+	t.ok(seam_traversal.global_position.x > 8.5, "CharacterBody3D still crosses the authored three-metre A-to-B seam")
+	world.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func _create_edge_test_retriever() -> CharacterBody3D:
+	var retriever := CharacterBody3D.new()
+	retriever.collision_layer = 1
+	retriever.collision_mask = 2
+	var collision := CollisionShape3D.new()
+	var shape := CapsuleShape3D.new()
+	shape.radius = 0.30
+	shape.height = 1.50
+	collision.shape = shape
+	retriever.add_child(collision)
+	return retriever
+
+
+func _move_character_for_physics_frames(t, character: CharacterBody3D, motion: Vector3, frame_count: int) -> void:
+	for frame_index: int in frame_count:
+		character.velocity = motion
+		character.move_and_slide()
+		await t.tree.physics_frame
+
+
 func test_zone_b_probes_keep_visible_surfaces_and_signal_lane(t) -> bool:
 	var scene := load(SCENE_PATH) as PackedScene
 	if not t.ok(scene != null, "Zone B scene loads for probe checks"):

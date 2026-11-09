@@ -81,8 +81,11 @@ size = Vector3(8.5, 0.18, 1.0)
 [sub_resource type="BoxShape3D" id="DockWestEdgeShape"]
 size = Vector3(0.18, 1.2, 3.0)
 
-[sub_resource type="BoxShape3D" id="MainSouthEdgeShape"]
-size = Vector3(9.5, 1.2, 0.18)
+[sub_resource type="BoxShape3D" id="MainSouthWestEdgeShape"]
+size = Vector3(2.5, 1.2, 0.18)
+
+[sub_resource type="BoxShape3D" id="MainSouthEastEdgeShape"]
+size = Vector3(1.5, 1.2, 0.18)
 
 [sub_resource type="BoxMesh" id="RailLongMesh"]
 size = Vector3(0.12, 0.55, 9.5)
@@ -223,9 +226,13 @@ shape = SubResource("DockWestEdgeShape")
 position = Vector3(2.91, 0.6, -1.5)
 shape = SubResource("DockWestEdgeShape")
 
-[node name="MainSouth" type="CollisionShape3D" parent="PlayableEdgesD"]
-position = Vector3(-0.25, 0.6, -3.09)
-shape = SubResource("MainSouthEdgeShape")
+[node name="MainSouthWest" type="CollisionShape3D" parent="PlayableEdgesD"]
+position = Vector3(-3.75, 0.6, -3.09)
+shape = SubResource("MainSouthWestEdgeShape")
+
+[node name="MainSouthEast" type="CollisionShape3D" parent="PlayableEdgesD"]
+position = Vector3(3.75, 0.6, -3.09)
+shape = SubResource("MainSouthEastEdgeShape")
 
 [node name="DExitToB" type="Marker3D" parent="."]
 position = Vector3(0, 0.09, 0)

@@ -145,13 +145,67 @@ func test_zone_d_has_collision_at_its_remaining_water_edges(t) -> bool:
 	var edges := zone.get_node_or_null("PlayableEdgesD") as StaticBody3D
 	t.ok(edges != null and edges.collision_layer == 2, "D adds world-static collision where its open dock and main floor meet water")
 	if edges != null:
-		for edge_name: String in ["DockWest", "DockEast", "MainSouth"]:
+		for edge_name: String in ["DockWest", "DockEast", "MainSouthWest", "MainSouthEast"]:
 			t.ok(edges.get_node_or_null(edge_name) is CollisionShape3D, "D edge %s has a collision proxy" % edge_name)
 		var dock_east := edges.get_node_or_null("DockEast") as CollisionShape3D
 		var east_shape := dock_east.shape as BoxShape3D if dock_east != null else null
 		if t.ok(east_shape != null, "D dock east edge has a box collision shape"):
 			t.ok(is_equal_approx(dock_east.position.x + east_shape.size.x * 0.5, 3.0), "D dock east collision reaches the x = 3 water edge")
 			t.ok(is_equal_approx(dock_east.position.z - east_shape.size.z * 0.5, -3.0) and is_equal_approx(dock_east.position.z + east_shape.size.z * 0.5, 0.0), "D dock east collision covers the full z = -3 to 0 edge")
+		var south_west := edges.get_node_or_null("MainSouthWest") as CollisionShape3D
+		var south_east := edges.get_node_or_null("MainSouthEast") as CollisionShape3D
+		var west_shape := south_west.shape as BoxShape3D if south_west != null else null
+		var main_east_shape := south_east.shape as BoxShape3D if south_east != null else null
+		if t.ok(west_shape != null and main_east_shape != null, "D main water edge uses split box collisions"):
+			t.ok(is_equal_approx(south_west.position.x + west_shape.size.x * 0.5, -2.5), "D main west water edge stops at the dock connection")
+			t.ok(is_equal_approx(south_east.position.x - main_east_shape.size.x * 0.5, 3.0), "D main east water edge starts beyond the dock connection")
 	zone.queue_free()
 	await t.tree.process_frame
 	return true
+
+
+func test_open_route_d_character_body_traverses_dock_main_and_back_to_b(t) -> bool:
+	var b_scene := load("res://src/world/zone_b_flooded_market.tscn") as PackedScene
+	var d_scene := load(SCENE_PATH) as PackedScene
+	if not t.ok(b_scene != null and d_scene != null, "B and D scenes load for the open-route traversal"):
+		return true
+	var world := Node3D.new()
+	t.tree.root.add_child(world)
+	var zone_b := b_scene.instantiate() as Node3D
+	zone_b.position = Vector3(7.0, 0.0, -2.45)
+	world.add_child(zone_b)
+	var zone_d := d_scene.instantiate() as Node3D
+	zone_d.position = Vector3(11.75, 0.0, -36.95)
+	world.add_child(zone_d)
+	zone_b.call("set_route_d_open", true)
+	var retriever := _create_traversal_retriever()
+	world.add_child(retriever)
+	retriever.global_position = Vector3(11.75, 0.84, -37.95)
+	await t.tree.physics_frame
+	await _move_character_for_physics_frames(t, retriever, Vector3(0.0, 0.0, -3.0), 56)
+	t.ok(retriever.global_position.z < -40.5, "CharacterBody3D crosses from D dock onto the main floor after Route D opens")
+	await _move_character_for_physics_frames(t, retriever, Vector3(0.0, 0.0, 3.0), 144)
+	t.ok(retriever.global_position.z > -34.9, "CharacterBody3D returns through the open route onto B floor")
+	world.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func _create_traversal_retriever() -> CharacterBody3D:
+	var retriever := CharacterBody3D.new()
+	retriever.collision_layer = 1
+	retriever.collision_mask = 2
+	var collision := CollisionShape3D.new()
+	var shape := CapsuleShape3D.new()
+	shape.radius = 0.30
+	shape.height = 1.50
+	collision.shape = shape
+	retriever.add_child(collision)
+	return retriever
+
+
+func _move_character_for_physics_frames(t, character: CharacterBody3D, motion: Vector3, frame_count: int) -> void:
+	for frame_index: int in frame_count:
+		character.velocity = motion
+		character.move_and_slide()
+		await t.tree.physics_frame
