@@ -14,6 +14,8 @@ var _overlay_open := false
 var _objective: Label
 var _beacon: Label
 var _beacon_panel: Panel
+var _beacon_margins: MarginContainer
+var _banner_panel: Panel
 var _banner: Label
 var _prompt: Button
 var _context_button: Button
@@ -91,22 +93,33 @@ func _build() -> void:
 	_objective = _label("Objective", &"HUD_OBJECTIVE_TAKE_MANIFEST", 24)
 	_objective.clip_text = true
 	objective_panel.add_child(_objective)
-	var banner_panel := Panel.new()
-	banner_panel.name = "BannerPanel"
-	banner_panel.visible = false
-	add_child(banner_panel)
+	_banner_panel = Panel.new()
+	_banner_panel.name = "BannerPanel"
+	_banner_panel.visible = false
+	add_child(_banner_panel)
 	_banner = _label("Banner", &"", 24)
-	_banner.clip_text = true
+	_banner.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_banner.clip_text = false
 	_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	banner_panel.add_child(_banner)
+	_banner.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_banner_panel.add_child(_banner)
 	_beacon_panel = Panel.new()
 	_beacon_panel.name = "BeaconPanel"
 	add_child(_beacon_panel)
+	_beacon_margins = MarginContainer.new()
+	_beacon_margins.name = "BeaconMargins"
+	_beacon_margins.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_beacon_margins.add_theme_constant_override("margin_left", 12)
+	_beacon_margins.add_theme_constant_override("margin_top", 8)
+	_beacon_margins.add_theme_constant_override("margin_right", 12)
+	_beacon_margins.add_theme_constant_override("margin_bottom", 8)
+	_beacon_margins.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_beacon_panel.add_child(_beacon_margins)
 	_beacon = _label("Beacon", &"BEACON_E0_STATE_LABEL", 20)
 	_beacon.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_beacon.clip_text = true
-	_beacon_panel.add_child(_beacon)
-	_inventory_button = _button("InventoryButton", &"HUD_BUTTON_INVENTORY", Vector2.ZERO, Vector2(96, 96))
+	_beacon.clip_text = false
+	_beacon_margins.add_child(_beacon)
+	_inventory_button = _button("InventoryButton", &"HUD_BUTTON_INVENTORY", Vector2.ZERO, Vector2(192, 96))
 	_inventory_button.add_theme_font_size_override("font_size", 20)
 	_inventory_button.pressed.connect(_on_inventory_pressed)
 	add_child(_inventory_button)
@@ -115,6 +128,8 @@ func _build() -> void:
 	add_child(_context_button)
 	_prompt = _button("Prompt", &"PROMPT_ROUTE_EXTRACT_NOW", Vector2.ZERO, Vector2(392, 112))
 	_prompt.flat = true
+	_prompt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_prompt.add_theme_font_size_override("font_size", 20)
 	_prompt.visible = false
 	_prompt.pressed.connect(clear_prompt)
 	add_child(_prompt)
@@ -162,26 +177,27 @@ func _refresh_beacon() -> void:
 func _refresh_banner() -> void:
 	if _banner == null or flow == null:
 		return
-	var panel := _banner.get_parent() as Panel
 	match flow.extract_state:
 		ExtractPierAFlow.ExtractState.S7_CALL_ACCEPTED:
 			_banner.text = tr("EXTRACT_S7_CALL_ACCEPTED")
 			_banner.visible = true
-			panel.visible = true
+			_banner_panel.visible = true
 		ExtractPierAFlow.ExtractState.S8_HOLD:
 			_banner.text = tr("EXTRACT_S8_HOLD_TIMER").format({"seconds": flow.hold_seconds_display()})
 			if flow.hold_paused and flow.hold_pause_reason == &"out_of_zone":
 				_banner.text += "\n" + tr("EXTRACT_S8_HOLD_PAUSED")
 			_banner.visible = true
-			panel.visible = true
+			_banner_panel.visible = true
 		ExtractPierAFlow.ExtractState.S9_BOAT_READY:
 			_banner.text = tr("EXTRACT_S9_BOAT_READY")
 			_banner.visible = true
-			panel.visible = true
+			_banner_panel.visible = true
 		_:
 			_banner.text = ""
 			_banner.visible = false
-			panel.visible = false
+			_banner_panel.visible = false
+	if is_inside_tree():
+		_layout_banner(HudLayout.safe_rect(self))
 
 
 func _refresh_context() -> void:
@@ -247,16 +263,16 @@ func _layout_hud() -> void:
 	if objective_panel != null:
 		HudLayout.place_top_left(objective_panel, safe, Vector2.ZERO, Vector2(640, 56))
 		HudLayout.place_top_left(_objective, Rect2(Vector2.ZERO, objective_panel.size), Vector2(16, 0), Vector2(608, 56))
-	var banner_panel := get_node_or_null("BannerPanel") as Panel
-	if banner_panel != null:
-		HudLayout.place_top_center(banner_panel, safe, 68.0, Vector2(512, 80))
-		HudLayout.place_top_left(_banner, Rect2(Vector2.ZERO, banner_panel.size), Vector2(16, 0), Vector2(480, 80))
+	_layout_banner(safe)
 	if _beacon_panel != null:
 		HudLayout.place_top_right(_beacon_panel, safe, 16.0, 112.0, Vector2(348, 96))
-		HudLayout.place_top_left(_beacon, Rect2(Vector2.ZERO, _beacon_panel.size), Vector2(12, 8), Vector2(324, 80))
-	HudLayout.place_top_right(_inventory_button, safe, 0.0, 0.0, Vector2(96, 96))
+	HudLayout.place_top_right(_inventory_button, safe, 0.0, 0.0, Vector2(192, 96))
 	HudLayout.place_bottom_right(_context_button, safe, 48.0, 144.0, Vector2(224, 112))
-	HudLayout.place_bottom_left(_prompt, safe, 280.0, 0.0, Vector2(392, 112))
+	# On 4:3 the fixed combat-action row reaches farther left. Preserve the R6
+	# joystick gap and let the prompt wrap inside the remaining bottom-middle slot.
+	var prompt_left := 280.0
+	var prompt_width := minf(392.0, safe.end.x - 560.0 - (safe.position.x + prompt_left))
+	HudLayout.place_bottom_left(_prompt, safe, prompt_left, 0.0, Vector2(maxf(64.0, prompt_width), 112))
 	for child: Node in get_children():
 		if child is Button and child != _context_button and child != _inventory_button and child != _prompt:
 			_layout_context_button(child as Button)
@@ -264,6 +280,37 @@ func _layout_hud() -> void:
 
 func _layout_context_button(button: Button) -> void:
 	HudLayout.place_bottom_right(button, HudLayout.safe_rect(self), 48.0, 144.0, Vector2(224, 112))
+
+
+func _layout_banner(safe: Rect2) -> void:
+	if _banner_panel == null or _banner == null:
+		return
+	# Keep the complete, wrapped S8 pause instruction in one composed panel. Give
+	# the label its maximum available height first so its rendered line count uses
+	# the current localized text, then shrink the panel to exactly what it needs.
+	const banner_width := 480.0
+	const banner_horizontal_margin := 16.0
+	const banner_vertical_margin := 12.0
+	const banner_min_height := 64.0
+	const banner_max_height := 240.0
+	var maximum_height := minf(banner_max_height, safe.end.y - safe.position.y - 112.0)
+	HudLayout.place_top_right(_banner_panel, safe, 0.0, 112.0, Vector2(banner_width, maximum_height))
+	HudLayout.place_top_left(_banner, Rect2(Vector2.ZERO, _banner_panel.size), Vector2(banner_horizontal_margin, banner_vertical_margin), Vector2(banner_width - banner_horizontal_margin * 2.0, maximum_height - banner_vertical_margin * 2.0))
+	var content_height := _banner_content_height()
+	var panel_height := clampf(content_height + banner_vertical_margin * 2.0, banner_min_height, maximum_height)
+	HudLayout.place_top_right(_banner_panel, safe, 0.0, 112.0, Vector2(banner_width, panel_height))
+	HudLayout.place_top_left(_banner, Rect2(Vector2.ZERO, _banner_panel.size), Vector2(banner_horizontal_margin, banner_vertical_margin), Vector2(banner_width - banner_horizontal_margin * 2.0, panel_height - banner_vertical_margin * 2.0))
+
+
+func banner_text_fits() -> bool:
+	return _banner != null and _banner_content_height() <= _banner.size.y
+
+
+func _banner_content_height() -> float:
+	var font := _banner.get_theme_font("font")
+	var font_size := _banner.get_theme_font_size("font_size")
+	var line_height := font.get_height(font_size) if font != null else float(font_size)
+	return float(maxi(1, _banner.get_line_count())) * line_height
 
 
 func _disconnect_flow() -> void:
@@ -295,7 +342,7 @@ func _button(node_name: String, key: StringName, at: Vector2, dimensions: Vector
 	var button := Button.new()
 	button.name = node_name
 	button.text = tr(key)
-	button.clip_text = true
+	button.clip_text = false
 	button.position = at
 	button.size = dimensions
 	button.focus_mode = Control.FOCUS_ALL

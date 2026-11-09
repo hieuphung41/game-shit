@@ -122,6 +122,14 @@ func remedy_count() -> int:
 	return count
 
 
+func danger_text_fits() -> bool:
+	return _button_text_fits(_danger)
+
+
+func stub_button_has_rendered_label() -> bool:
+	return _stub_button != null and _stub_button.visible and not _stub_button.text.strip_edges().is_empty() and _button_text_fits(_stub_button)
+
+
 func show_depleted() -> void:
 	if _stub_open:
 		return
@@ -215,7 +223,12 @@ func _build() -> void:
 	_status = _label("Status", &"", 24)
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(_status)
-	_danger = _button("DangerClose", &"HUD_DANGER_NEAR", Vector2.ZERO, Vector2(288, 96))
+	_danger = _button("DangerClose", &"HUD_DANGER_NEAR", Vector2.ZERO, Vector2(320, 128))
+	# D1 always carries both the threat and its one-tap escape instruction.  A
+	# fixed newline is not sufficient for every localized line length, so the
+	# control gets a real two-line layout rather than clipping its second line.
+	_danger.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_danger.clip_text = false
 	_danger.visible = false
 	_danger.pressed.connect(func() -> void: danger_close_requested.emit())
 	add_child(_danger)
@@ -228,8 +241,10 @@ func _build() -> void:
 	add_child(_stub)
 	var stub_text := _label("Message", &"COMBAT_STUB_HP_ZERO", 24)
 	stub_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	stub_text.clip_text = true
 	_stub.add_child(stub_text)
 	_stub_button = _button("BootButton", &"COMBAT_STUB_BUTTON_BOOT", Vector2.ZERO, Vector2(464, 80))
+	_stub_button.clip_text = false
 	_stub_button.pressed.connect(request_boot)
 	_stub.add_child(_stub_button)
 
@@ -366,6 +381,7 @@ func _refresh_stub() -> void:
 	if not _stub_open:
 		return
 	var ready := _stub_elapsed >= STUB_END_MESSAGE_SECONDS and not _boot_loading
+	_stub_button.visible = true
 	_stub_button.disabled = not ready
 	if not _boot_loading:
 		_stub_button.text = ("▣ " if not ready else "→ ") + tr("COMBAT_STUB_BUTTON_BOOT")
@@ -445,6 +461,23 @@ func _button(node_name: String, key: StringName, at: Vector2, dimensions: Vector
 	return button
 
 
+func _button_text_fits(button: Button) -> bool:
+	if button == null or button.clip_text:
+		return false
+	var font := button.get_theme_font("font")
+	var font_size := button.get_theme_font_size("font_size")
+	if font == null or font_size <= 0:
+		return false
+	# UiTheme gives buttons 12 px of horizontal content margin on both sides.
+	var content_width := button.size.x - 24.0
+	var line_count := 0
+	for line: String in button.text.split("\n"):
+		line_count += 1
+		if font.get_string_size(line, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size).x > content_width:
+			return false
+	return float(line_count) * font.get_height(font_size) <= button.size.y
+
+
 func _anchor_bottom_right(control: Control, right: float, bottom: float, dimensions: Vector2) -> void:
 	HudLayout.place_bottom_right(control, HudLayout.safe_rect(self), right, bottom, dimensions)
 
@@ -461,8 +494,8 @@ func _layout_hud() -> void:
 	HudLayout.place_top_left(_health_value, Rect2(Vector2.ZERO, _health_panel.size), Vector2(180, 0), Vector2(140, 40))
 	HudLayout.place_top_left(_health_low, Rect2(Vector2.ZERO, _health_panel.size), Vector2.ZERO, Vector2(164, 40))
 	HudLayout.place_top_left(_warning, safe, Vector2(0, 112), Vector2(352, 48))
-	HudLayout.place_bottom_left(_status, safe, 280.0, 0.0, Vector2(392, 112))
-	HudLayout.place_top_left(_danger, safe, Vector2(0, 176), Vector2(288, 96))
+	HudLayout.place_top_left(_status, safe, Vector2(0, 320), Vector2(392, 96))
+	HudLayout.place_top_left(_danger, safe, Vector2(0, 176), Vector2(320, 128))
 	for button: Button in [_attack, _dodge, _guard, _remedy]:
 		HudLayout.place_bottom_right(button, safe, float(button.get_meta(&"hud_right")), float(button.get_meta(&"hud_bottom")), button.size)
 	HudLayout.place_top_center(_stub, safe, 248.0, Vector2(544, 192))

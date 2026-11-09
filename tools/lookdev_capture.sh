@@ -52,6 +52,15 @@ for image in lookdev_game.png lookdev_gray.png lookdev_phone.png lookdev_detail.
 	fi
 done
 
+for resolution in 1280x720 2400x1080 1024x768; do
+	for state in s7 s8 s8_paused s9 danger warning_status_low_health prompt inventory_overlay depleted; do
+		if [[ ! -s "$OUT_DIR/ui_hud_${state}_${resolution}.png" ]]; then
+			echo "lookdev capture missing or empty: $OUT_DIR/ui_hud_${state}_${resolution}.png" >&2
+			exit 1
+		fi
+	done
+done
+
 python3 "$ROOT/tools/lookdev_probe.py" "$OUT_DIR/probe-raw.json" "$OUT_DIR/probe.json"
 python3 "$ROOT/tools/lookdev_probe.py" "$OUT_DIR/zone_a_probe-raw.json" "$OUT_DIR/zone_a_probe.json"
 python3 "$ROOT/tools/lookdev_probe.py" "$OUT_DIR/zone_b_probe-raw.json" "$OUT_DIR/zone_b_probe.json"

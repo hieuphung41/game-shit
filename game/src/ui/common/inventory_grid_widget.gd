@@ -243,7 +243,8 @@ func _add_item(item: ItemInstance, cell_size: float) -> void:
 	var button := Button.new()
 	button.name = "Item_%d" % item.uid
 	button.position = Vector2(item.anchor.x * cell_size, item.anchor.y * cell_size)
-	button.size = Vector2(item.effective_size().x * cell_size, item.effective_size().y * cell_size)
+	var item_size := Vector2(item.effective_size().x * cell_size, item.effective_size().y * cell_size)
+	button.size = item_size
 	button.focus_mode = Control.FOCUS_ALL
 	button.text = _item_label(item)
 	button.add_theme_font_size_override("font_size", max(24, int(24 * cell_scale)))
@@ -254,6 +255,11 @@ func _add_item(item: ItemInstance, cell_size: float) -> void:
 		button.text += "\n" + _seal_label(item.uid)
 	if item.uid == pending_source_uid:
 		button.text = _pending_source_cue() + button.text
+	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	button.clip_text = false
+	# Keep the item footprint aligned with its grid cells after the localized
+	# name and seal label have updated the Button's minimum size.
+	button.size = item_size
 	button.pressed.connect(press_item.bind(item.uid))
 	add_child(button)
 	_items[item.uid] = button

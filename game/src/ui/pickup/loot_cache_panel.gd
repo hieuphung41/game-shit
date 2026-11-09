@@ -280,7 +280,10 @@ func _build_grid() -> void:
 	_status.autowrap_mode = TextServer.AUTOWRAP_OFF
 	_status.clip_text = true
 	panel.add_child(_status)
-	var grid_top := 92.0 if s04_mode else 108.0
+	# Theme labels have a 34 px minimum rendered height. Start the grids after
+	# the three header rows, rather than letting the status and grid labels share
+	# the same pixels in the real OverlayLayer view.
+	var grid_top := 108.0
 	_backpack = _grid(panel, "Backpack", &"LOADOUT_LABEL_BACKPACK", RetrieverInventory.BACKPACK, Vector2(16, grid_top))
 	_notary_box = _grid(panel, "NotaryBox", &"LOADOUT_LABEL_NOTARY_BOX", RetrieverInventory.NOTARY_BOX, Vector2(352, grid_top))
 	if item != null and item.definition.rotatable and not item.definition.is_square():
@@ -301,18 +304,18 @@ func _build_grid() -> void:
 		_drop_or_withdraw.pressed.connect(_on_drop_or_withdraw_pressed)
 		panel.add_child(_drop_or_withdraw)
 	var sling := _label("SlingPouch", &"LOADOUT_LABEL_SLING_POUCH", 24)
-	sling.position = Vector2(320, 496) if s04_mode else Vector2(352, 440)
-	sling.size = Vector2(192, 24)
+	sling.position = Vector2(320, 440)
+	sling.size = Vector2(224, 24)
 	panel.add_child(sling)
 	var sling_item := _sling_pouch_item()
 	if sling_item != null:
 		var sling_cue := _static_label("SlingPouchCue", "✚", 24)
-		sling_cue.position = Vector2(320, 520) if s04_mode else Vector2(352, 464)
+		sling_cue.position = Vector2(320, 480)
 		sling_cue.size = Vector2(24, 24)
 		panel.add_child(sling_cue)
 		var sling_item_label := _static_label("SlingPouchItem", sling_item.definition.localized_display_name() + " " + tr(&"CARD_QUANTITY_SUFFIX").format({"quantity": sling_item.quantity}), 24)
-		sling_item_label.position = Vector2(344, 520) if s04_mode else Vector2(376, 464)
-		sling_item_label.size = Vector2(168, 24)
+		sling_item_label.position = Vector2(344, 480)
+		sling_item_label.size = Vector2(200, 24)
 		panel.add_child(sling_item_label)
 	var close_button := _button("CloseButton", &"CARD_ACTION_CLOSE")
 	_anchor_top_right(close_button, DOCK_RIGHT_INSET, CLOSE_BUTTON_TOP, CLOSE_BUTTON_SIZE)
@@ -323,11 +326,11 @@ func _build_grid() -> void:
 func _grid(parent: Control, node_name: String, key: StringName, kind: StringName, at: Vector2) -> InventoryGridWidget:
 	var label := _label(node_name + "Label", key, 24)
 	label.position = at
-	label.size = Vector2(288, 28)
+	label.size = Vector2(288 if kind == RetrieverInventory.BACKPACK else 192, 34)
 	parent.add_child(label)
 	var grid := InventoryGridWidget.new()
 	grid.name = node_name
-	grid.position = at + Vector2(0, 28)
+	grid.position = at + Vector2(0, 34)
 	grid.configure(inventory, kind)
 	grid.item_pressed.connect(_on_item_pressed)
 	grid.cell_pressed.connect(_on_grid_cell_pressed)
@@ -560,6 +563,7 @@ func _refresh_s04_controls(item: ItemInstance) -> void:
 				if box_item.definition.item_category == ItemDef.Category.EVIDENCE:
 					_notary_status.text = "▣ " + tr(&"INVENTORY_SEAL_LABEL_SEALED_NOT_EXTRACTED")
 					break
+		_notary_status.visible = not _notary_status.text.is_empty()
 	if _drop_or_withdraw == null:
 		return
 	_drop_or_withdraw.visible = item != null and session == Session.VIEW
