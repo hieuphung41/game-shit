@@ -2,6 +2,8 @@ class_name RetrieverController
 extends CharacterBody3D
 ## Touch-first movement controller for the Retriever in the vertical-slice greybox.
 
+const WorldFloorSafetyRule := preload("res://src/world/world_floor_safety.gd")
+
 @export var movement_speed: float = 4.0
 @export var combat_tuning: RetrieverCombatTuning
 
@@ -11,6 +13,7 @@ extends CharacterBody3D
 
 var _camera_follow_offset := Vector3.ZERO
 var _touch_direction := Vector2.ZERO
+var _floor_safety: WorldFloorSafety
 var combat: RetrieverCombat
 
 
@@ -21,11 +24,13 @@ func _ready() -> void:
 		_touch_joystick.direction_changed.connect(_on_touch_direction_changed)
 	if _camera != null:
 		_camera_follow_offset = _camera.global_position - global_position
+	enforce_floor_safety()
 
 
 func _physics_process(delta: float) -> void:
 	if _camera == null or combat == null:
 		return
+	enforce_floor_safety()
 	var input_direction := _active_direction()
 	var direction := RetrieverMovement.camera_relative_direction(input_direction, _camera.global_transform.basis)
 	combat.set_combat_position(global_position)
@@ -37,6 +42,7 @@ func _physics_process(delta: float) -> void:
 	velocity = motion_velocity_for(combat.motion_delta, delta)
 	velocity.y = 0.0
 	move_and_slide()
+	enforce_floor_safety()
 	combat.set_combat_position(global_position)
 	_follow_camera()
 
@@ -62,6 +68,26 @@ func _on_touch_direction_changed(direction: Vector2) -> void:
 func set_inventory(value: RetrieverInventory) -> void:
 	if combat != null:
 		combat.inventory = value
+
+
+func set_floor_safety(safety: WorldFloorSafety) -> void:
+	_floor_safety = safety
+
+
+func set_route_d_open(open: bool) -> void:
+	if _floor_safety != null:
+		_floor_safety.set_route_d_open(open)
+
+
+func enforce_floor_safety() -> bool:
+	if _floor_safety == null:
+		return false
+	var safe_position := _floor_safety.reconcile(global_position)
+	if safe_position.is_equal_approx(global_position):
+		return false
+	global_position = safe_position
+	velocity = Vector3.ZERO
+	return true
 
 
 func set_overlay_open(open: bool) -> void:

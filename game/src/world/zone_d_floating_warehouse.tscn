@@ -1,4 +1,4 @@
-[gd_scene load_steps=42 format=3]
+[gd_scene load_steps=45 format=3]
 
 [ext_resource type="Script" path="res://src/lookdev/zone_d_lookdev_capture.gd" id="1_capture"]
 [ext_resource type="Material" path="res://art/materials/env_wood.tres" id="2_wood"]
@@ -77,6 +77,12 @@ size = Vector3(8.5, 0.18, 1.0)
 
 [sub_resource type="BoxShape3D" id="NorthFloorShape"]
 size = Vector3(8.5, 0.18, 1.0)
+
+[sub_resource type="BoxShape3D" id="DockWestEdgeShape"]
+size = Vector3(0.18, 1.2, 3.0)
+
+[sub_resource type="BoxShape3D" id="MainSouthEdgeShape"]
+size = Vector3(9.5, 1.2, 0.18)
 
 [sub_resource type="BoxMesh" id="RailLongMesh"]
 size = Vector3(0.12, 0.55, 9.5)
@@ -204,6 +210,22 @@ shape = SubResource("MainFloorShape")
 [node name="North" type="CollisionShape3D" parent="FloorCollisionD"]
 position = Vector3(-0.75, 0, -12.0)
 shape = SubResource("NorthFloorShape")
+
+[node name="PlayableEdgesD" type="StaticBody3D" parent="."]
+collision_layer = 2
+metadata/greybox_role = "playable_floor_edge_collision"
+
+[node name="DockWest" type="CollisionShape3D" parent="PlayableEdgesD"]
+position = Vector3(-2.41, 0.6, -1.5)
+shape = SubResource("DockWestEdgeShape")
+
+[node name="DockEast" type="CollisionShape3D" parent="PlayableEdgesD"]
+position = Vector3(2.91, 0.6, -1.5)
+shape = SubResource("DockWestEdgeShape")
+
+[node name="MainSouth" type="CollisionShape3D" parent="PlayableEdgesD"]
+position = Vector3(-0.25, 0.6, -3.09)
+shape = SubResource("MainSouthEdgeShape")
 
 [node name="DExitToB" type="Marker3D" parent="."]
 position = Vector3(0, 0.09, 0)

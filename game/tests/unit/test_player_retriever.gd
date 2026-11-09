@@ -4,6 +4,10 @@ const BOOT_SCENE_PATH := "res://src/boot/boot.tscn"
 const PLAYER_SCENE_PATH := "res://src/player/retriever.tscn"
 const TOUCH_JOYSTICK_SCENE_PATH := "res://src/ui/touch/touch_joystick.tscn"
 const WORLD_SCENE_PATH := "res://src/world/zone_a_outer_pier.tscn"
+const ZONE_D_SCENE_PATH := "res://src/world/zone_d_floating_warehouse.tscn"
+const FLOOR_SAFETY_SCRIPT := preload("res://src/world/world_floor_safety.gd")
+const ZONE_D_WORLD_POSITION := Vector3(11.75, 0.0, -36.95)
+const FLOOR_SAFETY_MOVE_FRAMES := 16
 
 
 func test_retriever_movement_converts_input_to_isometric_camera_axes(t) -> bool:
@@ -139,6 +143,77 @@ func test_combat_motion_velocity_uses_the_actual_physics_delta(t) -> bool:
 	t.eq(velocity, Vector3(5.0, 0.0, 0.0), "a 1 m clamped displacement is spread over the real 0.2 second physics frame")
 	t.eq(velocity * 0.20, Vector3.RIGHT, "the physics integration applies exactly the clamped displacement")
 	return true
+
+
+func test_retriever_floor_safety_keeps_eight_directions_inside_each_playable_zone(t) -> bool:
+	var fixture := await _create_floor_safety_fixture(t)
+	if fixture.is_empty():
+		return true
+	var world := fixture[&"world"] as Node3D
+	var retriever := fixture[&"retriever"] as RetrieverController
+	var safety := fixture[&"safety"] as WorldFloorSafety
+	var directions := [Vector2.UP, Vector2.RIGHT, Vector2.DOWN, Vector2.LEFT, Vector2(1.0, -1.0).normalized(), Vector2(1.0, 1.0).normalized(), Vector2(-1.0, 1.0).normalized(), Vector2(-1.0, -1.0).normalized()]
+	var zone_centres := {
+		"A": Vector3(0.0, 0.95, 0.0),
+		"B": Vector3(11.5, 0.95, -18.0),
+		"D": Vector3(11.5, 0.95, -44.0),
+	}
+	for zone_name: String in zone_centres:
+		var start := zone_centres[zone_name] as Vector3
+		for direction: Vector2 in directions:
+			retriever.global_position = start
+			retriever.enforce_floor_safety()
+			retriever._on_touch_direction_changed(direction)
+			for _frame in FLOOR_SAFETY_MOVE_FRAMES:
+				await t.tree.physics_frame
+			t.ok(safety.is_safe(retriever.global_position), "%s edge input %s keeps the moving Retriever inside a playable floor polygon" % [zone_name, direction])
+		retriever._on_touch_direction_changed(Vector2.ZERO)
+	world.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func test_retriever_floor_safety_restores_last_safe_point_after_a_fall(t) -> bool:
+	var fixture := await _create_floor_safety_fixture(t)
+	if fixture.is_empty():
+		return true
+	var world := fixture[&"world"] as Node3D
+	var retriever := fixture[&"retriever"] as RetrieverController
+	var safety := fixture[&"safety"] as WorldFloorSafety
+	var last_safe := Vector3(11.5, 0.95, -18.0)
+	retriever.global_position = last_safe
+	retriever.enforce_floor_safety()
+	retriever.global_position = Vector3(11.75, 0.95, -36.0)
+	t.ok(not safety.is_safe(retriever.global_position), "closed Route D bridge is water, not a safe floor polygon")
+	t.ok(retriever.enforce_floor_safety(), "controller immediately recovers a forced position on the closed Route D bridge")
+	t.eq(retriever.global_position, last_safe, "closed Route D bridge restores the prior safe market floor")
+	retriever.global_position = Vector3(40.0, -1.0, 40.0)
+	t.ok(retriever.enforce_floor_safety(), "controller recovers a forced fall within one physics update")
+	t.eq(retriever.global_position, last_safe, "a fall or off-floor position returns to the most recent safe point without mutating run state")
+	world.queue_free()
+	await t.tree.process_frame
+	return true
+
+
+func _create_floor_safety_fixture(t) -> Dictionary:
+	var world_scene := load(WORLD_SCENE_PATH) as PackedScene
+	var zone_d_scene := load(ZONE_D_SCENE_PATH) as PackedScene
+	var retriever_scene := load(PLAYER_SCENE_PATH) as PackedScene
+	if not t.ok(world_scene != null and zone_d_scene != null and retriever_scene != null, "A, B, D, and Retriever scenes load for floor-safety integration"):
+		return {}
+	var world := world_scene.instantiate() as Node3D
+	var zone_d := zone_d_scene.instantiate() as Node3D
+	zone_d.position = ZONE_D_WORLD_POSITION
+	world.add_child(zone_d)
+	var retriever := retriever_scene.instantiate() as RetrieverController
+	retriever.movement_speed = 80.0
+	var safety := FLOOR_SAFETY_SCRIPT.create_vertical_slice() as WorldFloorSafety
+	retriever.set_floor_safety(safety)
+	world.add_child(retriever)
+	t.tree.root.add_child(world)
+	await t.tree.process_frame
+	await t.tree.physics_frame
+	return {&"world": world, &"retriever": retriever, &"safety": safety}
 
 
 func test_outer_pier_overlay_bridge_cancels_guard_and_remedy(t) -> bool:

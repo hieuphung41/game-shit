@@ -74,6 +74,11 @@ func test_zone_b_cover_and_blocked_route_have_honest_collision(t) -> bool:
 	t.ok(zone.get_node_or_null("PatrolTriggerB") is Area3D, "B has the authored return patrol trigger beyond Gate B")
 	var floor := zone.get_node_or_null("FloorCollision") as StaticBody3D
 	t.ok(floor != null and floor.get_node_or_null("CollisionShape3D") is CollisionShape3D, "B floor collision continues the walkable seam")
+	var edges := zone.get_node_or_null("PlayableEdgesB") as StaticBody3D
+	t.ok(edges != null and edges.collision_layer == 2, "B has world-static water-edge collision")
+	if edges != null:
+		for edge_name: String in ["East", "EntrySouth", "EntryNorth"]:
+			t.ok(edges.get_node_or_null(edge_name) is CollisionShape3D, "B edge %s leaves only the A seam open" % edge_name)
 	zone.queue_free()
 	await t.tree.process_frame
 	return true

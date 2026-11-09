@@ -133,3 +133,25 @@ func test_route_d_bridge_and_dock_share_the_same_walkable_height(t) -> bool:
 	world.queue_free()
 	await t.tree.process_frame
 	return true
+
+
+func test_zone_d_has_collision_at_its_remaining_water_edges(t) -> bool:
+	var scene := load(SCENE_PATH) as PackedScene
+	if not t.ok(scene != null, "Zone D scene loads for water-edge collision"):
+		return true
+	var zone := scene.instantiate() as Node3D
+	t.tree.root.add_child(zone)
+	await t.tree.process_frame
+	var edges := zone.get_node_or_null("PlayableEdgesD") as StaticBody3D
+	t.ok(edges != null and edges.collision_layer == 2, "D adds world-static collision where its open dock and main floor meet water")
+	if edges != null:
+		for edge_name: String in ["DockWest", "DockEast", "MainSouth"]:
+			t.ok(edges.get_node_or_null(edge_name) is CollisionShape3D, "D edge %s has a collision proxy" % edge_name)
+		var dock_east := edges.get_node_or_null("DockEast") as CollisionShape3D
+		var east_shape := dock_east.shape as BoxShape3D if dock_east != null else null
+		if t.ok(east_shape != null, "D dock east edge has a box collision shape"):
+			t.ok(is_equal_approx(dock_east.position.x + east_shape.size.x * 0.5, 3.0), "D dock east collision reaches the x = 3 water edge")
+			t.ok(is_equal_approx(dock_east.position.z - east_shape.size.z * 0.5, -3.0) and is_equal_approx(dock_east.position.z + east_shape.size.z * 0.5, 0.0), "D dock east collision covers the full z = -3 to 0 edge")
+	zone.queue_free()
+	await t.tree.process_frame
+	return true
