@@ -80,12 +80,14 @@ func test_zone_a_lookdev_capture_uses_the_game_camera_and_visible_prt_probes(t) 
 		t.eq(background_probe.get_meta("expected_hex"), "#4E6570", "Zone A background probe locks sea_bluegrey")
 	var shadow_probe := world.get_node_or_null("ProbeZoneADeckShadow") as Marker3D
 	if shadow_probe != null:
-		t.eq(shadow_probe.position, Vector3(-4.58, 0.095, -3.6), "Zone A shadow probe remains on the PostTall shadow position")
+		t.eq(shadow_probe.position, Vector3(2.25, 0.095, 1.25), "Zone A shadow probe remains inside the dispatch desk shadow")
 		t.eq(shadow_probe.get_meta("surface_path"), "PierDeck", "Zone A shadow probe samples the continuous PierDeck")
+		t.eq(shadow_probe.get_meta("expected_hex"), "#2C3142", "Zone A shadow probe locks the indigo shadow value")
 	var capture_script := load("res://src/lookdev/zone_a_lookdev_capture.gd") as Script
 	if capture_script != null:
 		t.ok("zone_a_game.png" in capture_script.source_code, "Zone A capture writes the full gameplay frame")
 		t.ok("zone_a_phone.png" in capture_script.source_code, "Zone A capture writes the phone frame")
+		t.ok("zone_a_detail.png" in capture_script.source_code, "Zone A capture writes the dispatch-counter detail frame")
 		t.ok("_first_mesh_on_camera_ray" in capture_script.source_code, "Zone A probes ray-check their intended visible mesh")
 	world.queue_free()
 	await t.tree.process_frame
@@ -118,6 +120,26 @@ func test_zone_a_priority_fixtures_keep_phone_readable_ink_and_sparse_gouges(t) 
 		t.eq(desk_material.get_shader_parameter("hatch_irregularity"), 1.0, "Dispatch desk opts into irregular hand-cut gouges")
 		t.eq(desk_material.get_shader_parameter("hatch_dash_frequency"), 0.33, "Dispatch desk uses long gouge strokes, not dot cadence")
 		t.ok(desk_material.next_pass is ShaderMaterial, "Dispatch desk uses the priority ink outline")
+	var live_desk := world.get_node_or_null("DispatchDesk/KenneyDeskModel") as Node3D
+	var live_desk_material := live_desk.get("library_material") as ShaderMaterial if live_desk != null else null
+	t.ok(live_desk_material != null, "Visible Kenney dispatch counter uses the dedicated dark wood gouge material")
+	if live_desk_material != null:
+		t.eq(live_desk_material.get_shader_parameter("hatch_enabled"), true, "Visible Kenney dispatch counter opts into shadow gouges")
+		t.eq(live_desk_material.get_shader_parameter("hatch_cluster_enabled"), true, "Visible Kenney dispatch counter leaves deliberate unmarked shadow gaps")
+		t.eq(live_desk_material.get_shader_parameter("hatch_cluster_coverage"), 0.42, "Visible Kenney dispatch counter keeps the gouges sparse")
+		var live_gouge_colour := live_desk_material.get_shader_parameter("hatch_gouge_colour") as Color
+		t.eq(live_gouge_colour.to_html(false).to_upper(), "ECE3CF", "Visible Kenney dispatch counter cuts only paper-coloured gouges")
+	var fascia := world.get_node_or_null("DispatchDesk/DispatchShadowFascia") as MeshInstance3D
+	t.ok(fascia != null and fascia.material_override == live_desk_material, "Dispatch counter has a visible dark shadow fascia for the gouge cluster")
+	var gouge_cluster := world.get_node_or_null("DispatchDesk/DispatchShadowFascia/PaperGougeCluster") as Node3D
+	t.ok(gouge_cluster != null, "Dispatch counter has an authored paper-gouge cluster")
+	if gouge_cluster != null:
+		var gouges := gouge_cluster.find_children("Gouge*", "MeshInstance3D", false, false)
+		t.eq(gouges.size(), 3, "Dispatch fascia limits the WC-02 mark to three sparse gouges")
+		for node: Node in gouges:
+			var gouge := node as MeshInstance3D
+			var gouge_material := gouge.material_override as ShaderMaterial if gouge != null else null
+			t.ok(gouge_material != null and gouge_material.get_shader_parameter("paper_gouge_override") == true, "%s stays a hard-edged paper cut, not emission" % node.name)
 	var tax_wall := world.get_node_or_null("SilhouetteE/TaxWall") as MeshInstance3D
 	var tax_wall_material := tax_wall.material_override as ShaderMaterial if tax_wall != null else null
 	t.ok(tax_wall_material != null, "Tax wall uses the shadow-gouge material")
@@ -130,6 +152,9 @@ func test_zone_a_priority_fixtures_keep_phone_readable_ink_and_sparse_gouges(t) 
 		t.eq(tax_wall_material.get_shader_parameter("hatch_irregularity"), 1.0, "Tax wall uses independent chisel cuts, not repeated hatch rows")
 		t.eq(tax_wall_material.get_shader_parameter("hatch_dash_frequency"), 0.33, "Tax wall gouges stay long at game scale")
 	t.ok(world.get_node_or_null("SilhouetteE/TaxWall/TaxWallEave") is MeshInstance3D, "Tax wall eave casts the broad shadow band for gouges")
+	var live_tax_board := world.get_node_or_null("SilhouetteE/KenneyTaxBoard") as Node3D
+	var live_tax_board_material := live_tax_board.get("library_material") as ShaderMaterial if live_tax_board != null else null
+	t.ok(live_tax_board_material != live_desk_material, "Tax board remains unmarked so the counter retains the only intentional gouge cluster")
 	var beacon_stem := world.get_node_or_null("BeaconA/BeaconStem") as MeshInstance3D
 	var beacon_lantern := world.get_node_or_null("BeaconA/BeaconLantern") as MeshInstance3D
 	t.ok(beacon_stem != null and beacon_stem.material_override is ShaderMaterial, "Beacon stem uses matte inked world material")

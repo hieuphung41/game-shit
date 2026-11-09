@@ -1,4 +1,4 @@
-[gd_scene load_steps=36 format=3]
+[gd_scene load_steps=43 format=3]
 
 [ext_resource type="Environment" path="res://art/env_default.tres" id="1_environment"]
 [ext_resource type="Material" path="res://art/materials/env_wood.tres" id="2_wood"]
@@ -17,6 +17,13 @@
 [ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/platform-planks.glb" id="15_kenney_planks"]
 [ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/structure-platform-dock.glb" id="16_kenney_dock"]
 [ext_resource type="PackedScene" path="res://src/world/zone_b_flooded_market.tscn" id="17_zone_b"]
+[ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/mast.glb" id="18_kenney_mast"]
+[ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/mast-ropes.glb" id="19_kenney_mast_ropes"]
+[ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/structure-platform-small.glb" id="20_kenney_platform_small"]
+[ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/structure-fence-sides.glb" id="21_kenney_fence"]
+[ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/structure-roof.glb" id="22_kenney_roof"]
+[ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/tower-top.glb" id="23_kenney_tower_top"]
+[ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/crate-bottles.glb" id="24_kenney_crate_bottles"]
 
 [sub_resource type="ShaderMaterial" id="InkPriority"]
 resource_name = "ink_outline_priority_055"
@@ -46,7 +53,19 @@ shader_parameter/hatch_line_width = 0.2
 shader_parameter/hatch_strength = 0.9
 shader_parameter/hatch_irregularity = 1.0
 shader_parameter/hatch_dash_frequency = 0.33
+shader_parameter/hatch_cluster_enabled = true
+shader_parameter/hatch_cluster_coverage = 0.42
+shader_parameter/hatch_cluster_cell_size = 2.4
 shader_parameter/hatch_gouge_colour = Color(0.92549, 0.890196, 0.811765, 1)
+
+[sub_resource type="ShaderMaterial" id="PaperGougeOverride"]
+resource_name = "toon_env_paper_gouge_override"
+shader = ExtResource("10_toon")
+shader_parameter/albedo_color = Color(0.92549, 0.890196, 0.811765, 1)
+shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
+shader_parameter/paper_grain_enabled = false
+shader_parameter/hatch_enabled = false
+shader_parameter/paper_gouge_override = true
 
 [sub_resource type="ShaderMaterial" id="WoodBroadPrint"]
 resource_name = "toon_env_wood_broad_print"
@@ -88,6 +107,18 @@ size = Vector3(0.18, 1.2, 1.05)
 
 [sub_resource type="BoxMesh" id="DeskTopMesh"]
 size = Vector3(1.7, 0.16, 0.82)
+
+[sub_resource type="BoxMesh" id="DispatchFasciaMesh"]
+size = Vector3(1.38, 0.34, 0.055)
+
+[sub_resource type="BoxMesh" id="DispatchGougeLongMesh"]
+size = Vector3(0.58, 0.065, 0.014)
+
+[sub_resource type="BoxMesh" id="DispatchGougeMediumMesh"]
+size = Vector3(0.43, 0.065, 0.014)
+
+[sub_resource type="BoxMesh" id="DispatchGougeShortMesh"]
+size = Vector3(0.28, 0.065, 0.014)
 
 [sub_resource type="BoxMesh" id="DeskLegMesh"]
 size = Vector3(0.14, 0.9, 0.14)
@@ -219,32 +250,63 @@ metadata/greybox_role = "dispatch_fixture_placeholder"
 position = Vector3(0, 0.94, 0)
 mesh = SubResource("DeskTopMesh")
 material_override = SubResource("WoodDarkHatchPriority")
+visible = false
 
 [node name="LegFrontLeft" type="MeshInstance3D" parent="DispatchDesk"]
 position = Vector3(-0.68, 0.45, 0.28)
 mesh = SubResource("DeskLegMesh")
 material_override = ExtResource("2_wood")
+visible = false
 
 [node name="LegFrontRight" type="MeshInstance3D" parent="DispatchDesk"]
 position = Vector3(0.68, 0.45, 0.28)
 mesh = SubResource("DeskLegMesh")
 material_override = ExtResource("2_wood")
+visible = false
 
 [node name="LegBackLeft" type="MeshInstance3D" parent="DispatchDesk"]
 position = Vector3(-0.68, 0.45, -0.28)
 mesh = SubResource("DeskLegMesh")
 material_override = ExtResource("2_wood")
+visible = false
 
 [node name="LegBackRight" type="MeshInstance3D" parent="DispatchDesk"]
 position = Vector3(0.68, 0.45, -0.28)
 mesh = SubResource("DeskLegMesh")
 material_override = ExtResource("2_wood")
+visible = false
 
 [node name="ManifestPlaceholder" type="MeshInstance3D" parent="DispatchDesk"]
 position = Vector3(0.12, 1.045, 0)
 rotation_degrees = Vector3(0, 0, -4)
 mesh = SubResource("ManifestMesh")
 material_override = ExtResource("5_paper")
+
+[node name="DispatchShadowFascia" type="MeshInstance3D" parent="DispatchDesk"]
+position = Vector3(0, 0.62, 0.515)
+mesh = SubResource("DispatchFasciaMesh")
+material_override = SubResource("WoodDarkHatchPriority")
+
+[node name="PaperGougeCluster" type="Node3D" parent="DispatchDesk/DispatchShadowFascia"]
+position = Vector3(0, 0, 0.035)
+
+[node name="GougeLong" type="MeshInstance3D" parent="DispatchDesk/DispatchShadowFascia/PaperGougeCluster"]
+position = Vector3(-0.16, 0.1, 0)
+rotation_degrees = Vector3(0, 0, -3)
+mesh = SubResource("DispatchGougeLongMesh")
+material_override = SubResource("PaperGougeOverride")
+
+[node name="GougeMedium" type="MeshInstance3D" parent="DispatchDesk/DispatchShadowFascia/PaperGougeCluster"]
+position = Vector3(0.15, 0, 0)
+rotation_degrees = Vector3(0, 0, -3)
+mesh = SubResource("DispatchGougeMediumMesh")
+material_override = SubResource("PaperGougeOverride")
+
+[node name="GougeShort" type="MeshInstance3D" parent="DispatchDesk/DispatchShadowFascia/PaperGougeCluster"]
+position = Vector3(-0.22, -0.1, 0)
+rotation_degrees = Vector3(0, 0, -3)
+mesh = SubResource("DispatchGougeShortMesh")
+material_override = SubResource("PaperGougeOverride")
 
 [node name="BeaconA" type="Node3D" parent="."]
 position = Vector3(-5.25, 0, -5.2)
@@ -255,6 +317,7 @@ metadata/greybox_role = "extract_landmark_placeholder"
 position = Vector3(0, 1.8, 0)
 mesh = SubResource("PostMesh")
 material_override = SubResource("IronLandmark")
+visible = false
 
 [node name="BeaconLantern" type="MeshInstance3D" parent="BeaconA"]
 position = Vector3(0, 3.72, 0)
@@ -270,18 +333,21 @@ position = Vector3(-5.9, 1.9, -1.5)
 rotation_degrees = Vector3(2, 0, 4)
 mesh = SubResource("PostMesh")
 material_override = ExtResource("3_wood_dark")
+visible = false
 
 [node name="PostMedium" type="MeshInstance3D" parent="MooringPosts"]
 position = Vector3(-5.45, 1.55, 1.2)
 rotation_degrees = Vector3(-2, 0, -3)
 mesh = SubResource("PostMesh")
 material_override = ExtResource("3_wood_dark")
+visible = false
 
 [node name="PostShort" type="MeshInstance3D" parent="MooringPosts"]
 position = Vector3(-4.75, 0.9, 3.5)
 rotation_degrees = Vector3(0, 0, 2)
 mesh = SubResource("ShortPostMesh")
 material_override = ExtResource("2_wood")
+visible = false
 
 [node name="MooringBarrels" type="Node3D" parent="."]
 position = Vector3(-6.1, 0.09, 3.5)
@@ -338,12 +404,14 @@ metadata/greybox_role = "non_interactive_backdrop"
 position = Vector3(0, 1.8, 0)
 mesh = SubResource("PostMesh")
 material_override = ExtResource("6_iron")
+visible = false
 
 [node name="CraneArm" type="MeshInstance3D" parent="SilhouetteC"]
 position = Vector3(-1.8, 3.45, 0)
 rotation_degrees = Vector3(0, 0, -4)
 mesh = SubResource("CraneArmMesh")
 material_override = ExtResource("6_iron")
+visible = false
 
 [node name="SilhouetteE" type="Node3D" parent="."]
 position = Vector3(-7.0, 1.45, -9.4)
@@ -353,12 +421,86 @@ metadata/greybox_role = "non_interactive_backdrop"
 [node name="TaxWall" type="MeshInstance3D" parent="SilhouetteE"]
 mesh = SubResource("WallMesh")
 material_override = SubResource("WoodDarkHatchPriority")
+visible = false
 
 [node name="TaxWallEave" type="MeshInstance3D" parent="SilhouetteE/TaxWall"]
 position = Vector3(0, 1.32, 0.48)
 rotation_degrees = Vector3(0, 2, 0)
 mesh = SubResource("WallEaveMesh")
 material_override = ExtResource("3_wood_dark")
+visible = false
+
+[node name="KenneyDeskModel" type="Node3D" parent="DispatchDesk"]
+position = Vector3(0, 0, 0)
+rotation_degrees = Vector3(0, 90, 0)
+scale = Vector3(0.68, 0.68, 0.68)
+script = ExtResource("12_third_party_material")
+library_material = SubResource("WoodDarkHatchPriority")
+
+[node name="Counter" parent="DispatchDesk/KenneyDeskModel" instance=ExtResource("20_kenney_platform_small")]
+
+[node name="KenneyBeaconMast" type="Node3D" parent="BeaconA"]
+scale = Vector3(0.45, 0.45, 0.45)
+script = ExtResource("12_third_party_material")
+library_material = ExtResource("6_iron")
+
+[node name="Mast" parent="BeaconA/KenneyBeaconMast" instance=ExtResource("18_kenney_mast")]
+
+[node name="KenneyBeaconCrown" type="Node3D" parent="BeaconA"]
+position = Vector3(0, 3.25, 0)
+scale = Vector3(0.22, 0.22, 0.22)
+script = ExtResource("12_third_party_material")
+library_material = ExtResource("6_iron")
+
+[node name="LanternRoof" parent="BeaconA/KenneyBeaconCrown" instance=ExtResource("23_kenney_tower_top")]
+
+[node name="KenneyMooringPosts" type="Node3D" parent="MooringPosts"]
+script = ExtResource("12_third_party_material")
+library_material = ExtResource("3_wood_dark")
+
+[node name="TallPile" parent="MooringPosts/KenneyMooringPosts" instance=ExtResource("18_kenney_mast")]
+position = Vector3(-5.9, 0, -1.5)
+rotation_degrees = Vector3(2, 0, 4)
+scale = Vector3(0.36, 0.36, 0.36)
+
+[node name="MediumPile" parent="MooringPosts/KenneyMooringPosts" instance=ExtResource("18_kenney_mast")]
+position = Vector3(-5.45, 0, 1.2)
+rotation_degrees = Vector3(-2, 0, -3)
+scale = Vector3(0.26, 0.26, 0.26)
+
+[node name="KenneyCargo" type="Node3D" parent="CrateStack"]
+script = ExtResource("12_third_party_material")
+library_material = ExtResource("2_wood")
+
+[node name="CargoFront" parent="CrateStack/KenneyCargo" instance=ExtResource("24_kenney_crate_bottles")]
+position = Vector3(-0.42, 0, 0.1)
+rotation_degrees = Vector3(0, -4, 0)
+scale = Vector3(0.72, 0.72, 0.72)
+
+[node name="CargoRear" parent="CrateStack/KenneyCargo" instance=ExtResource("24_kenney_crate_bottles")]
+position = Vector3(0.36, 0.48, -0.04)
+rotation_degrees = Vector3(0, 5, 0)
+scale = Vector3(0.58, 0.58, 0.58)
+
+[node name="KenneyCrane" type="Node3D" parent="SilhouetteC"]
+position = Vector3(0, -2.2, 0)
+scale = Vector3(0.46, 0.46, 0.46)
+script = ExtResource("12_third_party_material")
+library_material = ExtResource("6_iron")
+
+[node name="MastAndRigging" parent="SilhouetteC/KenneyCrane" instance=ExtResource("19_kenney_mast_ropes")]
+
+[node name="KenneyTaxBoard" type="Node3D" parent="SilhouetteE"]
+position = Vector3(0, -1.45, 0)
+scale = Vector3(0.8, 0.8, 0.8)
+script = ExtResource("12_third_party_material")
+library_material = ExtResource("3_wood_dark")
+
+[node name="BoardFrame" parent="SilhouetteE/KenneyTaxBoard" instance=ExtResource("21_kenney_fence")]
+
+[node name="BoardRoof" parent="SilhouetteE/KenneyTaxBoard" instance=ExtResource("22_kenney_roof")]
+position = Vector3(0, 1.65, 0)
+scale = Vector3(0.65, 0.36, 0.65)
 
 [node name="ProbeZoneABackground" type="Marker3D" parent="." groups=["zone_a_lookdev_probe"]]
 position = Vector3(-14.47, 7.75, 6.74)
@@ -374,7 +516,8 @@ metadata/expected_hex = "#7B5B40"
 metadata/tolerance = 10.0
 
 [node name="ProbeZoneADeckShadow" type="Marker3D" parent="." groups=["zone_a_lookdev_probe"]]
-position = Vector3(-4.58, 0.095, -3.6)
+position = Vector3(2.25, 0.095, 1.25)
 metadata/role = "shadow"
 metadata/surface_path = "PierDeck"
+metadata/expected_hex = "#2C3142"
 metadata/tolerance = 12.0

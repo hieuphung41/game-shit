@@ -29,6 +29,7 @@
         "license": "CC0-1.0",
         "normalized": true
       },
+      "file_size_bytes": 9232,
       "verification": {
         "rubric_score": 16,
         "approved_by": "technical-artist self-review; art-director pending"
@@ -46,6 +47,7 @@
         "license": "CC0-1.0",
         "normalized": true
       },
+      "file_size_bytes": 14092,
       "verification": {
         "rubric_score": 16,
         "approved_by": "technical-artist self-review; art-director pending"
@@ -63,6 +65,7 @@
         "license": "CC0-1.0",
         "normalized": true
       },
+      "file_size_bytes": 6524,
       "verification": {
         "rubric_score": 16,
         "approved_by": "technical-artist self-review; art-director pending"
@@ -80,10 +83,81 @@
         "license": "CC0-1.0",
         "normalized": true
       },
+      "file_size_bytes": 33336,
       "verification": {
         "rubric_score": 16,
         "approved_by": "technical-artist self-review; art-director pending"
       }
+    },
+    {
+      "id": "kenney-pirate-crate-bottles",
+      "path": "game/assets/third_party/kenney-pirate-kit/crate-bottles.glb",
+      "role": "Chồng cargo tĩnh ở Bến Ngoài; material nguồn bị thay khi render.",
+      "lane": "env",
+      "status": "in_review",
+      "source": {"kind": "third_party", "url_or_tool": "https://kenney.nl/assets/pirate-kit (downloaded 2026-11-09)", "license": "CC0-1.0", "normalized": true},
+      "file_size_bytes": 58588,
+      "verification": {"rubric_score": 17, "approved_by": "technical-artist self-review; art-director pending"}
+    },
+    {
+      "id": "kenney-pirate-mast",
+      "path": "game/assets/third_party/kenney-pirate-kit/mast.glb",
+      "role": "Cọc neo và thân đèn phao Bến Ngoài; material nguồn bị thay khi render.",
+      "lane": "env",
+      "status": "in_review",
+      "source": {"kind": "third_party", "url_or_tool": "https://kenney.nl/assets/pirate-kit (downloaded 2026-11-09)", "license": "CC0-1.0", "normalized": true},
+      "file_size_bytes": 30816,
+      "verification": {"rubric_score": 17, "approved_by": "technical-artist self-review; art-director pending"}
+    },
+    {
+      "id": "kenney-pirate-mast-ropes",
+      "path": "game/assets/third_party/kenney-pirate-kit/mast-ropes.glb",
+      "role": "Cần cẩu neo dây ngoài lối đi Bến Ngoài; material nguồn bị thay khi render.",
+      "lane": "env",
+      "status": "in_review",
+      "source": {"kind": "third_party", "url_or_tool": "https://kenney.nl/assets/pirate-kit (downloaded 2026-11-09)", "license": "CC0-1.0", "normalized": true},
+      "file_size_bytes": 36156,
+      "verification": {"rubric_score": 17, "approved_by": "technical-artist self-review; art-director pending"}
+    },
+    {
+      "id": "kenney-pirate-structure-platform-small",
+      "path": "game/assets/third_party/kenney-pirate-kit/structure-platform-small.glb",
+      "role": "Khung quầy dispatch Bến Ngoài; material nguồn bị thay khi render.",
+      "lane": "env",
+      "status": "in_review",
+      "source": {"kind": "third_party", "url_or_tool": "https://kenney.nl/assets/pirate-kit (downloaded 2026-11-09)", "license": "CC0-1.0", "normalized": true},
+      "file_size_bytes": 23068,
+      "verification": {"rubric_score": 17, "approved_by": "technical-artist self-review; art-director pending"}
+    },
+    {
+      "id": "kenney-pirate-structure-fence-sides",
+      "path": "game/assets/third_party/kenney-pirate-kit/structure-fence-sides.glb",
+      "role": "Khung bảng thông báo thuế Bến Ngoài; material nguồn bị thay khi render.",
+      "lane": "env",
+      "status": "in_review",
+      "source": {"kind": "third_party", "url_or_tool": "https://kenney.nl/assets/pirate-kit (downloaded 2026-11-09)", "license": "CC0-1.0", "normalized": true},
+      "file_size_bytes": 44480,
+      "verification": {"rubric_score": 17, "approved_by": "technical-artist self-review; art-director pending"}
+    },
+    {
+      "id": "kenney-pirate-structure-roof",
+      "path": "game/assets/third_party/kenney-pirate-kit/structure-roof.glb",
+      "role": "Mái che bảng thông báo thuế Bến Ngoài; material nguồn bị thay khi render.",
+      "lane": "env",
+      "status": "in_review",
+      "source": {"kind": "third_party", "url_or_tool": "https://kenney.nl/assets/pirate-kit (downloaded 2026-11-09)", "license": "CC0-1.0", "normalized": true},
+      "file_size_bytes": 34480,
+      "verification": {"rubric_score": 17, "approved_by": "technical-artist self-review; art-director pending"}
+    },
+    {
+      "id": "kenney-pirate-tower-top",
+      "path": "game/assets/third_party/kenney-pirate-kit/tower-top.glb",
+      "role": "Vỏ hộp đèn phao Bến Ngoài; material nguồn bị thay khi render.",
+      "lane": "env",
+      "status": "in_review",
+      "source": {"kind": "third_party", "url_or_tool": "https://kenney.nl/assets/pirate-kit (downloaded 2026-11-09)", "license": "CC0-1.0", "normalized": true},
+      "file_size_bytes": 29484,
+      "verification": {"rubric_score": 17, "approved_by": "technical-artist self-review; art-director pending"}
     },
     {
       "id": "kenney-animated-characters-protagonists-retriever",

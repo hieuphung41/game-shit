@@ -8,6 +8,7 @@ const PROBE_SURFACE_OFFSET := 0.04
 const TRIANGLE_EPSILON := 0.00001
 const RETRIEVER_SCENE := preload("res://src/player/retriever.tscn")
 const BACKGROUND_PROBE_PIXEL := Vector2(96.0, 96.0)
+const DISPATCH_DETAIL_REGION := Rect2i(480, 360, 320, 180)
 
 @onready var camera: Camera3D = $CameraIsometric
 @onready var world_environment: WorldEnvironment = $WorldEnvironment
@@ -49,6 +50,12 @@ func _capture(capture_directory: String) -> void:
 		var phone_image: Image = game_image.duplicate()
 		phone_image.resize(PHONE_WIDTH, PHONE_HEIGHT, Image.INTERPOLATE_NEAREST)
 		result = phone_image.save_png(capture_directory.path_join("zone_a_phone.png"))
+	if result == OK:
+		# This is an in-engine crop of the fixed gameplay camera, not a separate
+		# presentation camera. It lets review inspect the desk's WC-02 cuts.
+		var dispatch_detail: Image = game_image.get_region(DISPATCH_DETAIL_REGION)
+		dispatch_detail.resize(game_image.get_width(), game_image.get_height(), Image.INTERPOLATE_NEAREST)
+		result = dispatch_detail.save_png(capture_directory.path_join("zone_a_detail.png"))
 	if result != OK:
 		push_error("Could not save Zone A capture(s): %s" % error_string(result))
 	get_tree().quit(0 if result == OK else 1)
