@@ -49,6 +49,8 @@ var _stub_button: Button
 func _ready() -> void:
 	theme = UiTheme.create()
 	_build()
+	resized.connect(_layout_hud)
+	call_deferred("_layout_hud")
 	var window := get_window()
 	if window != null and not window.focus_exited.is_connected(_release_guard_owner):
 		window.focus_exited.connect(_release_guard_owner)
@@ -195,36 +197,25 @@ func _build() -> void:
 	_stub_blocker.visible = false
 	add_child(_stub_blocker)
 	_objective = _label("Objective", _objective_key, 24)
-	_objective.position = Vector2(16, 16)
-	_objective.size = Vector2(640, 56)
 	add_child(_objective)
 	_health_panel = Panel.new()
 	_health_panel.name = "HealthPanel"
-	_health_panel.position = Vector2(16, 80)
-	_health_panel.size = Vector2(320, 40)
 	add_child(_health_panel)
-	_health_segments = _label("Segments", &"", 26)
-	_health_segments.position = Vector2(0, 0)
-	_health_segments.size = Vector2(192, 40)
+	_health_segments = _label("Segments", &"", 20)
+	_health_segments.clip_text = true
 	_health_panel.add_child(_health_segments)
 	_health_value = _label("HealthValue", &"HUD_HEALTH_VALUE", 28)
-	_health_value.position = Vector2(196, 0)
-	_health_value.size = Vector2(124, 40)
+	_health_value.clip_text = true
 	_health_panel.add_child(_health_value)
 	_health_low = _label("LowHealth", &"HUD_HEALTH_LOW", 24)
-	_health_low.position = Vector2(0, 40)
-	_health_low.size = Vector2(220, 32)
 	_health_panel.add_child(_health_low)
 	_warning = _label("Warning", &"", 24)
-	_warning.position = Vector2(16, 128)
-	_warning.size = Vector2(352, 48)
 	_warning.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(_warning)
 	_status = _label("Status", &"", 24)
-	_anchor_bottom_left(_status, 296, 16, Vector2(392, 112))
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(_status)
-	_danger = _button("DangerClose", &"HUD_DANGER_NEAR", Vector2(16, 192), Vector2(288, 96))
+	_danger = _button("DangerClose", &"HUD_DANGER_NEAR", Vector2.ZERO, Vector2(288, 96))
 	_danger.visible = false
 	_danger.pressed.connect(func() -> void: danger_close_requested.emit())
 	add_child(_danger)
@@ -234,22 +225,19 @@ func _build() -> void:
 	_remedy = _combat_button("RemedyButton", &"HUD_BUTTON_REMEDY", &"use_remedy", 464, 16, Vector2(96, 96))
 	_stub = Panel.new()
 	_stub.name = "DepletedStub"
-	_stub.position = Vector2(368, 264)
-	_stub.size = Vector2(544, 192)
 	add_child(_stub)
 	var stub_text := _label("Message", &"COMBAT_STUB_HP_ZERO", 24)
-	stub_text.position = Vector2(20, 12)
-	stub_text.size = Vector2(504, 72)
 	stub_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_stub.add_child(stub_text)
-	_stub_button = _button("BootButton", &"COMBAT_STUB_BUTTON_BOOT", Vector2(40, 96), Vector2(464, 80))
+	_stub_button = _button("BootButton", &"COMBAT_STUB_BUTTON_BOOT", Vector2.ZERO, Vector2(464, 80))
 	_stub_button.pressed.connect(request_boot)
 	_stub.add_child(_stub_button)
 
 
 func _combat_button(node_name: String, key: StringName, action: StringName, right: float, bottom: float, dimensions: Vector2) -> Button:
 	var button := _button(node_name, key, Vector2.ZERO, dimensions)
-	_anchor_bottom_right(button, right, bottom, dimensions)
+	button.set_meta(&"hud_right", right)
+	button.set_meta(&"hud_bottom", bottom)
 	if action == &"use_remedy":
 		button.pressed.connect(press_action.bind(action))
 	elif action != &"combat_guard":
@@ -318,10 +306,16 @@ func _refresh() -> void:
 		_health_panel.visible = not _stub_open
 	if health != null and _health_value != null:
 		_health_value.text = tr("HUD_HEALTH_VALUE").format({"hp": health.hp, "max_hp": health.max_hp})
-		var total := ceili(float(health.max_hp) / 10.0)
-		var filled := ceili(float(health.hp) / 10.0)
+		# Eight compact segments keep the labelled H2 row readable without entering
+		# the adjacent exact numeric-health field.
+		var total := 8
+		var filled := ceili(float(health.hp) / float(health.max_hp) * float(total))
 		_health_segments.text = ("⚠ " if health.hp <= ceili(float(health.max_hp) * 0.3) else "♥ ") + "■".repeat(filled) + "□".repeat(total - filled)
-		_health_low.visible = health.hp <= ceili(float(health.max_hp) * 0.3)
+		var is_low := health.hp <= ceili(float(health.max_hp) * 0.3)
+		# H2 is a single 40 px row. At low health the textual warning replaces
+		# the segment row instead of extending into H5's warning region.
+		_health_segments.visible = not is_low
+		_health_low.visible = is_low
 	if _warning != null:
 		_warning.visible = not _warning_key.is_empty() and not _stub_open
 	_refresh_status()
@@ -442,6 +436,8 @@ func _button(node_name: String, key: StringName, at: Vector2, dimensions: Vector
 	var button := Button.new()
 	button.name = node_name
 	button.text = tr(key)
+	button.clip_text = true
+	button.custom_minimum_size = dimensions
 	button.position = at
 	button.size = dimensions
 	button.focus_mode = Control.FOCUS_ALL
@@ -450,22 +446,27 @@ func _button(node_name: String, key: StringName, at: Vector2, dimensions: Vector
 
 
 func _anchor_bottom_right(control: Control, right: float, bottom: float, dimensions: Vector2) -> void:
-	control.anchor_left = 1.0
-	control.anchor_top = 1.0
-	control.anchor_right = 1.0
-	control.anchor_bottom = 1.0
-	control.offset_left = -right - dimensions.x
-	control.offset_top = -bottom - dimensions.y
-	control.offset_right = -right
-	control.offset_bottom = -bottom
+	HudLayout.place_bottom_right(control, HudLayout.safe_rect(self), right, bottom, dimensions)
 
 
 func _anchor_bottom_left(control: Control, left: float, bottom: float, dimensions: Vector2) -> void:
-	control.anchor_left = 0.0
-	control.anchor_top = 1.0
-	control.anchor_right = 0.0
-	control.anchor_bottom = 1.0
-	control.offset_left = left
-	control.offset_top = -bottom - dimensions.y
-	control.offset_right = left + dimensions.x
-	control.offset_bottom = -bottom
+	HudLayout.place_bottom_left(control, HudLayout.safe_rect(self), left, bottom, dimensions)
+
+
+func _layout_hud() -> void:
+	var safe := HudLayout.safe_rect(self)
+	HudLayout.place_top_left(_objective, safe, Vector2.ZERO, Vector2(640, 56))
+	HudLayout.place_top_left(_health_panel, safe, Vector2(0, 64), Vector2(320, 40))
+	HudLayout.place_top_left(_health_segments, Rect2(Vector2.ZERO, _health_panel.size), Vector2.ZERO, Vector2(164, 40))
+	HudLayout.place_top_left(_health_value, Rect2(Vector2.ZERO, _health_panel.size), Vector2(180, 0), Vector2(140, 40))
+	HudLayout.place_top_left(_health_low, Rect2(Vector2.ZERO, _health_panel.size), Vector2.ZERO, Vector2(164, 40))
+	HudLayout.place_top_left(_warning, safe, Vector2(0, 112), Vector2(352, 48))
+	HudLayout.place_bottom_left(_status, safe, 280.0, 0.0, Vector2(392, 112))
+	HudLayout.place_top_left(_danger, safe, Vector2(0, 176), Vector2(288, 96))
+	for button: Button in [_attack, _dodge, _guard, _remedy]:
+		HudLayout.place_bottom_right(button, safe, float(button.get_meta(&"hud_right")), float(button.get_meta(&"hud_bottom")), button.size)
+	HudLayout.place_top_center(_stub, safe, 248.0, Vector2(544, 192))
+	var stub_text := _stub.get_node_or_null("Message") as Label
+	if stub_text != null:
+		HudLayout.place_top_left(stub_text, Rect2(Vector2.ZERO, _stub.size), Vector2(20, 12), Vector2(504, 72))
+	HudLayout.place_top_left(_stub_button, Rect2(Vector2.ZERO, _stub.size), Vector2(40, 96), Vector2(464, 80))

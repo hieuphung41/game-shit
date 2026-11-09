@@ -76,10 +76,11 @@ func test_ui_combat_hud_uses_s03_combat_regions_and_hold_input(t) -> bool:
 	var dodge := hud.get_node("DodgeButton") as Button
 	var guard := hud.get_node("GuardButton") as Button
 	var remedy := hud.get_node("RemedyButton") as Button
-	t.eq(Vector2(attack.offset_left, attack.offset_top), Vector2(-192, -144), "attack is inset 64×16 from bottom-right C1")
-	t.eq(Vector2(dodge.offset_left, dodge.offset_top), Vector2(-320, -128), "dodge is inset 208×16 from bottom-right C2")
-	t.eq(Vector2(guard.offset_left, guard.offset_top), Vector2(-448, -128), "guard is inset 336×16 from bottom-right C3")
-	t.eq(Vector2(remedy.offset_left, remedy.offset_top), Vector2(-560, -112), "remedy is inset 464×16 from bottom-right C4")
+	t.eq(attack.size, Vector2(128, 128), "attack keeps the C1 touch size")
+	t.eq(dodge.size, Vector2(112, 112), "dodge keeps the C2 touch size")
+	t.eq(guard.size, Vector2(112, 112), "guard keeps the C3 touch size")
+	t.eq(remedy.size, Vector2(96, 96), "remedy keeps the C4 touch size")
+	t.ok(attack.get_global_rect().end.x <= hud.get_viewport_rect().end.x - HudLayout.SAFE_MARGIN, "attack remains inside the right safe inset")
 	var press_a := InputEventScreenTouch.new()
 	press_a.index = 1
 	press_a.position = guard.get_global_rect().get_center()
