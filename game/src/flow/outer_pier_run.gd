@@ -5,6 +5,7 @@ extends Node3D
 
 const BOOT_SCENE := "res://src/boot/boot.tscn"
 const WORLD_SCENE := preload("res://src/world/zone_a_outer_pier.tscn")
+const WORLD_FLOOR_SAFETY := preload("res://src/world/world_floor_safety.gd")
 const ZONE_D_SCENE := preload("res://src/world/zone_d_floating_warehouse.tscn")
 const RETRIEVER_SCENE := preload("res://src/player/retriever.tscn")
 const TAX_GUARD_SCENE := preload("res://src/enemies/tax_guard.tscn")
@@ -200,6 +201,7 @@ func _create_world() -> void:
 	_zone_d.position = ZONE_D_WORLD_POSITION
 	_world.add_child(_zone_d)
 	_retriever = RETRIEVER_SCENE.instantiate() as RetrieverController
+	_retriever.set_floor_safety(WORLD_FLOOR_SAFETY.create_vertical_slice())
 	_world.add_child(_retriever)
 	_retriever.add_to_group(&"retriever")
 	_manifest_placeholder = _world.get_node_or_null("DispatchDesk/ManifestPlaceholder") as MeshInstance3D
@@ -812,6 +814,7 @@ func _update_gate() -> void:
 		return
 	_gate_open = true
 	_zone_b.call(&"set_route_d_open", true)
+	_retriever.set_route_d_open(true)
 	var barrier := _zone_b.get_node_or_null("GateB/GateBBarrier") as StaticBody3D
 	if barrier != null:
 		var collision := barrier.get_node_or_null("CollisionShape3D") as CollisionShape3D

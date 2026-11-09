@@ -1,4 +1,4 @@
-[gd_scene load_steps=46 format=3]
+[gd_scene load_steps=48 format=3]
 
 [ext_resource type="Script" path="res://src/lookdev/zone_b_lookdev_capture.gd" id="1_capture"]
 [ext_resource type="Material" path="res://art/materials/env_wood.tres" id="2_wood"]
@@ -31,6 +31,15 @@ size = Vector3(9, 0.18, 35)
 
 [sub_resource type="BoxShape3D" id="FloorShape"]
 size = Vector3(9, 0.18, 35)
+
+[sub_resource type="BoxShape3D" id="MarketEastEdgeShape"]
+size = Vector3(0.18, 1.2, 35)
+
+[sub_resource type="BoxShape3D" id="MarketWestEntryEdgeShape"]
+size = Vector3(0.18, 1.2, 1.0)
+
+[sub_resource type="BoxShape3D" id="MarketWestEntryNorthEdgeShape"]
+size = Vector3(0.18, 1.2, 1.5)
 
 [sub_resource type="PlaneMesh" id="WaterMesh"]
 size = Vector2(22, 40)
@@ -203,6 +212,22 @@ collision_layer = 2
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="FloorCollision"]
 shape = SubResource("FloorShape")
+
+[node name="PlayableEdgesB" type="StaticBody3D" parent="."]
+collision_layer = 2
+metadata/greybox_role = "playable_floor_edge_collision"
+
+[node name="East" type="CollisionShape3D" parent="PlayableEdgesB"]
+position = Vector3(8.91, 0.6, -15)
+shape = SubResource("MarketEastEdgeShape")
+
+[node name="EntrySouth" type="CollisionShape3D" parent="PlayableEdgesB"]
+position = Vector3(0.09, 0.6, 2.0)
+shape = SubResource("MarketWestEntryEdgeShape")
+
+[node name="EntryNorth" type="CollisionShape3D" parent="PlayableEdgesB"]
+position = Vector3(0.09, 0.6, -2.25)
+shape = SubResource("MarketWestEntryNorthEdgeShape")
 
 [node name="SeamAB" type="Marker3D" parent="."]
 position = Vector3(0, 0.09, 0)
