@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=3]
+[gd_scene load_steps=36 format=3]
 
 [ext_resource type="Environment" path="res://art/env_default.tres" id="1_environment"]
 [ext_resource type="Material" path="res://art/materials/env_wood.tres" id="2_wood"]
@@ -73,6 +73,18 @@ shader_parameter/hatch_enabled = false
 
 [sub_resource type="BoxMesh" id="DeckMesh"]
 size = Vector3(14, 0.18, 10)
+
+[sub_resource type="BoxShape3D" id="PierEdgeLongShape"]
+size = Vector3(0.18, 1.2, 10)
+
+[sub_resource type="BoxShape3D" id="PierEdgeWideShape"]
+size = Vector3(14, 1.2, 0.18)
+
+[sub_resource type="BoxShape3D" id="PierEastNorthEdgeShape"]
+size = Vector3(0.18, 1.2, 5.95)
+
+[sub_resource type="BoxShape3D" id="PierEastSouthEdgeShape"]
+size = Vector3(0.18, 1.2, 1.05)
 
 [sub_resource type="BoxMesh" id="DeskTopMesh"]
 size = Vector3(1.7, 0.16, 0.82)
@@ -152,6 +164,30 @@ material_override = ExtResource("8_water")
 [node name="PierDeck" type="MeshInstance3D" parent="."]
 mesh = SubResource("DeckMesh")
 material_override = SubResource("WoodBroadPrint")
+
+[node name="PlayableEdgesA" type="StaticBody3D" parent="."]
+collision_layer = 2
+metadata/greybox_role = "playable_floor_edge_collision"
+
+[node name="West" type="CollisionShape3D" parent="PlayableEdgesA"]
+position = Vector3(-6.91, 0.6, 0)
+shape = SubResource("PierEdgeLongShape")
+
+[node name="North" type="CollisionShape3D" parent="PlayableEdgesA"]
+position = Vector3(0, 0.6, -4.91)
+shape = SubResource("PierEdgeWideShape")
+
+[node name="South" type="CollisionShape3D" parent="PlayableEdgesA"]
+position = Vector3(0, 0.6, 4.91)
+shape = SubResource("PierEdgeWideShape")
+
+[node name="EastNorth" type="CollisionShape3D" parent="PlayableEdgesA"]
+position = Vector3(6.91, 0.6, 2.025)
+shape = SubResource("PierEastNorthEdgeShape")
+
+[node name="EastSouth" type="CollisionShape3D" parent="PlayableEdgesA"]
+position = Vector3(6.91, 0.6, -4.475)
+shape = SubResource("PierEastSouthEdgeShape")
 
 [node name="ExtractPierA" type="Node3D" parent="."]
 position = Vector3(-4.75, 0, -5.1)

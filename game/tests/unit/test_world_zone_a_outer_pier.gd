@@ -44,11 +44,11 @@ func test_zone_a_outer_pier_has_g3_landmarks_and_backdrops_only(t) -> bool:
 			t.eq(backdrop.get_meta("greybox_role"), "non_interactive_backdrop", "%s is explicitly non-interactive" % node_path)
 	var zone_b := world.get_node_or_null("ZoneBFloodedMarket") as Node3D
 	t.ok(zone_b != null, "Zone A owns the seamless Zone B child")
-	var a_collision_count := 0
-	for body: Node in world.find_children("*", "CollisionObject3D", true, false):
-		if zone_b == null or not zone_b.is_ancestor_of(body):
-			a_collision_count += 1
-	t.eq(a_collision_count, 0, "Zone A keeps its own greybox collision-free while B owns cover collision")
+	var edges := world.get_node_or_null("PlayableEdgesA") as StaticBody3D
+	t.ok(edges != null and edges.collision_layer == 2, "Zone A has world-static edge collision around its playable deck")
+	if edges != null:
+		for edge_name: String in ["West", "North", "South", "EastNorth", "EastSouth"]:
+			t.ok(edges.get_node_or_null(edge_name) is CollisionShape3D, "Zone A edge %s blocks water without closing the B seam" % edge_name)
 	for marker: Node in world.find_children("*", "Marker3D", true, false):
 		if zone_b == null or not zone_b.is_ancestor_of(marker):
 			t.ok(marker.is_in_group(ZONE_A_PROBE_GROUP), "Zone A Marker3D is capture-only, never an objective or interaction marker")
@@ -192,12 +192,8 @@ func test_zone_a_uses_the_four_approved_kenney_models_with_library_materials(t) 
 	var pier_deck := world.get_node_or_null("PierDeck") as MeshInstance3D
 	t.ok(pier_deck != null and pier_deck.mesh is BoxMesh, "PierDeck keeps its continuous 14 by 10 metre walking surface")
 	t.ok(world.get_node_or_null("ExtractPierA/DockProp") is Node3D, "ExtractPierA keeps its transform while only its visual child changes")
-	var zone_b := world.get_node_or_null("ZoneBFloodedMarket") as Node3D
-	var a_collision_count := 0
-	for body: Node in world.find_children("*", "CollisionObject3D", true, false):
-		if zone_b == null or not zone_b.is_ancestor_of(body):
-			a_collision_count += 1
-	t.eq(a_collision_count, 0, "Kenney visual replacements preserve Zone A's collision-free greybox state")
+	var edges := world.get_node_or_null("PlayableEdgesA") as StaticBody3D
+	t.ok(edges != null and edges.collision_layer == 2, "Kenney visual replacements preserve Zone A's authored water-edge collision")
 	world.queue_free()
 	await t.tree.process_frame
 	return true
