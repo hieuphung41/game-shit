@@ -722,7 +722,9 @@ position = Vector3(-12.6, 0.09, 0.05)
 position = Vector3(-0.7, 0, -1.95)
 
 [node name="ProbeZoneBFloorLit" type="Marker3D" parent="." groups=["zone_b_lookdev_probe"]]
-position = Vector3(4.5, 0.095, -28)
+; Clear entry-side deck: this face receives the capture sun and stays outside
+; the facade's indigo cast shadow.
+position = Vector3(7.0, 0.095, -3.0)
 metadata/role = "lit_face"
 metadata/surface_path = "FloorB"
 metadata/expected_hex = "#7B5B40"
@@ -731,14 +733,17 @@ metadata/placement = "producer-approved visible floor surface"
 
 [node name="ProbeZoneBFloorShadow" type="Marker3D" parent="." groups=["zone_b_lookdev_probe"]]
 ; WestFacade casts its fixed directional shadow southeast across this calm-floor point.
-position = Vector3(0.8, 0.095, -28.65)
+position = Vector3(0.75, 0.095, -26.0)
 metadata/role = "shadow"
 metadata/surface_path = "FloorB"
 metadata/tolerance = 12.0
 metadata/placement = "producer-approved visible cast-shadow surface"
 
 [node name="ProbeZoneBLaneFloor" type="Marker3D" parent="." groups=["zone_b_lookdev_probe"]]
-position = Vector3(4.5, 0.095, -18)
+; The lane-side deck is deliberately clear of the red telegraph and of the
+; long facade shadow, so this measures the walkable wood palette rather than
+; a gameplay signal or shadow band.
+position = Vector3(5.6, 0.095, -12.0)
 metadata/role = "lit_face"
 metadata/surface_path = "FloorB"
 metadata/expected_hex = "#7B5B40"
@@ -763,24 +768,25 @@ metadata/role = "background"
 metadata/expected_hex = "#4E6570"
 metadata/tolerance = 5.0
 
-; CC0 visuals replace only the recognisable market props. Their parents retain the
-; authored collision, placement, and clear telegraph floor from the encounter spec.
-[node name="KenneyMarketStalls" type="Node3D" parent="WestFacade"]
-position = Vector3(0.15, 0.0, 1.1)
+; CC0 visuals replace only the recognisable market props. The stall is deliberately
+; a visual-only sibling of the facade: at the fixed phone camera it clears the wall
+; silhouette while the authored facade and cover collisions retain their exact bounds.
+[node name="KenneyMarketStalls" type="Node3D" parent="."]
+position = Vector3(1.45, 0.0, -12.4)
 rotation_degrees = Vector3(0, 90, 0)
 script = ExtResource("16_third_party_material")
 library_material = ExtResource("3_wood_dark")
 metadata/visual_role = "cc0_market_stall_frames"
 
-[node name="StallCounter" parent="WestFacade/KenneyMarketStalls" instance=ExtResource("20_kenney_platform_small")]
+[node name="StallCounter" parent="KenneyMarketStalls" instance=ExtResource("20_kenney_platform_small")]
 position = Vector3(0.0, 0.15, 0.0)
 rotation_degrees = Vector3(0, -3, 0)
-scale = Vector3(1.32, 1.32, 1.32)
+scale = Vector3(2.05, 2.05, 2.05)
 
 [node name="StallRoof" type="Node3D" parent="WestFacade"]
 position = Vector3(0.25, 2.15, 3.5)
 rotation_degrees = Vector3(0, 90, -3)
-scale = Vector3(1.18, 0.78, 1.18)
+scale = Vector3(1.48, 1.0, 1.48)
 script = ExtResource("16_third_party_material")
 library_material = ExtResource("4_canvas_red")
 metadata/visual_role = "cc0_red_canvas_market_awning"
@@ -795,32 +801,33 @@ metadata/visual_role = "cc0_market_crates_and_shelves"
 [node name="CoverOne" parent="KenneyCargo" instance=ExtResource("17_kenney_crate")]
 position = Vector3(2.6, 0.08, -2.8)
 rotation_degrees = Vector3(0, -4, 0)
-scale = Vector3(1.42, 1.42, 1.42)
+scale = Vector3(1.62, 1.62, 1.62)
 
 [node name="CoverTwo" parent="KenneyCargo" instance=ExtResource("18_kenney_crate_bottles")]
 position = Vector3(1.6, 0.08, -16.0)
 rotation_degrees = Vector3(0, 4, 0)
-scale = Vector3(1.32, 1.32, 1.32)
+scale = Vector3(1.95, 1.95, 1.95)
 
 [node name="CoverThree" parent="KenneyCargo" instance=ExtResource("17_kenney_crate")]
 position = Vector3(1.6, 0.08, -20.5)
 rotation_degrees = Vector3(0, -3, 0)
-scale = Vector3(1.42, 1.42, 1.42)
+scale = Vector3(1.62, 1.62, 1.62)
 
 [node name="FishBasket" parent="KenneyCargo" instance=ExtResource("18_kenney_crate_bottles")]
 position = Vector3(7.7, 0.04, -18.0)
 rotation_degrees = Vector3(0, 6, 0)
-scale = Vector3(1.0, 1.0, 1.0)
+scale = Vector3(1.35, 1.35, 1.35)
 
 [node name="Cache" parent="KenneyCargo" instance=ExtResource("17_kenney_crate")]
 position = Vector3(1.8, 0.08, -29.5)
 rotation_degrees = Vector3(0, -5, 0)
-scale = Vector3(1.25, 1.25, 1.25)
+scale = Vector3(1.55, 1.55, 1.55)
 
 [node name="KenneyTaxGate" type="Node3D" parent="GateB"]
 position = Vector3(0.0, 0.12, 0.0)
 rotation_degrees = Vector3(0, 90, 0)
-scale = Vector3(1.12, 1.12, 1.12)
+; Height carries the gate silhouette; its width stays clear of the fixed floor probe.
+scale = Vector3(1.55, 2.15, 1.4)
 script = ExtResource("16_third_party_material")
 library_material = ExtResource("6_iron")
 metadata/visual_role = "cc0_tax_gate_frame"

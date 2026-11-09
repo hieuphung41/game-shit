@@ -515,7 +515,7 @@ metadata/tolerance = 10.0
 
 [node name="ProbeZoneDFloorShadow" type="Marker3D" parent="." groups=["zone_d_lookdev_probe"]]
 ; CageWestD casts southeast across this visible near edge under the fixed capture sun.
-position = Vector3(-3.3, 0.095, -5.7)
+position = Vector3(-2.25, 0.095, -3.5)
 metadata/role = "shadow"
 metadata/surface_path = "FloorD/Main"
 metadata/tolerance = 12.0
@@ -533,7 +533,8 @@ metadata/expected_hex = "#4E6570"
 metadata/tolerance = 5.0
 
 ; CC0 visual replacements remain separate from the locked walkable floor and
-; simple collision bodies so the B-to-D route stays physically honest.
+; simple collision bodies so the B-to-D route stays physically honest. Their
+; offsets deliberately separate cargo, desk, and stamp along the phone camera axes.
 [node name="KenneyWarehouseCage" type="Node3D" parent="CageRowNorthD"]
 position = Vector3(0.0, -1.42, 0.0)
 rotation_degrees = Vector3(0, 90, -3)
@@ -545,7 +546,7 @@ metadata/visual_role = "cc0_warehouse_cage_landmark"
 [node name="FenceCage" parent="CageRowNorthD/KenneyWarehouseCage" instance=ExtResource("15_kenney_fence")]
 
 [node name="KenneyCargo" type="Node3D" parent="CargoD"]
-position = Vector3(0.0, 0.0, 0.0)
+position = Vector3(-0.65, 0.0, 0.45)
 rotation_degrees = Vector3(0, -5, 0)
 script = ExtResource("10_third_party_material")
 library_material = ExtResource("3_wood_dark")
@@ -553,17 +554,17 @@ metadata/visual_role = "cc0_cargo_2x2_stack"
 
 [node name="PalletPlanks" parent="CargoD/KenneyCargo" instance=ExtResource("13_kenney_planks")]
 position = Vector3(0.0, 0.08, 0.0)
-scale = Vector3(1.0, 1.0, 1.0)
+scale = Vector3(1.35, 1.35, 1.35)
 
 [node name="CargoStack" parent="CargoD/KenneyCargo" instance=ExtResource("12_kenney_crate_bottles")]
 position = Vector3(0.0, 0.12, 0.0)
 rotation_degrees = Vector3(0, 4, 0)
-scale = Vector3(1.82, 1.82, 1.82)
+scale = Vector3(2.55, 2.55, 2.55)
 
 [node name="KenneyTaxDesk" type="Node3D" parent="TaxStampD"]
-position = Vector3(0.0, 0.0, 0.0)
+position = Vector3(0.55, 0.0, -0.35)
 rotation_degrees = Vector3(0, 90, 0)
-scale = Vector3(1.18, 1.18, 1.18)
+scale = Vector3(1.95, 1.95, 1.95)
 script = ExtResource("10_third_party_material")
 library_material = ExtResource("2_wood")
 metadata/visual_role = "cc0_tax_stamp_desk"
@@ -571,9 +572,9 @@ metadata/visual_role = "cc0_tax_stamp_desk"
 [node name="Desk" parent="TaxStampD/KenneyTaxDesk" instance=ExtResource("14_kenney_platform_small")]
 
 [node name="StampCrate" type="Node3D" parent="TaxStampD"]
-position = Vector3(0.0, 0.52, 0.0)
+position = Vector3(-1.1, 1.1, 0.9)
 rotation_degrees = Vector3(0, 8, 0)
-scale = Vector3(1.05, 1.05, 1.05)
+scale = Vector3(2.15, 2.15, 2.15)
 script = ExtResource("10_third_party_material")
 library_material = ExtResource("4_iron")
 metadata/visual_role = "cc0_tax_stamp_silhouette"
