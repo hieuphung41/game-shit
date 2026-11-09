@@ -466,7 +466,7 @@ metadata/expected_hex = "#7B5B40"
 metadata/tolerance = 10.0
 
 [node name="ProbeZoneADeckShadow" type="Marker3D" parent="." groups=["zone_a_lookdev_probe"]]
-position = Vector3(0.65, 0.095, 2.3)
+position = Vector3(-4.58, 0.095, -3.6)
 metadata/role = "shadow"
 metadata/surface_path = "PierDeck"
 metadata/tolerance = 12.0
