@@ -300,11 +300,13 @@ func test_zone_b_cc0_market_props_keep_collision_and_use_matte_library_materials
 	var gate := zone.get_node_or_null("GateB/KenneyTaxGate") as Node3D
 	var cargo := zone.get_node_or_null("KenneyCargo/CoverTwo") as Node3D
 	var facade := zone.get_node_or_null("WestFacade") as Node3D
-	t.ok(counter != null and counter.scale.x >= 2.0, "Market counter keeps a readable phone-scale silhouette")
+	var awning := zone.get_node_or_null("WestFacade/StallRoof") as Node3D
+	t.ok(counter != null and counter.scale.x >= 2.3, "Market counter keeps a readable phone-scale silhouette")
 	t.ok(counter_root != null and counter_root.get_parent() == zone and facade != null and counter_root.global_position.distance_to(facade.global_position) >= 4.0, "Market counter is a visual-only root clear of the facade at phone scale")
 	t.ok(roof != null and roof.scale.x >= 1.45 and roof.scale.y >= 0.95, "Market awning keeps a readable phone-scale silhouette")
-	t.ok(gate != null and gate.scale.y >= 2.1 and gate.scale.x >= 1.5, "Tax gate keeps a tall readable phone-scale silhouette")
-	t.ok(cargo != null and cargo.scale.x >= 1.9, "Market cargo keeps a readable phone-scale silhouette")
+	t.ok(counter != null and awning != null and counter.global_position.distance_to(awning.global_position) >= 4.0, "Counter clears the awning silhouette on the phone camera axis")
+	t.ok(gate != null and gate.scale.y >= 2.3 and gate.scale.x >= 1.8, "Tax gate keeps a tall readable phone-scale silhouette")
+	t.ok(cargo != null and cargo.scale.x >= 2.3 and facade != null and cargo.global_position.distance_to(facade.global_position) >= 3.0, "Market cargo clears the facade with a readable short dimension")
 	for cover_name: String in ["CoverB1", "CoverB2", "CoverB3", "CoverB4"]:
 		var collision := zone.get_node_or_null(cover_name) as StaticBody3D
 		var placeholder := zone.get_node_or_null("%s/Mesh" % cover_name) as MeshInstance3D

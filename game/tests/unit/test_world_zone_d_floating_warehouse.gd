@@ -217,12 +217,12 @@ func test_zone_d_cc0_cages_cargo_and_tax_desk_use_matte_library_materials(t) -> 
 	var cargo := zone.get_node_or_null("CargoD/KenneyCargo/CargoStack") as Node3D
 	var desk := zone.get_node_or_null("TaxStampD/KenneyTaxDesk") as Node3D
 	var stamp := zone.get_node_or_null("TaxStampD/StampCrate") as Node3D
-	t.ok(cargo != null and cargo.scale.x >= 2.5, "Cargo stack keeps a readable phone-scale silhouette")
-	t.ok(desk != null and desk.scale.x >= 1.9, "Tax desk keeps a readable phone-scale silhouette")
+	t.ok(cargo != null and cargo.scale.x >= 2.8, "Cargo stack keeps a readable phone-scale silhouette")
+	t.ok(desk != null and desk.scale.x >= 2.15, "Tax desk keeps a readable phone-scale silhouette")
 	t.ok(stamp != null and stamp.scale.x >= 2.1, "Tax stamp keeps a readable phone-scale silhouette")
 	if cargo != null and desk != null and stamp != null:
 		t.ok(cargo.global_position.distance_to(desk.global_position) >= 5.0, "Cargo and tax desk keep separate visual roots along the phone camera axis")
-		t.ok(stamp.global_position.distance_to(desk.global_position) >= 1.5 and stamp.global_position.distance_to(cargo.global_position) >= 1.5, "Tax stamp remains a separate readable visual role")
+		t.ok(stamp.global_position.distance_to(desk.global_position) >= 3.2 and stamp.global_position.distance_to(cargo.global_position) >= 3.0, "Tax stamp remains a separate readable visual role")
 	for placeholder_path: String in ["CargoD/Pallet/Mesh", "CargoD/ItemBlock/Mesh", "TaxStampD/Desk/Mesh", "TaxStampD/ItemBlock/Mesh"]:
 		var placeholder := zone.get_node_or_null(placeholder_path) as MeshInstance3D
 		t.ok(placeholder != null and not placeholder.visible, "%s hides the old box visual" % placeholder_path)
