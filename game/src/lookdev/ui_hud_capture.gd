@@ -71,7 +71,12 @@ func _capture_states(capture_viewport: SubViewport, run: OuterPierRun) -> void:
 	run._close_overlay()
 	run._combat_hud.health.damage(70)
 	run._combat_hud.show_warning(&"HUD_ALERT_PATROL_B")
-	run._combat_hud.show_status(&"COMBAT_REMEDY_REFUSED_HP_FULL")
+	if not inventory.consume(2).ok:
+		push_error("HUD capture could not consume the sling remedy for the low-health refusal")
+		get_tree().quit(1)
+		return
+	run._retriever.press_combat_action(&"use_remedy")
+	_verify_low_health_no_remedy_capture(run._combat_hud)
 	await _capture(capture_viewport, &"warning_status_low_health")
 	run._hud.show_prompt(&"PROMPT_ROUTE_EXTRACT_NOW")
 	await _capture(capture_viewport, &"prompt")
@@ -122,6 +127,13 @@ func _verify_depleted_capture(combat_hud: CombatHud) -> void:
 	var boot_button := combat_hud.get_node_or_null("DepletedStub/BootButton") as Button
 	if boot_button == null or not boot_button.visible or not boot_button.disabled or not combat_hud.stub_button_has_rendered_label():
 		push_error("HUD depleted capture requires a readable disabled BootButton label and progress cue")
+		get_tree().quit(1)
+
+
+func _verify_low_health_no_remedy_capture(combat_hud: CombatHud) -> void:
+	var status := combat_hud.get_node_or_null("Status") as Label
+	if combat_hud.health == null or combat_hud.health.hp >= combat_hud.health.max_hp or status == null or not status.visible or status.text != tr("COMBAT_REMEDY_REFUSED_NO_REMEDY"):
+		push_error("HUD low-health capture requires the reachable no-remedy refusal")
 		get_tree().quit(1)
 
 

@@ -4,6 +4,7 @@ const EXTRACT_HUD_SCENE := preload("res://src/ui/hud/extract_hud.tscn")
 const COMBAT_HUD_SCENE := preload("res://src/ui/combat/combat_hud.tscn")
 const OUTER_PIER_RUN_SCENE := preload("res://src/flow/outer_pier_run.tscn")
 const SUPPORTED_SIZES: Array[Vector2i] = [Vector2i(1280, 720), Vector2i(2400, 1080), Vector2i(1024, 768)]
+const HEALTH_REGRESSION_SIZES: Array[Vector2i] = [Vector2i(1367, 720), Vector2i(1280, 960)]
 
 
 func test_ui_hud_safe_area_uses_display_bounds_or_the_inset_fallback(t) -> bool:
@@ -18,6 +19,12 @@ func test_ui_hud_safe_area_uses_display_bounds_or_the_inset_fallback(t) -> bool:
 func test_ui_hud_all_visible_states_stay_safe_and_non_overlapping_at_supported_aspect_ratios(t) -> bool:
 	for size: Vector2i in SUPPORTED_SIZES:
 		await _assert_all_hud_states(t, size)
+	return true
+
+
+func test_ui_hud_health_segments_do_not_paint_through_exact_value_in_production_run(t) -> bool:
+	for size: Vector2i in HEALTH_REGRESSION_SIZES:
+		await _assert_production_health_segment_bounds(t, size)
 	return true
 
 
@@ -121,7 +128,7 @@ func _assert_all_hud_states(t, size: Vector2i) -> void:
 	t.ok(danger.visible, "danger close is visible while an overlay is open at %s" % size)
 	t.eq(danger.text, "▲ " + tr("HUD_DANGER_WINDUP") + "\n" + tr("HUD_DANGER_CLOSE_HINT"), "danger close shows the full windup instruction at %s" % size)
 	t.ok(danger.autowrap_mode == TextServer.AUTOWRAP_WORD_SMART and not danger.clip_text and combat_hud.danger_text_fits(), "danger close renders both instruction lines without clipping at %s: rect=%s" % [size, danger.get_global_rect()])
-	t.ok(combat_hud.health_text_fits(), "health segments and exact health text both fit without clipping at %s" % size)
+	t.ok(combat_hud.health_text_fits(), "health segments preserve the exact health value without painting over it at %s" % size)
 	t.ok(not (extract_hud.get_node("InventoryButton") as Button).visible, "inventory trigger hides while its overlay is open at %s" % size)
 	_assert_visible_controls(t, size, &"danger_overlay", extract_hud, combat_hud)
 
@@ -134,8 +141,14 @@ func _assert_all_hud_states(t, size: Vector2i) -> void:
 
 	combat_hud.health.damage(70)
 	combat_hud.show_warning(&"HUD_ALERT_PATROL_B")
-	combat_hud.show_status(&"COMBAT_REMEDY_REFUSED_HP_FULL")
+	var consume := inventory.consume(2)
+	t.ok(consume.ok, "low-health refusal setup removes the sling remedy through the public inventory API at %s" % size)
+	combat_hud.combat.press(&"use_remedy")
 	await t.tree.process_frame
+	var status := combat_hud.get_node("Status") as Label
+	t.eq(combat_hud.health.hp, 30, "low-health refusal setup keeps the retriever at 30/100 at %s" % size)
+	t.eq(status.text, tr("COMBAT_REMEDY_REFUSED_NO_REMEDY"), "low-health refusal is reached through the real remedy path at %s" % size)
+	t.ok(status.visible, "reachable low-health no-remedy status is visible at %s" % size)
 	_assert_visible_controls(t, size, &"low_health_warning_status", extract_hud, combat_hud)
 
 	extract_hud.show_prompt(&"PROMPT_ROUTE_EXTRACT_NOW")
@@ -239,6 +252,30 @@ func _assert_production_inventory_overlay(t, size: Vector2i) -> void:
 	await t.tree.process_frame
 
 
+func _assert_production_health_segment_bounds(t, size: Vector2i) -> void:
+	RunSession.clear()
+	var viewport := SubViewport.new()
+	viewport.name = "HudHealthRegressionViewport"
+	viewport.size = size
+	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	t.tree.root.add_child(viewport)
+	var run := OUTER_PIER_RUN_SCENE.instantiate() as OuterPierRun
+	viewport.add_child(run)
+	await t.tree.process_frame
+	await t.tree.process_frame
+	var combat_hud := run._combat_hud
+	var segments := combat_hud.get_node("HealthPanel/Segments") as Label
+	var value := combat_hud.get_node("HealthPanel/HealthValue") as Label
+	t.ok(combat_hud.health != null and combat_hud.health.hp == combat_hud.health.max_hp, "production run starts with full health at %s" % size)
+	t.ok(segments.clip_text, "decorative health segments clip to their field at %s" % size)
+	t.ok(not value.clip_text and value.text == tr("HUD_HEALTH_VALUE").format({"hp": 100, "max_hp": 100}), "production run retains the full accessible health value at %s" % size)
+	t.ok(combat_hud.health_text_fits(), "health row renders without a segment/value collision at %s" % size)
+	t.ok(not combat_hud.health_segment_glyph_rect().intersects(value.get_global_rect()), "visible segment glyph bounds do not intersect HealthValue at %s: segments=%s value=%s" % [size, combat_hud.health_segment_glyph_rect(), value.get_global_rect()])
+	viewport.queue_free()
+	RunSession.clear()
+	await t.tree.process_frame
+
+
 func _assert_s9_inventory_overlay_composition(t, size: Vector2i) -> void:
 	RunSession.clear()
 	var viewport := SubViewport.new()
@@ -310,6 +347,11 @@ func _assert_visible_controls(t, size: Vector2i, state_name: StringName, extract
 		var font_size := inventory_button.get_theme_font_size("font_size")
 		var text_width := font.get_string_size(inventory_button.text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size).x
 		t.ok(not inventory_button.clip_text and text_width <= inventory_button.size.x - 24.0, "inventory label fits without clipping for %s at %s: text=%.1f button=%.1f" % [state_name, size, text_width, inventory_button.size.x])
+	var remedy_button := combat_hud.get_node("RemedyButton") as Button
+	if remedy_button.is_visible_in_tree():
+		var quantity_text := tr("CARD_QUANTITY_SUFFIX").format({"quantity": combat_hud.remedy_count()})
+		t.ok(remedy_button.text.contains(quantity_text), "remedy label includes its visible quantity %s for %s at %s: text=%s" % [quantity_text, state_name, size, remedy_button.text])
+		t.ok(not remedy_button.clip_text and combat_hud.remedy_text_fits(), "remedy label including %s fits its content rect without clipping for %s at %s: text=%s rect=%s" % [quantity_text, state_name, size, remedy_button.text, remedy_button.get_global_rect()])
 
 
 func _assert_visible_controls_for_roots(t, size: Vector2i, state_name: StringName, roots: Array[Control]) -> void:

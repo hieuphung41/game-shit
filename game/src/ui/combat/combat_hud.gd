@@ -126,6 +126,10 @@ func danger_text_fits() -> bool:
 	return _button_text_fits(_danger)
 
 
+func remedy_text_fits() -> bool:
+	return _button_text_fits(_remedy)
+
+
 func stub_button_has_rendered_label() -> bool:
 	if _stub_button == null or not _stub_button.visible or _stub_button.text.strip_edges().is_empty() or not _button_text_fits(_stub_button):
 		return false
@@ -218,7 +222,10 @@ func _build() -> void:
 	_health_panel.name = "HealthPanel"
 	add_child(_health_panel)
 	_health_segments = _label("Segments", &"", 20)
-	_health_segments.clip_text = false
+	# Segments are a compact visual aid; the adjacent value keeps the complete,
+	# accessible HP count. Clip the decorative field to its allocated cell so a
+	# narrow intermediate layout can never paint through that exact value.
+	_health_segments.clip_text = true
 	_health_panel.add_child(_health_segments)
 	_health_value = _label("HealthValue", &"HUD_HEALTH_VALUE", 28)
 	_health_value.clip_text = false
@@ -262,6 +269,10 @@ func _combat_button(node_name: String, key: StringName, action: StringName, righ
 	button.set_meta(&"hud_right", right)
 	button.set_meta(&"hud_bottom", bottom)
 	if action == &"use_remedy":
+		# C4 keeps its specified 96x96 touch target. Its localized label and
+		# quantity use two deliberate lines rather than clipping the count.
+		button.clip_text = false
+		button.autowrap_mode = TextServer.AUTOWRAP_OFF
 		button.pressed.connect(press_action.bind(action))
 	elif action != &"combat_guard":
 		button.button_down.connect(press_action.bind(action))
@@ -365,7 +376,13 @@ func _refresh_buttons() -> void:
 		_guard.disabled = false
 	if _remedy != null:
 		_remedy.disabled = combat.state == RetrieverCombat.STATE_GUARDING
-		_remedy.text = tr("HUD_BUTTON_REMEDY") + (" ◌" if _remedy_channel_active else "") + " ×" + str(remedy_count())
+		_remedy.text = _remedy_label()
+
+
+func _remedy_label() -> String:
+	var activity_marker := "◌ " if _remedy_channel_active else ""
+	var quantity := tr("CARD_QUANTITY_SUFFIX").format({"quantity": remedy_count()})
+	return "%s\n%s%s" % [tr("HUD_BUTTON_REMEDY"), activity_marker, quantity]
 
 
 func _refresh_danger() -> void:
@@ -479,14 +496,18 @@ func _button_text_fits(button: Button) -> bool:
 	var font_size := button.get_theme_font_size("font_size")
 	if font == null or font_size <= 0:
 		return false
-	# UiTheme gives buttons 12 px of horizontal content margin on both sides.
-	var content_width := button.size.x - 24.0 * HudLayout.scale_for_control(self)
+	var content_width := button.size.x
+	var content_height := button.size.y
+	var style := button.get_theme_stylebox("normal")
+	if style != null:
+		content_width -= style.get_content_margin(SIDE_LEFT) + style.get_content_margin(SIDE_RIGHT)
+		content_height -= style.get_content_margin(SIDE_TOP) + style.get_content_margin(SIDE_BOTTOM)
 	var line_count := 0
 	for line: String in button.text.split("\n"):
 		line_count += 1
 		if font.get_string_size(line, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size).x > content_width:
 			return false
-	return float(line_count) * font.get_height(font_size) <= button.size.y
+	return float(line_count) * font.get_height(font_size) <= content_height
 
 
 func _anchor_bottom_right(control: Control, right: float, bottom: float, dimensions: Vector2) -> void:
@@ -583,7 +604,24 @@ func health_text_fits() -> bool:
 	if _health_panel == null or _health_value == null or _health_segments == null or _health_low == null:
 		return false
 	var left := _health_low if _health_low.visible else _health_segments
-	return not _health_value.clip_text and not left.clip_text \
-		and _text_width(left, left.text) <= left.size.x \
+	var left_fits := not left.clip_text and _text_width(left, left.text) <= left.size.x
+	if left == _health_segments:
+		left_fits = _health_segments.clip_text
+	return not _health_value.clip_text and left_fits \
 		and _text_width(_health_value, _health_value.text) <= _health_value.size.x \
-		and not left.get_rect().intersects(_health_value.get_rect())
+		and not health_segment_glyph_rect().intersects(_health_value.get_global_rect())
+
+
+## Returns the bounds of glyphs that can actually be rendered. When segments
+## are clipped, their visible bounds cannot extend beyond the field rect; this
+## lets layout tests distinguish label geometry from a real painted overlap.
+func health_segment_glyph_rect() -> Rect2:
+	if _health_segments == null or not _health_segments.visible:
+		return Rect2()
+	var rect := _health_segments.get_global_rect()
+	var glyph_width := _text_width(_health_segments, _health_segments.text)
+	var canvas_scale := _health_segments.get_global_transform_with_canvas().get_scale().x
+	glyph_width *= absf(canvas_scale)
+	if _health_segments.clip_text:
+		glyph_width = minf(glyph_width, rect.size.x)
+	return Rect2(rect.position, Vector2(glyph_width, rect.size.y))
