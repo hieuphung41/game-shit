@@ -218,10 +218,10 @@ func _build() -> void:
 	_health_panel.name = "HealthPanel"
 	add_child(_health_panel)
 	_health_segments = _label("Segments", &"", 20)
-	_health_segments.clip_text = true
+	_health_segments.clip_text = false
 	_health_panel.add_child(_health_segments)
 	_health_value = _label("HealthValue", &"HUD_HEALTH_VALUE", 28)
-	_health_value.clip_text = true
+	_health_value.clip_text = false
 	_health_panel.add_child(_health_value)
 	_health_low = _label("LowHealth", &"HUD_HEALTH_LOW", 24)
 	_health_panel.add_child(_health_low)
@@ -341,6 +341,8 @@ func _refresh() -> void:
 		_health_low.visible = is_low
 	if _warning != null:
 		_warning.visible = not _warning_key.is_empty() and not _stub_open
+	if _health_panel != null:
+		_layout_health_row(HudLayout.scale_for_control(self))
 	_refresh_status()
 	_refresh_danger()
 	_refresh_buttons()
@@ -464,6 +466,7 @@ func _button(node_name: String, key: StringName, at: Vector2, dimensions: Vector
 	button.custom_minimum_size = dimensions
 	button.position = at
 	button.size = dimensions
+	button.set_meta(&"hud_dimensions", dimensions)
 	button.focus_mode = Control.FOCUS_ALL
 	button.add_theme_font_size_override("font_size", 24)
 	return button
@@ -477,7 +480,7 @@ func _button_text_fits(button: Button) -> bool:
 	if font == null or font_size <= 0:
 		return false
 	# UiTheme gives buttons 12 px of horizontal content margin on both sides.
-	var content_width := button.size.x - 24.0
+	var content_width := button.size.x - 24.0 * HudLayout.scale_for_control(self)
 	var line_count := 0
 	for line: String in button.text.split("\n"):
 		line_count += 1
@@ -496,18 +499,91 @@ func _anchor_bottom_left(control: Control, left: float, bottom: float, dimension
 
 func _layout_hud() -> void:
 	var safe := HudLayout.safe_rect(self)
+	var layout_scale := HudLayout.scale_for_safe(safe)
+	HudLayout.apply_font_scale(_objective, 24, layout_scale)
+	HudLayout.apply_font_scale(_health_segments, 20, layout_scale)
+	HudLayout.apply_font_scale(_health_value, 28, layout_scale)
+	HudLayout.apply_font_scale(_health_low, 24, layout_scale)
+	HudLayout.apply_font_scale(_warning, 24, layout_scale)
+	HudLayout.apply_font_scale(_status, 24, layout_scale)
+	HudLayout.apply_font_scale(_danger, 24, layout_scale)
+	HudLayout.apply_font_scale(_stub.get_node("Message") as Label, 24, layout_scale)
+	HudLayout.apply_font_scale(_stub_button, 24, layout_scale)
 	HudLayout.place_top_left(_objective, safe, Vector2.ZERO, Vector2(640, 56))
 	HudLayout.place_top_left(_health_panel, safe, Vector2(0, 64), Vector2(320, 40))
-	HudLayout.place_top_left(_health_segments, Rect2(Vector2.ZERO, _health_panel.size), Vector2.ZERO, Vector2(164, 40))
-	HudLayout.place_top_left(_health_value, Rect2(Vector2.ZERO, _health_panel.size), Vector2(180, 0), Vector2(140, 40))
-	HudLayout.place_top_left(_health_low, Rect2(Vector2.ZERO, _health_panel.size), Vector2.ZERO, Vector2(164, 40))
+	_layout_health_row(layout_scale)
 	HudLayout.place_top_left(_warning, safe, Vector2(0, 112), Vector2(352, 48))
 	HudLayout.place_top_left(_status, safe, Vector2(0, 320), Vector2(392, 96))
 	HudLayout.place_top_left(_danger, safe, HudLayout.DANGER_CLOSE_OFFSET, HudLayout.DANGER_CLOSE_SIZE)
 	for button: Button in [_attack, _dodge, _guard, _remedy]:
-		HudLayout.place_bottom_right(button, safe, float(button.get_meta(&"hud_right")), float(button.get_meta(&"hud_bottom")), button.size)
+		var reference_size: Vector2 = button.get_meta(&"hud_dimensions")
+		HudLayout.apply_font_scale(button, 24, layout_scale)
+		HudLayout.place_bottom_right(button, safe, float(button.get_meta(&"hud_right")), float(button.get_meta(&"hud_bottom")), reference_size)
 	HudLayout.place_top_center(_stub, safe, 248.0, Vector2(544, 192))
 	var stub_text := _stub.get_node_or_null("Message") as Label
 	if stub_text != null:
-		HudLayout.place_top_left(stub_text, Rect2(Vector2.ZERO, _stub.size), Vector2(20, 12), Vector2(504, 72))
-	HudLayout.place_top_left(_stub_button, Rect2(Vector2.ZERO, _stub.size), Vector2(40, 96), Vector2(464, 80))
+		HudLayout.place_top_left(stub_text, Rect2(Vector2.ZERO, _stub.size), Vector2(20, 12), Vector2(504, 72), layout_scale)
+	var stub_button_size: Vector2 = _stub_button.get_meta(&"hud_dimensions")
+	HudLayout.place_top_left(_stub_button, Rect2(Vector2.ZERO, _stub.size), Vector2(40, 96), stub_button_size, layout_scale)
+
+
+func _layout_health_row(layout_scale: float) -> void:
+	if _health_panel == null or _health_value == null or _health_segments == null or _health_low == null:
+		return
+	var horizontal_padding := 8.0 * layout_scale
+	var gap := 8.0 * layout_scale
+	var row_height := _health_panel.size.y
+	var left := _health_low if _health_low.visible else _health_segments
+	# The fields measure their rendered text after the shared font scale is
+	# applied. This is deliberately not a pair of fixed-width labels: at 4:3 the
+	# font floor remains readable and the segment display contracts first.
+	if left == _health_segments:
+		_set_health_segment_text_to_fit(_health_panel.size.x - horizontal_padding * 2.0 - gap - _text_width(_health_value, _health_value.text))
+	var value_width := _text_width(_health_value, _health_value.text)
+	var left_width := _text_width(left, left.text)
+	var available_left := _health_panel.size.x - horizontal_padding * 2.0 - gap - value_width
+	left_width = minf(left_width, available_left)
+	left.position = Vector2(horizontal_padding, 0.0)
+	left.size = Vector2(left_width, row_height)
+	_health_value.position = Vector2(horizontal_padding + left_width + gap, 0.0)
+	_health_value.size = Vector2(value_width, row_height)
+	# Hidden controls must not retain a stale visible rect: layout regression
+	# checks intentionally inspect every visible Label, including low-health.
+	if left == _health_low:
+		_health_segments.position = _health_low.position
+		_health_segments.size = _health_low.size
+	else:
+		_health_low.position = _health_segments.position
+		_health_low.size = _health_segments.size
+
+
+func _set_health_segment_text_to_fit(available_width: float) -> void:
+	if health == null:
+		return
+	var total := 8
+	while total > 1:
+		var filled := ceili(float(health.hp) / float(health.max_hp) * float(total))
+		var candidate := ("⚠ " if health.hp <= ceili(float(health.max_hp) * 0.3) else "♥ ") + "■".repeat(filled) + "□".repeat(total - filled)
+		if _text_width(_health_segments, candidate) <= available_width:
+			_health_segments.text = candidate
+			return
+		total -= 1
+	_health_segments.text = "♥ ■"
+
+
+func _text_width(label: Label, value: String) -> float:
+	var font := label.get_theme_font("font")
+	var font_size := label.get_theme_font_size("font_size")
+	if font == null or font_size <= 0:
+		return 0.0
+	return ceilf(font.get_string_size(value, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size).x)
+
+
+func health_text_fits() -> bool:
+	if _health_panel == null or _health_value == null or _health_segments == null or _health_low == null:
+		return false
+	var left := _health_low if _health_low.visible else _health_segments
+	return not _health_value.clip_text and not left.clip_text \
+		and _text_width(left, left.text) <= left.size.x \
+		and _text_width(_health_value, _health_value.text) <= _health_value.size.x \
+		and not left.get_rect().intersects(_health_value.get_rect())

@@ -21,9 +21,49 @@ func test_ui_hud_all_visible_states_stay_safe_and_non_overlapping_at_supported_a
 	return true
 
 
+func test_ui_hud_scales_reference_measurements_on_20_by_9_and_fits_4_by_3(t) -> bool:
+	var baseline := await _make_fixture(t, Vector2i(1280, 720))
+	var wide := await _make_fixture(t, Vector2i(2400, 1080))
+	var narrow := await _make_fixture(t, Vector2i(1024, 768))
+	var baseline_extract := baseline["extract"] as ExtractHud
+	var wide_extract := wide["extract"] as ExtractHud
+	var narrow_extract := narrow["extract"] as ExtractHud
+	var baseline_combat := baseline["combat"] as CombatHud
+	var wide_combat := wide["combat"] as CombatHud
+	var narrow_combat := narrow["combat"] as CombatHud
+	var baseline_scale := HudLayout.scale_for_safe(HudLayout.safe_rect(baseline_extract))
+	var wide_scale := HudLayout.scale_for_safe(HudLayout.safe_rect(wide_extract))
+	var narrow_scale := HudLayout.scale_for_safe(HudLayout.safe_rect(narrow_extract))
+	t.eq(baseline_scale, 1.0, "1280x720 keeps the authored reference measurements")
+	t.eq(wide_scale, HudLayout.MAX_LAYOUT_SCALE, "2400x1080 reaches the bounded 20:9 HUD scale")
+	t.ok(narrow_scale < 1.0, "1024x768 fits the same reference layout through its narrow safe width")
+	var baseline_inventory := baseline_extract.get_node("InventoryButton") as Button
+	var wide_inventory := wide_extract.get_node("InventoryButton") as Button
+	var narrow_inventory := narrow_extract.get_node("InventoryButton") as Button
+	t.ok(wide_inventory.size.is_equal_approx(baseline_inventory.size * wide_scale), "20:9 inventory touch rect scales from the 1280x720 reference")
+	t.ok(narrow_inventory.size.x <= baseline_inventory.size.x and narrow_inventory.size.y <= baseline_inventory.size.y, "4:3 inventory touch rect fits inside its reference footprint even with the font floor")
+	var baseline_danger := baseline_combat.get_node("DangerClose") as Button
+	var wide_danger := wide_combat.get_node("DangerClose") as Button
+	t.ok(wide_danger.size.is_equal_approx(baseline_danger.size * wide_scale), "20:9 danger rect scales from the 1280x720 reference")
+	var baseline_font := baseline_inventory.get_theme_font_size("font_size")
+	t.eq(wide_inventory.get_theme_font_size("font_size"), HudLayout.scaled_font_size(baseline_font, wide_scale), "20:9 inventory label uses the same layout scale as its touch rect")
+	var narrow_objective := narrow_combat.get_node("Objective") as Label
+	t.ok(narrow_objective.get_theme_font_size("font_size") >= HudLayout.MIN_FONT_SIZE, "4:3 text keeps the readable font floor")
+	await _free_fixture(t, narrow)
+	await _free_fixture(t, wide)
+	await _free_fixture(t, baseline)
+	return true
+
+
 func test_ui_hud_inventory_overlay_uses_the_production_overlay_layer_at_supported_aspect_ratios(t) -> bool:
 	for size: Vector2i in SUPPORTED_SIZES:
 		await _assert_production_inventory_overlay(t, size)
+	return true
+
+
+func test_ui_hud_s9_inventory_overlay_keeps_banner_and_dock_composed(t) -> bool:
+	for size: Vector2i in SUPPORTED_SIZES:
+		await _assert_s9_inventory_overlay_composition(t, size)
 	return true
 
 
@@ -81,6 +121,7 @@ func _assert_all_hud_states(t, size: Vector2i) -> void:
 	t.ok(danger.visible, "danger close is visible while an overlay is open at %s" % size)
 	t.eq(danger.text, "▲ " + tr("HUD_DANGER_WINDUP") + "\n" + tr("HUD_DANGER_CLOSE_HINT"), "danger close shows the full windup instruction at %s" % size)
 	t.ok(danger.autowrap_mode == TextServer.AUTOWRAP_WORD_SMART and not danger.clip_text and combat_hud.danger_text_fits(), "danger close renders both instruction lines without clipping at %s: rect=%s" % [size, danger.get_global_rect()])
+	t.ok(combat_hud.health_text_fits(), "health segments and exact health text both fit without clipping at %s" % size)
 	t.ok(not (extract_hud.get_node("InventoryButton") as Button).visible, "inventory trigger hides while its overlay is open at %s" % size)
 	_assert_visible_controls(t, size, &"danger_overlay", extract_hud, combat_hud)
 
@@ -165,6 +206,7 @@ func _assert_production_inventory_overlay(t, size: Vector2i) -> void:
 	t.ok(run._overlay_layer.layer > run._hud_layer.layer, "inventory overlay renders above the HUD layer at %s" % size)
 	_assert_inventory_view_title_is_unique(t, size, overlay)
 	_assert_inventory_overlay_controls(t, size, run, overlay)
+	_assert_inventory_overlay_reference_layout(t, size, overlay)
 	var remedy := overlay.inventory.notary_box.items.get(1) as ItemInstance
 	var source_item := overlay.get_node_or_null("LootGridPanel/NotaryBox/Item_%d" % remedy.uid) as Button
 	t.ok(source_item != null, "production VIEW exposes the sealed source item for selection at %s" % size)
@@ -180,6 +222,7 @@ func _assert_production_inventory_overlay(t, size: Vector2i) -> void:
 			await t.tree.process_frame
 			t.ok(overlay.has_pending_confirmation(), "selected production item opens O5i before withdrawal at %s" % size)
 			_assert_inventory_overlay_controls(t, size, run, overlay)
+			_assert_inventory_overlay_reference_layout(t, size, overlay)
 			var confirmation := overlay._confirmation
 			if confirmation != null:
 				confirmation._opened_at_msec = Time.get_ticks_msec() - 301
@@ -191,6 +234,40 @@ func _assert_production_inventory_overlay(t, size: Vector2i) -> void:
 					t.ok(not overlay.has_pending_confirmation(), "O5i cancel restores the production inventory view at %s" % size)
 					_assert_inventory_overlay_controls(t, size, run, overlay)
 	run.set_process(true)
+	viewport.queue_free()
+	RunSession.clear()
+	await t.tree.process_frame
+
+
+func _assert_s9_inventory_overlay_composition(t, size: Vector2i) -> void:
+	RunSession.clear()
+	var viewport := SubViewport.new()
+	viewport.name = "HudS9InventoryOverlayViewport"
+	viewport.size = size
+	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	t.tree.root.add_child(viewport)
+	var run := OUTER_PIER_RUN_SCENE.instantiate() as OuterPierRun
+	viewport.add_child(run)
+	await t.tree.process_frame
+	await t.tree.process_frame
+	_carry_manifest(t, RunSession.inventory)
+	run.flow.set_in_beacon_zone(true)
+	t.ok(run.flow.request_call() and run.flow.confirm_call(), "S9 inventory setup confirms the real call state at %s" % size)
+	for _tick in 6:
+		run.flow.tick(0.25)
+	run.flow.hold_remaining = 0.0
+	run.flow.tick(0.25)
+	await t.tree.process_frame
+	t.eq(run.flow.extract_state, ExtractPierAFlow.ExtractState.S9_BOAT_READY, "S9 inventory setup reaches the real boat-ready state at %s" % size)
+	run._open_inventory_view()
+	await t.tree.process_frame
+	var overlay := run._overlay as LootCachePanel
+	var banner_panel := run._hud.get_node("BannerPanel") as Panel
+	var dock := overlay.get_node_or_null("LootGridPanel") as Control if overlay != null else null
+	t.ok(overlay != null and dock != null, "S9 inventory opens the production dock at %s" % size)
+	t.ok(banner_panel != null and not banner_panel.is_visible_in_tree(), "S9 hides the conflicting banner while its inventory dock is open at %s" % size)
+	if banner_panel != null and dock != null and banner_panel.is_visible_in_tree():
+		t.ok(not banner_panel.get_global_rect().intersects(dock.get_global_rect()), "visible S9 banner does not overlap the production inventory dock at %s" % size)
 	viewport.queue_free()
 	RunSession.clear()
 	await t.tree.process_frame
@@ -330,6 +407,22 @@ func _assert_inventory_view_title_is_unique(t, size: Vector2i, overlay: LootCach
 		if control is Label and (control as Label).text == tr(&"INVENTORY_PANEL_TITLE"):
 			title_count += 1
 	t.eq(title_count, 1, "VIEW without a selected item renders INVENTORY_PANEL_TITLE exactly once at %s" % size)
+
+
+func _assert_inventory_overlay_reference_layout(t, size: Vector2i, overlay: LootCachePanel) -> void:
+	var safe := HudLayout.safe_rect(overlay)
+	var scale := HudLayout.scale_for_safe(safe)
+	var confirmation := overlay._confirmation
+	if confirmation != null:
+		var modal := confirmation.get_node_or_null("InventoryConfirmPanel") as Control
+		t.ok(modal != null and modal.get_global_rect().size.is_equal_approx(Vector2(296, 392) * scale), "O5i dimensions scale from the safe-area reference at %s" % size)
+		if modal != null:
+			t.ok(safe.encloses(modal.get_global_rect()), "O5i reference composition remains inside the safe area at %s" % size)
+		return
+	var dock := overlay.get_node_or_null("LootGridPanel") as Control
+	t.ok(dock != null and dock.get_global_rect().size.is_equal_approx(Vector2(560, 528) * scale), "inventory dock dimensions scale from the safe-area reference at %s" % size)
+	if dock != null:
+		t.ok(safe.encloses(dock.get_global_rect()), "inventory dock reference composition remains inside the safe area at %s" % size)
 
 
 func _visible_overlay_text_controls(root: Control) -> Array[Control]:

@@ -32,16 +32,18 @@ var _drop_or_withdraw: Button
 var _close_button: Button
 var _confirmation: InventoryConfirmPanel
 
-const DOCK_RIGHT_INSET := 16.0
-const GRID_DOCK_TOP := 176.0
+## Reference coordinates are measured inside HudLayout's 16 px safe inset.
+const DOCK_RIGHT_INSET := 0.0
+const GRID_DOCK_TOP := 160.0
 const GRID_DOCK_SIZE := Vector2(560, 528)
-const CLOSE_BUTTON_TOP := 16.0
+const CLOSE_BUTTON_TOP := 0.0
 const CLOSE_BUTTON_SIZE := Vector2(96, 96)
 const INVENTORY_CONFIRM_SCENE := preload("res://src/ui/confirm/inventory_confirm_panel.tscn")
 
 
 func _ready() -> void:
 	theme = UiTheme.create()
+	resized.connect(_relayout_grid)
 	if inventory != null and cache != null:
 		open_card()
 
@@ -715,14 +717,23 @@ func _static_label(node_name: String, value: String, font_size: int) -> Label:
 
 
 func _anchor_top_right(control: Control, right_inset: float, top: float, dimensions: Vector2) -> void:
-	control.anchor_left = 1.0
-	control.anchor_top = 0.0
-	control.anchor_right = 1.0
-	control.anchor_bottom = 0.0
-	control.offset_left = -right_inset - dimensions.x
-	control.offset_top = top
-	control.offset_right = -right_inset
-	control.offset_bottom = top + dimensions.y
+	var safe := HudLayout.safe_rect(self)
+	var layout_scale := HudLayout.scale_for_safe(safe)
+	if control.name == "LootGridPanel":
+		# The dock is authored as one 1280x720 composition: grids, labels and
+		# their child touch cells remain in reference units under this root.
+		HudLayout.place_reference_top_right(control, safe, right_inset, top, dimensions, layout_scale)
+		return
+	HudLayout.place_top_right(control, safe, right_inset, top, dimensions, layout_scale)
+	HudLayout.apply_font_scale(control, 24, layout_scale)
+
+
+func _relayout_grid() -> void:
+	var dock := get_node_or_null("LootGridPanel") as Control
+	if dock != null:
+		_anchor_top_right(dock, DOCK_RIGHT_INSET, GRID_DOCK_TOP, GRID_DOCK_SIZE)
+	if _close_button != null:
+		_anchor_top_right(_close_button, DOCK_RIGHT_INSET, CLOSE_BUTTON_TOP, CLOSE_BUTTON_SIZE)
 
 
 func _button(node_name: String, key: StringName) -> Button:

@@ -21,6 +21,7 @@ var _confirmation_locked := false
 
 func _ready() -> void:
 	theme = UiTheme.create()
+	resized.connect(_layout_panel)
 	_build()
 
 
@@ -94,8 +95,6 @@ func _build() -> void:
 		child.queue_free()
 	var panel := Panel.new()
 	panel.name = "InventoryConfirmPanel"
-	panel.position = Vector2(312, 184)
-	panel.size = Vector2(296, 392)
 	add_child(panel)
 	var is_withdraw := _kind == &"withdraw"
 	var title_key: StringName = &"INVENTORY_CONFIRM_WITHDRAW_TITLE" if is_withdraw else &"INVENTORY_CONFIRM_DROP_TITLE"
@@ -133,6 +132,16 @@ func _build() -> void:
 	# O5i can open from a grid touch, which leaves focus on the dock beneath it.
 	# Defer until this control is in the viewport so ui_accept always targets O5i.
 	accept_button.call_deferred("grab_focus")
+	_layout_panel()
+
+
+func _layout_panel() -> void:
+	var panel := get_node_or_null("InventoryConfirmPanel") as Panel
+	if panel == null:
+		return
+	# O5i is a reference composition. Its child rows keep their designed
+	# relationship while this root reflows inside the current safe area.
+	HudLayout.place_reference_top_left(panel, HudLayout.safe_rect(self), Vector2(296, 168), Vector2(296, 392))
 
 
 func _body_key(is_withdraw: bool) -> StringName:

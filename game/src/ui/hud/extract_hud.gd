@@ -56,8 +56,12 @@ func set_overlay_open(open: bool) -> void:
 	if open:
 		if _context_button != null:
 			_context_button.visible = false
-		return
-	_refresh_context()
+	else:
+		_refresh_context()
+	# The full-height inventory dock occupies the S9 banner's reference band.
+	# While that dock is open, keep the boat-ready state in the objective and
+	# world marker rather than rendering a second, overlapping HUD panel.
+	_refresh_banner()
 
 
 func show_prompt(key: StringName) -> void:
@@ -177,6 +181,11 @@ func _refresh_beacon() -> void:
 func _refresh_banner() -> void:
 	if _banner == null or flow == null:
 		return
+	if _overlay_open and flow.extract_state == ExtractPierAFlow.ExtractState.S9_BOAT_READY:
+		_banner.text = ""
+		_banner.visible = false
+		_banner_panel.visible = false
+		return
 	match flow.extract_state:
 		ExtractPierAFlow.ExtractState.S7_CALL_ACCEPTED:
 			_banner.text = tr("EXTRACT_S7_CALL_ACCEPTED")
@@ -259,10 +268,21 @@ func _on_child_entered_tree(child: Node) -> void:
 
 func _layout_hud() -> void:
 	var safe := HudLayout.safe_rect(self)
+	var layout_scale := HudLayout.scale_for_safe(safe)
+	HudLayout.apply_font_scale(_objective, 24, layout_scale)
+	HudLayout.apply_font_scale(_banner, 24, layout_scale)
+	HudLayout.apply_font_scale(_beacon, 20, layout_scale)
+	HudLayout.apply_font_scale(_inventory_button, 20, layout_scale)
+	HudLayout.apply_font_scale(_context_button, 24, layout_scale)
+	HudLayout.apply_font_scale(_prompt, 20, layout_scale)
+	_beacon_margins.add_theme_constant_override("margin_left", roundi(12.0 * layout_scale))
+	_beacon_margins.add_theme_constant_override("margin_top", roundi(8.0 * layout_scale))
+	_beacon_margins.add_theme_constant_override("margin_right", roundi(12.0 * layout_scale))
+	_beacon_margins.add_theme_constant_override("margin_bottom", roundi(8.0 * layout_scale))
 	var objective_panel := get_node_or_null("ObjectivePanel") as Panel
 	if objective_panel != null:
 		HudLayout.place_top_left(objective_panel, safe, Vector2.ZERO, Vector2(640, 56))
-		HudLayout.place_top_left(_objective, Rect2(Vector2.ZERO, objective_panel.size), Vector2(16, 0), Vector2(608, 56))
+		HudLayout.place_top_left(_objective, Rect2(Vector2.ZERO, objective_panel.size), Vector2(16, 0), Vector2(608, 56), layout_scale)
 	_layout_banner(safe)
 	if _beacon_panel != null:
 		HudLayout.place_top_right(_beacon_panel, safe, 16.0, 112.0, Vector2(348, 96))
@@ -271,7 +291,7 @@ func _layout_hud() -> void:
 	# On 4:3 the fixed combat-action row reaches farther left. Preserve the R6
 	# joystick gap and let the prompt wrap inside the remaining bottom-middle slot.
 	var prompt_left := 280.0
-	var prompt_width := minf(392.0, safe.end.x - 560.0 - (safe.position.x + prompt_left))
+	var prompt_width := minf(392.0, (safe.size.x - (prompt_left + 560.0) * layout_scale) / layout_scale)
 	HudLayout.place_bottom_left(_prompt, safe, prompt_left, 0.0, Vector2(maxf(64.0, prompt_width), 112))
 	for child: Node in get_children():
 		if child is Button and child != _context_button and child != _inventory_button and child != _prompt:
@@ -293,13 +313,14 @@ func _layout_banner(safe: Rect2) -> void:
 	const banner_vertical_margin := 12.0
 	const banner_min_height := 64.0
 	const banner_max_height := 240.0
-	var maximum_height := minf(banner_max_height, safe.end.y - safe.position.y - 112.0)
+	var layout_scale := HudLayout.scale_for_safe(safe)
+	var maximum_height := minf(banner_max_height, safe.size.y / layout_scale - 112.0)
 	HudLayout.place_top_right(_banner_panel, safe, 0.0, 112.0, Vector2(banner_width, maximum_height))
-	HudLayout.place_top_left(_banner, Rect2(Vector2.ZERO, _banner_panel.size), Vector2(banner_horizontal_margin, banner_vertical_margin), Vector2(banner_width - banner_horizontal_margin * 2.0, maximum_height - banner_vertical_margin * 2.0))
-	var content_height := _banner_content_height()
+	HudLayout.place_top_left(_banner, Rect2(Vector2.ZERO, _banner_panel.size), Vector2(banner_horizontal_margin, banner_vertical_margin), Vector2(banner_width - banner_horizontal_margin * 2.0, maximum_height - banner_vertical_margin * 2.0), layout_scale)
+	var content_height := _banner_content_height() / layout_scale
 	var panel_height := clampf(content_height + banner_vertical_margin * 2.0, banner_min_height, maximum_height)
 	HudLayout.place_top_right(_banner_panel, safe, 0.0, 112.0, Vector2(banner_width, panel_height))
-	HudLayout.place_top_left(_banner, Rect2(Vector2.ZERO, _banner_panel.size), Vector2(banner_horizontal_margin, banner_vertical_margin), Vector2(banner_width - banner_horizontal_margin * 2.0, panel_height - banner_vertical_margin * 2.0))
+	HudLayout.place_top_left(_banner, Rect2(Vector2.ZERO, _banner_panel.size), Vector2(banner_horizontal_margin, banner_vertical_margin), Vector2(banner_width - banner_horizontal_margin * 2.0, panel_height - banner_vertical_margin * 2.0), layout_scale)
 
 
 func banner_text_fits() -> bool:
