@@ -11,3 +11,8 @@ static func camera_relative_direction(stick_direction: Vector2, camera_basis: Ba
 	var camera_forward := Vector3(-camera_basis.z.x, 0.0, -camera_basis.z.z).normalized()
 	var world_direction := camera_right * clamped_stick.x - camera_forward * clamped_stick.y
 	return world_direction.normalized() * clamped_stick.length()
+
+
+static func screen_direction_for_world_direction(world_direction: Vector3, camera_basis: Basis) -> Vector2:
+	var camera_space_direction := camera_basis.inverse() * world_direction
+	return Vector2(camera_space_direction.x, -camera_space_direction.y)
