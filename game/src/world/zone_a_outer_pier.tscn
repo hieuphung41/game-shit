@@ -53,7 +53,19 @@ shader_parameter/hatch_line_width = 0.2
 shader_parameter/hatch_strength = 0.9
 shader_parameter/hatch_irregularity = 1.0
 shader_parameter/hatch_dash_frequency = 0.33
+shader_parameter/hatch_cluster_enabled = true
+shader_parameter/hatch_cluster_coverage = 0.42
+shader_parameter/hatch_cluster_cell_size = 2.4
 shader_parameter/hatch_gouge_colour = Color(0.92549, 0.890196, 0.811765, 1)
+
+[sub_resource type="ShaderMaterial" id="PaperGougeOverride"]
+resource_name = "toon_env_paper_gouge_override"
+shader = ExtResource("10_toon")
+shader_parameter/albedo_color = Color(0.92549, 0.890196, 0.811765, 1)
+shader_parameter/shadow_indigo = Color(0.172549, 0.192157, 0.258824, 1)
+shader_parameter/paper_grain_enabled = false
+shader_parameter/hatch_enabled = false
+shader_parameter/paper_gouge_override = true
 
 [sub_resource type="ShaderMaterial" id="WoodBroadPrint"]
 resource_name = "toon_env_wood_broad_print"
@@ -95,6 +107,18 @@ size = Vector3(0.18, 1.2, 1.05)
 
 [sub_resource type="BoxMesh" id="DeskTopMesh"]
 size = Vector3(1.7, 0.16, 0.82)
+
+[sub_resource type="BoxMesh" id="DispatchFasciaMesh"]
+size = Vector3(1.38, 0.34, 0.055)
+
+[sub_resource type="BoxMesh" id="DispatchGougeLongMesh"]
+size = Vector3(0.58, 0.065, 0.014)
+
+[sub_resource type="BoxMesh" id="DispatchGougeMediumMesh"]
+size = Vector3(0.43, 0.065, 0.014)
+
+[sub_resource type="BoxMesh" id="DispatchGougeShortMesh"]
+size = Vector3(0.28, 0.065, 0.014)
 
 [sub_resource type="BoxMesh" id="DeskLegMesh"]
 size = Vector3(0.14, 0.9, 0.14)
@@ -258,6 +282,32 @@ rotation_degrees = Vector3(0, 0, -4)
 mesh = SubResource("ManifestMesh")
 material_override = ExtResource("5_paper")
 
+[node name="DispatchShadowFascia" type="MeshInstance3D" parent="DispatchDesk"]
+position = Vector3(0, 0.62, 0.515)
+mesh = SubResource("DispatchFasciaMesh")
+material_override = SubResource("WoodDarkHatchPriority")
+
+[node name="PaperGougeCluster" type="Node3D" parent="DispatchDesk/DispatchShadowFascia"]
+position = Vector3(0, 0, 0.035)
+
+[node name="GougeLong" type="MeshInstance3D" parent="DispatchDesk/DispatchShadowFascia/PaperGougeCluster"]
+position = Vector3(-0.16, 0.1, 0)
+rotation_degrees = Vector3(0, 0, -3)
+mesh = SubResource("DispatchGougeLongMesh")
+material_override = SubResource("PaperGougeOverride")
+
+[node name="GougeMedium" type="MeshInstance3D" parent="DispatchDesk/DispatchShadowFascia/PaperGougeCluster"]
+position = Vector3(0.15, 0, 0)
+rotation_degrees = Vector3(0, 0, -3)
+mesh = SubResource("DispatchGougeMediumMesh")
+material_override = SubResource("PaperGougeOverride")
+
+[node name="GougeShort" type="MeshInstance3D" parent="DispatchDesk/DispatchShadowFascia/PaperGougeCluster"]
+position = Vector3(-0.22, -0.1, 0)
+rotation_degrees = Vector3(0, 0, -3)
+mesh = SubResource("DispatchGougeShortMesh")
+material_override = SubResource("PaperGougeOverride")
+
 [node name="BeaconA" type="Node3D" parent="."]
 position = Vector3(-5.25, 0, -5.2)
 rotation_degrees = Vector3(0, 3, -2)
@@ -385,7 +435,7 @@ position = Vector3(0, 0, 0)
 rotation_degrees = Vector3(0, 90, 0)
 scale = Vector3(0.68, 0.68, 0.68)
 script = ExtResource("12_third_party_material")
-library_material = ExtResource("3_wood_dark")
+library_material = SubResource("WoodDarkHatchPriority")
 
 [node name="Counter" parent="DispatchDesk/KenneyDeskModel" instance=ExtResource("20_kenney_platform_small")]
 
@@ -466,7 +516,8 @@ metadata/expected_hex = "#7B5B40"
 metadata/tolerance = 10.0
 
 [node name="ProbeZoneADeckShadow" type="Marker3D" parent="." groups=["zone_a_lookdev_probe"]]
-position = Vector3(-4.58, 0.095, -3.6)
+position = Vector3(2.25, 0.095, 1.25)
 metadata/role = "shadow"
 metadata/surface_path = "PierDeck"
+metadata/expected_hex = "#2C3142"
 metadata/tolerance = 12.0

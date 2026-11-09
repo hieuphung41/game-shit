@@ -8,6 +8,7 @@ const PROBE_SURFACE_OFFSET := 0.04
 const TRIANGLE_EPSILON := 0.00001
 const RETRIEVER_SCENE := preload("res://src/player/retriever.tscn")
 const BACKGROUND_PROBE_PIXEL := Vector2(96.0, 96.0)
+const DISPATCH_DETAIL_REGION := Rect2i(480, 360, 320, 180)
 
 @onready var camera: Camera3D = $CameraIsometric
 @onready var world_environment: WorldEnvironment = $WorldEnvironment
@@ -35,21 +36,7 @@ func _capture(capture_directory: String) -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	RenderingServer.force_sync()
-	for debug_point: Vector3 in [Vector3(-6.5, 0.095, -4.5), Vector3(-5.5, 0.095, -2.5), Vector3(-4.5, 0.095, -1.5), Vector3(-3.5, 0.095, -0.5), Vector3(-2.5, 0.095, 0.5), Vector3(-1.5, 0.095, 1.5), Vector3(-0.5, 0.095, 2.5), Vector3(0.5, 0.095, 3.5), Vector3(1.5, 0.095, 4.5)]:
-		print("SWEEP %s -> %s" % [debug_point, camera.unproject_position(debug_point)])
 	var game_image: Image = get_viewport().get_texture().get_image()
-	for grid_x: int in range(-6, 7):
-		for grid_z: int in range(-4, 5):
-			var debug_probe := Marker3D.new()
-			add_child(debug_probe)
-			debug_probe.position = Vector3(float(grid_x) + 0.25, 0.095, float(grid_z) + 0.25)
-			debug_probe.set_meta("surface_path", "PierDeck")
-			if _probe_surface_is_visible(camera, debug_probe):
-				var debug_screen := camera.unproject_position(debug_probe.global_position)
-				var debug_colour := _sample_pixel_cross(game_image, Vector2i(roundi(debug_screen.x), roundi(debug_screen.y)))
-				if debug_colour.to_html(false).to_upper().begins_with("2C31"):
-					print("DARK DECK %s %s" % [debug_probe.position, debug_colour.to_html(false).to_upper()])
-			debug_probe.queue_free()
 	if game_image == null:
 		push_error("Zone A capture needs an active rendering viewport")
 		get_tree().quit(1)
@@ -63,6 +50,12 @@ func _capture(capture_directory: String) -> void:
 		var phone_image: Image = game_image.duplicate()
 		phone_image.resize(PHONE_WIDTH, PHONE_HEIGHT, Image.INTERPOLATE_NEAREST)
 		result = phone_image.save_png(capture_directory.path_join("zone_a_phone.png"))
+	if result == OK:
+		# This is an in-engine crop of the fixed gameplay camera, not a separate
+		# presentation camera. It lets review inspect the desk's WC-02 cuts.
+		var dispatch_detail: Image = game_image.get_region(DISPATCH_DETAIL_REGION)
+		dispatch_detail.resize(game_image.get_width(), game_image.get_height(), Image.INTERPOLATE_NEAREST)
+		result = dispatch_detail.save_png(capture_directory.path_join("zone_a_detail.png"))
 	if result != OK:
 		push_error("Could not save Zone A capture(s): %s" % error_string(result))
 	get_tree().quit(0 if result == OK else 1)
