@@ -20,7 +20,7 @@
     {
       "id": "kenney-pirate-crate",
       "path": "game/assets/third_party/kenney-pirate-kit/crate.glb",
-      "role": "Khối thùng tham chiếu cạnh thùng greybox của Bến Ngoài; material gốc bị thay khi render.",
+      "role": "Thùng CC0 cho Bến Ngoài, cover Chợ Ngập và Sổ Kho Ngấm Nước ở Kho Nổi; material gốc bị thay khi render.",
       "lane": "env",
       "status": "in_review",
       "source": {
@@ -56,7 +56,7 @@
     {
       "id": "kenney-pirate-platform-planks",
       "path": "game/assets/third_party/kenney-pirate-kit/platform-planks.glb",
-      "role": "Khối ván tham chiếu cạnh sàn greybox của Bến Ngoài; material gốc bị thay khi render.",
+      "role": "Khối ván CC0 cho Bến Ngoài và pallet cargo 2x2 Kho Nổi; material gốc bị thay khi render.",
       "lane": "env",
       "status": "in_review",
       "source": {
@@ -92,7 +92,7 @@
     {
       "id": "kenney-pirate-crate-bottles",
       "path": "game/assets/third_party/kenney-pirate-kit/crate-bottles.glb",
-      "role": "Chồng cargo tĩnh ở Bến Ngoài; material nguồn bị thay khi render.",
+      "role": "Chồng cargo CC0 ở Bến Ngoài, cover Chợ Ngập và cargo 2x2 Kho Nổi; material nguồn bị thay khi render.",
       "lane": "env",
       "status": "in_review",
       "source": {"kind": "third_party", "url_or_tool": "https://kenney.nl/assets/pirate-kit (downloaded 2026-11-09)", "license": "CC0-1.0", "normalized": true},
@@ -102,7 +102,7 @@
     {
       "id": "kenney-pirate-mast",
       "path": "game/assets/third_party/kenney-pirate-kit/mast.glb",
-      "role": "Cọc neo và thân đèn phao Bến Ngoài; material nguồn bị thay khi render.",
+      "role": "Cọc neo Bến Ngoài và cột đèn Chợ Ngập; material nguồn bị thay khi render.",
       "lane": "env",
       "status": "in_review",
       "source": {"kind": "third_party", "url_or_tool": "https://kenney.nl/assets/pirate-kit (downloaded 2026-11-09)", "license": "CC0-1.0", "normalized": true},
@@ -122,7 +122,7 @@
     {
       "id": "kenney-pirate-structure-platform-small",
       "path": "game/assets/third_party/kenney-pirate-kit/structure-platform-small.glb",
-      "role": "Khung quầy dispatch Bến Ngoài; material nguồn bị thay khi render.",
+      "role": "Khung quầy dispatch Bến Ngoài, sạp Chợ Ngập và bàn Kho Nổi; material nguồn bị thay khi render.",
       "lane": "env",
       "status": "in_review",
       "source": {"kind": "third_party", "url_or_tool": "https://kenney.nl/assets/pirate-kit (downloaded 2026-11-09)", "license": "CC0-1.0", "normalized": true},
@@ -132,7 +132,7 @@
     {
       "id": "kenney-pirate-structure-fence-sides",
       "path": "game/assets/third_party/kenney-pirate-kit/structure-fence-sides.glb",
-      "role": "Khung bảng thông báo thuế Bến Ngoài; material nguồn bị thay khi render.",
+      "role": "Khung bảng Bến Ngoài, cổng thuế Chợ Ngập và lồng kho Kho Nổi; material nguồn bị thay khi render.",
       "lane": "env",
       "status": "in_review",
       "source": {"kind": "third_party", "url_or_tool": "https://kenney.nl/assets/pirate-kit (downloaded 2026-11-09)", "license": "CC0-1.0", "normalized": true},
@@ -142,7 +142,7 @@
     {
       "id": "kenney-pirate-structure-roof",
       "path": "game/assets/third_party/kenney-pirate-kit/structure-roof.glb",
-      "role": "Mái che bảng thông báo thuế Bến Ngoài; material nguồn bị thay khi render.",
+      "role": "Mái che bảng Bến Ngoài và mái bạt đỏ son Chợ Ngập; material nguồn bị thay khi render.",
       "lane": "env",
       "status": "in_review",
       "source": {"kind": "third_party", "url_or_tool": "https://kenney.nl/assets/pirate-kit (downloaded 2026-11-09)", "license": "CC0-1.0", "normalized": true},

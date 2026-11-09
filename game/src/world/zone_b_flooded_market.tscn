@@ -1,4 +1,4 @@
-[gd_scene load_steps=48 format=3]
+[gd_scene load_steps=55 format=3]
 
 [ext_resource type="Script" path="res://src/lookdev/zone_b_lookdev_capture.gd" id="1_capture"]
 [ext_resource type="Material" path="res://art/materials/env_wood.tres" id="2_wood"]
@@ -15,6 +15,13 @@
 [ext_resource type="PackedScene" path="res://src/vfx/lane_b_alert_lamp.tscn" id="13_alert_lamp"]
 [ext_resource type="Shader" path="res://art/shaders/toon_matte.gdshader" id="14_toon"]
 [ext_resource type="Material" path="res://art/materials/env_paper.tres" id="15_paper"]
+[ext_resource type="Script" path="res://src/lookdev/third_party_lookdev_material.gd" id="16_third_party_material"]
+[ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/crate.glb" id="17_kenney_crate"]
+[ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/crate-bottles.glb" id="18_kenney_crate_bottles"]
+[ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/mast.glb" id="19_kenney_mast"]
+[ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/structure-platform-small.glb" id="20_kenney_platform_small"]
+[ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/structure-roof.glb" id="21_kenney_roof"]
+[ext_resource type="PackedScene" path="res://assets/third_party/kenney-pirate-kit/structure-fence-sides.glb" id="22_kenney_fence"]
 
 [sub_resource type="ShaderMaterial" id="InkLandmark"]
 shader = ExtResource("10_ink")
@@ -296,6 +303,7 @@ metadata/greybox_role = "cover_collision_placeholder"
 mesh = SubResource("CoverLargeMesh")
 material_override = ExtResource("5_stone")
 material_overlay = SubResource("InkProp")
+visible = false
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="CoverB1"]
 shape = SubResource("CoverLargeShape")
@@ -335,6 +343,7 @@ metadata/greybox_role = "cover_collision_placeholder"
 mesh = SubResource("CoverLargeMesh")
 material_override = ExtResource("5_stone")
 material_overlay = SubResource("InkProp")
+visible = false
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="CoverB2"]
 shape = SubResource("CoverLargeShape")
@@ -348,6 +357,7 @@ metadata/greybox_role = "cover_collision_placeholder"
 mesh = SubResource("CoverLargeMesh")
 material_override = ExtResource("5_stone")
 material_overlay = SubResource("InkProp")
+visible = false
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="CoverB3"]
 shape = SubResource("CoverLargeShape")
@@ -361,6 +371,7 @@ metadata/greybox_role = "low_cover_collision_placeholder"
 mesh = SubResource("CoverLowMesh")
 material_override = ExtResource("3_wood_dark")
 material_overlay = SubResource("InkProp")
+visible = false
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="CoverB4"]
 shape = SubResource("CoverLowShape")
@@ -432,6 +443,7 @@ metadata/greybox_role = "cache_placeholder"
 mesh = SubResource("CacheMesh")
 material_override = ExtResource("3_wood_dark")
 material_overlay = SubResource("InkProp")
+visible = false
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="CacheB"]
 shape = SubResource("CacheShape")
@@ -718,7 +730,8 @@ metadata/tolerance = 10.0
 metadata/placement = "producer-approved visible floor surface"
 
 [node name="ProbeZoneBFloorShadow" type="Marker3D" parent="." groups=["zone_b_lookdev_probe"]]
-position = Vector3(3.3, 0.095, -2.8)
+; WestFacade casts its fixed directional shadow southeast across this calm-floor point.
+position = Vector3(0.8, 0.095, -28.65)
 metadata/role = "shadow"
 metadata/surface_path = "FloorB"
 metadata/tolerance = 12.0
@@ -749,3 +762,77 @@ metadata/tolerance = 10.0
 metadata/role = "background"
 metadata/expected_hex = "#4E6570"
 metadata/tolerance = 5.0
+
+; CC0 visuals replace only the recognisable market props. Their parents retain the
+; authored collision, placement, and clear telegraph floor from the encounter spec.
+[node name="KenneyMarketStalls" type="Node3D" parent="WestFacade"]
+position = Vector3(0.15, 0.0, 1.1)
+rotation_degrees = Vector3(0, 90, 0)
+script = ExtResource("16_third_party_material")
+library_material = ExtResource("3_wood_dark")
+metadata/visual_role = "cc0_market_stall_frames"
+
+[node name="StallCounter" parent="WestFacade/KenneyMarketStalls" instance=ExtResource("20_kenney_platform_small")]
+position = Vector3(0.0, 0.15, 0.0)
+rotation_degrees = Vector3(0, -3, 0)
+scale = Vector3(1.32, 1.32, 1.32)
+
+[node name="StallRoof" type="Node3D" parent="WestFacade"]
+position = Vector3(0.25, 2.15, 3.5)
+rotation_degrees = Vector3(0, 90, -3)
+scale = Vector3(1.18, 0.78, 1.18)
+script = ExtResource("16_third_party_material")
+library_material = ExtResource("4_canvas_red")
+metadata/visual_role = "cc0_red_canvas_market_awning"
+
+[node name="Roof" parent="WestFacade/StallRoof" instance=ExtResource("21_kenney_roof")]
+
+[node name="KenneyCargo" type="Node3D" parent="."]
+script = ExtResource("16_third_party_material")
+library_material = ExtResource("2_wood")
+metadata/visual_role = "cc0_market_crates_and_shelves"
+
+[node name="CoverOne" parent="KenneyCargo" instance=ExtResource("17_kenney_crate")]
+position = Vector3(2.6, 0.08, -2.8)
+rotation_degrees = Vector3(0, -4, 0)
+scale = Vector3(1.42, 1.42, 1.42)
+
+[node name="CoverTwo" parent="KenneyCargo" instance=ExtResource("18_kenney_crate_bottles")]
+position = Vector3(1.6, 0.08, -16.0)
+rotation_degrees = Vector3(0, 4, 0)
+scale = Vector3(1.32, 1.32, 1.32)
+
+[node name="CoverThree" parent="KenneyCargo" instance=ExtResource("17_kenney_crate")]
+position = Vector3(1.6, 0.08, -20.5)
+rotation_degrees = Vector3(0, -3, 0)
+scale = Vector3(1.42, 1.42, 1.42)
+
+[node name="FishBasket" parent="KenneyCargo" instance=ExtResource("18_kenney_crate_bottles")]
+position = Vector3(7.7, 0.04, -18.0)
+rotation_degrees = Vector3(0, 6, 0)
+scale = Vector3(1.0, 1.0, 1.0)
+
+[node name="Cache" parent="KenneyCargo" instance=ExtResource("17_kenney_crate")]
+position = Vector3(1.8, 0.08, -29.5)
+rotation_degrees = Vector3(0, -5, 0)
+scale = Vector3(1.25, 1.25, 1.25)
+
+[node name="KenneyTaxGate" type="Node3D" parent="GateB"]
+position = Vector3(0.0, 0.12, 0.0)
+rotation_degrees = Vector3(0, 90, 0)
+scale = Vector3(1.12, 1.12, 1.12)
+script = ExtResource("16_third_party_material")
+library_material = ExtResource("6_iron")
+metadata/visual_role = "cc0_tax_gate_frame"
+
+[node name="FenceFrame" parent="GateB/KenneyTaxGate" instance=ExtResource("22_kenney_fence")]
+
+[node name="KenneyLanternMast" type="Node3D" parent="LandmarkEntryLantern"]
+position = Vector3(0.0, 0.0, 0.0)
+rotation_degrees = Vector3(0, 3, 0)
+scale = Vector3(0.44, 0.44, 0.44)
+script = ExtResource("16_third_party_material")
+library_material = ExtResource("3_wood_dark")
+metadata/visual_role = "cc0_market_lantern_post"
+
+[node name="Mast" parent="LandmarkEntryLantern/KenneyLanternMast" instance=ExtResource("19_kenney_mast")]

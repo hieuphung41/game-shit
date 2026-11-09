@@ -268,3 +268,47 @@ func test_zone_b_facade_cuts_stay_sparse_and_irregular(t) -> bool:
 	zone.queue_free()
 	await t.tree.process_frame
 	return true
+
+
+func test_zone_b_cc0_market_props_keep_collision_and_use_matte_library_materials(t) -> bool:
+	var scene := load(SCENE_PATH) as PackedScene
+	if not t.ok(scene != null, "Zone B scene loads for CC0 prop checks"):
+		return true
+	var zone := scene.instantiate() as Node3D
+	t.tree.root.add_child(zone)
+	await t.tree.process_frame
+	var replacements: Dictionary = {
+		"WestFacade/KenneyMarketStalls": "structure-platform-small",
+		"WestFacade/StallRoof": "structure-roof",
+		"KenneyCargo": "crate",
+		"GateB/KenneyTaxGate": "structure-fence-sides",
+		"LandmarkEntryLantern/KenneyLanternMast": "mast",
+	}
+	for root_path: String in replacements:
+		var replacement_root := zone.get_node_or_null(root_path) as Node3D
+		if not t.ok(replacement_root != null, "%s keeps its CC0 visual root" % root_path):
+			continue
+		var expected_mesh_name: String = replacements[root_path]
+		var imported_meshes := replacement_root.find_children(expected_mesh_name, "MeshInstance3D", true, false)
+		t.ok(not imported_meshes.is_empty(), "%s contains the %s Kenney mesh" % [root_path, expected_mesh_name])
+		for node: Node in imported_meshes:
+			var mesh := node as MeshInstance3D
+			t.ok(mesh.material_override is ShaderMaterial, "%s replaces the imported material with a matte library shader" % mesh.get_path())
+	var counter := zone.get_node_or_null("WestFacade/KenneyMarketStalls/StallCounter") as Node3D
+	var roof := zone.get_node_or_null("WestFacade/StallRoof") as Node3D
+	var gate := zone.get_node_or_null("GateB/KenneyTaxGate") as Node3D
+	var cargo := zone.get_node_or_null("KenneyCargo/CoverTwo") as Node3D
+	t.ok(counter != null and counter.scale.x >= 1.3, "Market counter keeps a readable phone-scale silhouette")
+	t.ok(roof != null and roof.scale.x >= 1.15 and roof.scale.y >= 0.75, "Market awning keeps a readable phone-scale silhouette")
+	t.ok(gate != null and gate.scale.x >= 1.1, "Tax gate keeps a readable phone-scale silhouette")
+	t.ok(cargo != null and cargo.scale.x >= 1.3, "Market cargo keeps a readable phone-scale silhouette")
+	for cover_name: String in ["CoverB1", "CoverB2", "CoverB3", "CoverB4"]:
+		var collision := zone.get_node_or_null(cover_name) as StaticBody3D
+		var placeholder := zone.get_node_or_null("%s/Mesh" % cover_name) as MeshInstance3D
+		t.ok(collision != null and collision.collision_layer == 2, "%s retains authored collision under its CC0 visual" % cover_name)
+		t.ok(placeholder != null and not placeholder.visible, "%s hides the old box visual" % cover_name)
+	var floor := zone.get_node_or_null("FloorB") as MeshInstance3D
+	t.ok(floor != null and floor.visible, "B keeps its continuous clear telegraph floor")
+	zone.queue_free()
+	await t.tree.process_frame
+	return true
