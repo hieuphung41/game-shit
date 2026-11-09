@@ -166,10 +166,11 @@ func _render() -> void:
 			add_child(cell)
 			_cells[anchor] = cell
 	for item: ItemInstance in _grid.all_items():
+		# An occupied footprint has exactly one interactive owner: its Item_*
+		# button. Leaving selected cells enabled placed two sibling buttons in
+		# the same rect and let touch/focus reach an ambiguous target.
+		_hide_cells_covered_by(item)
 		_add_item(item, cell_size)
-	var pending_item := _grid.items.get(pending_source_uid) as ItemInstance
-	if pending_item != null:
-		_add_pending_source_overlay(pending_item, cell_size)
 	_add_touch_preview_edge_indicator(cell_size)
 
 
@@ -265,60 +266,14 @@ func _add_item(item: ItemInstance, cell_size: float) -> void:
 	_items[item.uid] = button
 
 
-## O5 keeps the source item in place until the user confirms. A separate
-## overlay, added after item buttons, makes that pending state legible for every
-## occupied source cell instead of relying on the button's text prefix alone.
-func _add_pending_source_overlay(item: ItemInstance, cell_size: float) -> void:
-	var overlay := Control.new()
-	overlay.name = "PendingSourceOverlay_%d" % item.uid
-	overlay.position = Vector2(item.anchor.x * cell_size, item.anchor.y * cell_size)
-	var footprint := item.effective_size()
-	overlay.size = Vector2(footprint.x * cell_size, footprint.y * cell_size)
-	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	for y in footprint.y:
-		for x in footprint.x:
-			var cell := Control.new()
-			cell.name = "Cell_%d_%d" % [x, y]
-			cell.position = Vector2(x * cell_size, y * cell_size)
-			cell.size = Vector2(cell_size, cell_size)
-			cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			_add_pending_source_border(cell, cell_size)
-			var cue := Label.new()
-			cue.name = "PendingSourceCue"
-			cue.text = "↓" if pending_source_kind == &"drop" else "🔓"
-			cue.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			cue.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			cue.size = Vector2(cell_size, cell_size)
-			cue.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			cue.add_theme_font_size_override("font_size", max(24, int(28 * cell_scale)))
-			cue.add_theme_color_override("font_color", UiTheme.STAMP_RED)
-			cell.add_child(cue)
-			overlay.add_child(cell)
-	add_child(overlay)
-
-
-func _add_pending_source_border(cell: Control, cell_size: float) -> void:
-	var inset := 4.0
-	var horizontal_size := Vector2(cell_size - inset * 2.0, 24.0)
-	_add_pending_border_label(cell, "TopDottedBorder", "┄┄┄", Vector2(inset, 0), horizontal_size)
-	_add_pending_border_label(cell, "BottomDottedBorder", "┄┄┄", Vector2(inset, cell_size - 24.0), horizontal_size)
-	_add_pending_border_label(cell, "LeftDottedBorder", "·\n·\n·", Vector2(0, 18), Vector2(24, cell_size - 36.0))
-	_add_pending_border_label(cell, "RightDottedBorder", "·\n·\n·", Vector2(cell_size - 24.0, 18), Vector2(24, cell_size - 36.0))
-
-
-func _add_pending_border_label(parent: Control, node_name: String, value: String, at: Vector2, dimensions: Vector2) -> void:
-	var border := Label.new()
-	border.name = node_name
-	border.text = value
-	border.position = at
-	border.size = dimensions
-	border.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	border.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	border.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	border.add_theme_font_size_override("font_size", max(24, int(24 * cell_scale)))
-	border.add_theme_color_override("font_color", UiTheme.STAMP_RED)
-	parent.add_child(border)
-
+## Every occupied footprint is represented by its item button. Grid cells remain
+## the interaction surface only for unoccupied anchors.
+func _hide_cells_covered_by(item: ItemInstance) -> void:
+	for y in item.effective_size().y:
+		for x in item.effective_size().x:
+			var cell := _cells.get(item.anchor + Vector2i(x, y)) as Button
+			if cell != null:
+				cell.visible = false
 
 func _pending_source_cue() -> String:
 	return "┄↓ " if pending_source_kind == &"drop" else "┄🔓 "

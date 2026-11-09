@@ -106,7 +106,7 @@ func _assert_all_hud_states(t, size: Vector2i) -> void:
 	combat_hud.show_depleted()
 	await t.tree.process_frame
 	var boot := combat_hud.get_node("DepletedStub/BootButton") as Button
-	t.ok(boot.visible and combat_hud.stub_button_has_rendered_label(), "depleted wait control is visible and has a readable rendered label at %s: text=%s rect=%s" % [size, boot.text, boot.get_global_rect()])
+	t.ok(boot.visible and boot.disabled and combat_hud.stub_button_has_rendered_label(), "depleted wait control is disabled but retains a readable rendered label at %s: text=%s rect=%s" % [size, boot.text, boot.get_global_rect()])
 	_assert_visible_controls(t, size, &"depleted", extract_hud, combat_hud)
 
 	await _free_fixture(t, fixture)
@@ -163,7 +163,33 @@ func _assert_production_inventory_overlay(t, size: Vector2i) -> void:
 	var danger := run._combat_hud.get_node("DangerClose") as Button
 	t.ok(danger.visible and run._combat_hud.danger_text_fits(), "production inventory overlay retains the readable danger escape at %s" % size)
 	t.ok(run._overlay_layer.layer > run._hud_layer.layer, "inventory overlay renders above the HUD layer at %s" % size)
+	_assert_inventory_view_title_is_unique(t, size, overlay)
 	_assert_inventory_overlay_controls(t, size, run, overlay)
+	var remedy := overlay.inventory.notary_box.items.get(1) as ItemInstance
+	var source_item := overlay.get_node_or_null("LootGridPanel/NotaryBox/Item_%d" % remedy.uid) as Button
+	t.ok(source_item != null, "production VIEW exposes the sealed source item for selection at %s" % size)
+	if source_item != null:
+		source_item.pressed.emit()
+		await t.tree.process_frame
+		t.eq(overlay.selected_uid, remedy.uid, "tapping the production source item selects it at %s" % size)
+		_assert_inventory_overlay_controls(t, size, run, overlay)
+		var target_cell := overlay.get_node_or_null("LootGridPanel/Backpack/Cell_0_0") as Button
+		t.ok(target_cell != null, "production VIEW exposes an empty backpack target at %s" % size)
+		if target_cell != null:
+			target_cell.pressed.emit()
+			await t.tree.process_frame
+			t.ok(overlay.has_pending_confirmation(), "selected production item opens O5i before withdrawal at %s" % size)
+			_assert_inventory_overlay_controls(t, size, run, overlay)
+			var confirmation := overlay._confirmation
+			if confirmation != null:
+				confirmation._opened_at_msec = Time.get_ticks_msec() - 301
+				var cancel := confirmation.get_node_or_null("InventoryConfirmPanel/CancelButton") as Button
+				t.ok(cancel != null, "O5i exposes its cancel action at %s" % size)
+				if cancel != null:
+					cancel.pressed.emit()
+					await t.tree.process_frame
+					t.ok(not overlay.has_pending_confirmation(), "O5i cancel restores the production inventory view at %s" % size)
+					_assert_inventory_overlay_controls(t, size, run, overlay)
 	run.set_process(true)
 	viewport.queue_free()
 	RunSession.clear()
@@ -251,26 +277,74 @@ func _visible_buttons(roots: Array[Control]) -> Array[Button]:
 
 func _assert_inventory_overlay_controls(t, size: Vector2i, run: OuterPierRun, overlay: LootCachePanel) -> void:
 	var safe := HudLayout.safe_rect(run._combat_hud)
-	var controls: Array[Control] = [
-		run._combat_hud.get_node("DangerClose") as Button,
-		overlay.get_node("CloseButton") as Button,
-		overlay.get_node("LootGridPanel/Source") as Label,
-		overlay.get_node("LootGridPanel/HeldItem") as Label,
-		overlay.get_node("LootGridPanel/Status") as Label,
-		overlay.get_node("LootGridPanel/BackpackLabel") as Label,
-		overlay.get_node("LootGridPanel/NotaryBoxLabel") as Label,
-		overlay.get_node("LootGridPanel/SlingPouch") as Label,
-		overlay.get_node("LootGridPanel/SlingPouchCue") as Label,
-		overlay.get_node("LootGridPanel/SlingPouchItem") as Label,
-	]
+	var modal := overlay._confirmation
+	var controls := _visible_overlay_text_controls(modal if modal != null else overlay)
+	if modal != null:
+		_assert_modal_controls(t, size, controls, safe)
+		return
+	var danger := run._combat_hud.get_node("DangerClose") as Button
+	if danger != null and danger.is_visible_in_tree():
+		controls.append(danger)
+	var has_grid_cell := false
+	var has_item_button := false
 	for control: Control in controls:
-		if control != null and control.is_visible_in_tree():
-			t.ok(safe.encloses(control.get_global_rect()), "%s stays in the safe area for the production inventory overlay at %s: safe=%s rect=%s" % [control.name, size, safe, control.get_global_rect()])
+		has_grid_cell = has_grid_cell or String(control.name).begins_with("Cell_")
+		has_item_button = has_item_button or String(control.name).begins_with("Item_")
+	t.ok(has_grid_cell, "production inventory overlay recursively includes visible Cell_* controls at %s" % size)
+	t.ok(has_item_button, "production inventory overlay recursively includes visible Item_* controls at %s" % size)
+	for control: Control in controls:
+		t.ok(safe.encloses(control.get_global_rect()), "%s stays in the safe area for the production inventory overlay at %s: safe=%s rect=%s" % [control.get_path(), size, safe, control.get_global_rect()])
 	for first: Control in controls:
 		for second: Control in controls:
-			if first == null or second == null or first == second or not first.is_visible_in_tree() or not second.is_visible_in_tree() or String(first.get_path()) >= String(second.get_path()):
+			if first == second or String(first.get_path()) >= String(second.get_path()) or _allows_overlay_control_overlap(first, second):
 				continue
-			t.ok(not first.get_global_rect().intersects(second.get_global_rect()), "%s and %s do not overlap in the production inventory overlay at %s" % [first.name, second.name, size])
+			t.ok(not first.get_global_rect().intersects(second.get_global_rect()), "%s and %s do not overlap in the production inventory overlay at %s" % [first.get_path(), second.get_path(), size])
+	if size == Vector2i(1280, 720):
+		for control: Control in controls:
+			if control is Button:
+				t.ok(minf(control.get_global_rect().size.x, control.get_global_rect().size.y) >= 64.0, "%s keeps the 64 px touch floor for the production inventory overlay" % control.get_path())
+
+
+func _assert_modal_controls(t, size: Vector2i, controls: Array[Control], safe: Rect2) -> void:
+	for control: Control in controls:
+		t.ok(safe.encloses(control.get_global_rect()), "%s stays in the safe area for the production O5i modal at %s: safe=%s rect=%s" % [control.get_path(), size, safe, control.get_global_rect()])
+	for first: Control in controls:
+		for second: Control in controls:
+			if first == second or String(first.get_path()) >= String(second.get_path()) or _allows_overlay_control_overlap(first, second):
+				continue
+			t.ok(not first.get_global_rect().intersects(second.get_global_rect()), "%s and %s do not overlap in the production O5i modal at %s" % [first.get_path(), second.get_path(), size])
+	if size == Vector2i(1280, 720):
+		for control: Control in controls:
+			if control is Button:
+				t.ok(minf(control.get_global_rect().size.x, control.get_global_rect().size.y) >= 64.0, "%s keeps the 64 px touch floor for the production O5i modal" % control.get_path())
+
+
+func _assert_inventory_view_title_is_unique(t, size: Vector2i, overlay: LootCachePanel) -> void:
+	var source := overlay.get_node("LootGridPanel/Source") as Label
+	var held := overlay.get_node("LootGridPanel/HeldItem") as Label
+	t.ok(source != null and source.is_visible_in_tree(), "VIEW source title remains visible at %s" % size)
+	t.eq(source.text, tr(&"INVENTORY_PANEL_TITLE"), "VIEW source uses the inventory panel title at %s" % size)
+	t.ok(held != null and (not held.is_visible_in_tree()) and held.text.is_empty(), "VIEW without a selected item hides and empties HeldItem at %s" % size)
+	var title_count := 0
+	for control: Control in _visible_overlay_text_controls(overlay):
+		if control is Label and (control as Label).text == tr(&"INVENTORY_PANEL_TITLE"):
+			title_count += 1
+	t.eq(title_count, 1, "VIEW without a selected item renders INVENTORY_PANEL_TITLE exactly once at %s" % size)
+
+
+func _visible_overlay_text_controls(root: Control) -> Array[Control]:
+	var controls: Array[Control] = []
+	for node: Node in _descendants(root):
+		if node is Label or node is Button:
+			var control := node as Control
+			if control.is_visible_in_tree():
+				controls.append(control)
+	return controls
+
+
+func _allows_overlay_control_overlap(first: Control, second: Control) -> bool:
+	# Only a direct parent-child control pair may share a touch rectangle.
+	return first.get_parent() == second or second.get_parent() == first
 
 
 func _descendants(root: Node) -> Array[Node]:

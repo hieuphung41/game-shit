@@ -29,6 +29,7 @@ var _footprint_chip: Label
 var _footprint_shape_cue: Control
 var _notary_status: Label
 var _drop_or_withdraw: Button
+var _close_button: Button
 var _confirmation: InventoryConfirmPanel
 
 const DOCK_RIGHT_INSET := 16.0
@@ -255,15 +256,17 @@ func _build_grid() -> void:
 	source.size = Vector2(528, 24)
 	panel.add_child(source)
 	var item := _selected_item()
-	var held_key: StringName = item.definition.display_name_key if item != null else &"INVENTORY_PANEL_TITLE"
-	var held := _label("HeldItem", held_key, 24)
+	var held := _label("HeldItem", item.definition.display_name_key if item != null else &"", 24)
 	held.position = Vector2(16, 40)
 	held.size = Vector2(320, 28)
+	# VIEW with no selected item has one source title only. An empty held-item
+	# slot must not create a second copy of the panel title.
+	held.visible = item != null
 	panel.add_child(held)
 	_footprint_shape_cue = Control.new()
 	_footprint_shape_cue.name = "FootprintShapeCue"
 	_footprint_shape_cue.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_footprint_shape_cue.position = Vector2(352, 34)
+	_footprint_shape_cue.position = Vector2(352, 40)
 	_footprint_shape_cue.size = Vector2(48, 36)
 	panel.add_child(_footprint_shape_cue)
 	_footprint_chip = _label("FootprintChip", &"INVENTORY_FOOTPRINT_CHIP", 24)
@@ -288,7 +291,7 @@ func _build_grid() -> void:
 	_notary_box = _grid(panel, "NotaryBox", &"LOADOUT_LABEL_NOTARY_BOX", RetrieverInventory.NOTARY_BOX, Vector2(352, grid_top))
 	if item != null and item.definition.rotatable and not item.definition.is_square():
 		_rotate = _button("RotateButton", &"INVENTORY_BUTTON_ROTATE")
-		_rotate.position = Vector2(320, 392) if s04_mode else Vector2(352, 328)
+		_rotate.position = Vector2(320, 376) if s04_mode else Vector2(352, 328)
 		_rotate.size = Vector2(104, 96) if s04_mode else Vector2(192, 96)
 		_rotate.pressed.connect(toggle_rotate)
 		panel.add_child(_rotate)
@@ -303,24 +306,25 @@ func _build_grid() -> void:
 		_drop_or_withdraw.size = Vector2(104, 96)
 		_drop_or_withdraw.pressed.connect(_on_drop_or_withdraw_pressed)
 		panel.add_child(_drop_or_withdraw)
-	var sling := _label("SlingPouch", &"LOADOUT_LABEL_SLING_POUCH", 24)
-	sling.position = Vector2(320, 440)
-	sling.size = Vector2(224, 24)
-	panel.add_child(sling)
-	var sling_item := _sling_pouch_item()
-	if sling_item != null:
-		var sling_cue := _static_label("SlingPouchCue", "✚", 24)
-		sling_cue.position = Vector2(320, 480)
-		sling_cue.size = Vector2(24, 24)
-		panel.add_child(sling_cue)
-		var sling_item_label := _static_label("SlingPouchItem", sling_item.definition.localized_display_name() + " " + tr(&"CARD_QUANTITY_SUFFIX").format({"quantity": sling_item.quantity}), 24)
-		sling_item_label.position = Vector2(344, 480)
-		sling_item_label.size = Vector2(200, 24)
-		panel.add_child(sling_item_label)
-	var close_button := _button("CloseButton", &"CARD_ACTION_CLOSE")
-	_anchor_top_right(close_button, DOCK_RIGHT_INSET, CLOSE_BUTTON_TOP, CLOSE_BUTTON_SIZE)
-	close_button.pressed.connect(close)
-	add_child(close_button)
+	if not s04_mode:
+		var sling := _label("SlingPouch", &"LOADOUT_LABEL_SLING_POUCH", 24)
+		sling.position = Vector2(320, 440)
+		sling.size = Vector2(224, 24)
+		panel.add_child(sling)
+		var sling_item := _sling_pouch_item()
+		if sling_item != null:
+			var sling_cue := _static_label("SlingPouchCue", "✚", 24)
+			sling_cue.position = Vector2(320, 480)
+			sling_cue.size = Vector2(24, 24)
+			panel.add_child(sling_cue)
+			var sling_item_label := _static_label("SlingPouchItem", sling_item.definition.localized_display_name() + " " + tr(&"CARD_QUANTITY_SUFFIX").format({"quantity": sling_item.quantity}), 24)
+			sling_item_label.position = Vector2(344, 480)
+			sling_item_label.size = Vector2(200, 24)
+			panel.add_child(sling_item_label)
+	_close_button = _button("CloseButton", &"CARD_ACTION_CLOSE")
+	_anchor_top_right(_close_button, DOCK_RIGHT_INSET, CLOSE_BUTTON_TOP, CLOSE_BUTTON_SIZE)
+	_close_button.pressed.connect(close)
+	add_child(_close_button)
 
 
 func _grid(parent: Control, node_name: String, key: StringName, kind: StringName, at: Vector2) -> InventoryGridWidget:
@@ -370,7 +374,7 @@ func _refresh_footprint_chip() -> void:
 	var item := _selected_item()
 	var visible := item != null and item.definition != null
 	_footprint_chip.visible = visible
-	_footprint_shape_cue.visible = visible
+	_footprint_shape_cue.visible = visible and not s04_mode
 	if not visible:
 		return
 	var footprint := item.definition.size
@@ -380,12 +384,15 @@ func _refresh_footprint_chip() -> void:
 	for child in _footprint_shape_cue.get_children():
 		_footprint_shape_cue.remove_child(child)
 		child.queue_free()
+	if s04_mode:
+		return
 	for y in footprint.y:
 		for x in footprint.x:
 			var footprint_cell := _static_label("Cell_%d_%d" % [x, y], "□", 18)
 			footprint_cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			footprint_cell.position = Vector2(x * 20, y * 18)
-			footprint_cell.size = Vector2(20, 18)
+			footprint_cell.position = Vector2(x * 20, y * 20)
+			footprint_cell.size = Vector2(20, 20)
+			footprint_cell.add_theme_font_size_override("font_size", 16)
 			_footprint_shape_cue.add_child(footprint_cell)
 
 
@@ -542,6 +549,7 @@ func _clear() -> void:
 	_footprint_shape_cue = null
 	_notary_status = null
 	_drop_or_withdraw = null
+	_close_button = null
 	_confirmation = null
 
 
@@ -632,6 +640,7 @@ func _open_confirmation(kind: StringName, anchor: Vector2i, rotated: bool) -> vo
 	_confirmation.danger_close_requested.connect(danger_close)
 	add_child(_confirmation)
 	_pending_source_widget(kind).show_pending_source(item.uid, kind)
+	_set_dock_visible(false)
 	_refresh_s04_controls(item)
 
 
@@ -643,6 +652,7 @@ func _cancel_confirmation() -> void:
 	_pending_confirmation.clear()
 	_withdraw_targeting = false
 	_clear_pending_confirmation_presentation()
+	_set_dock_visible(true)
 	_refresh_grid_markers()
 
 
@@ -659,6 +669,7 @@ func _commit_confirmation() -> void:
 	_pending_confirmation.clear()
 	_withdraw_targeting = false
 	_clear_pending_confirmation_presentation()
+	_set_dock_visible(true)
 	if not result.ok:
 		_show_preview(result, RetrieverInventory.BACKPACK, anchor)
 		return
@@ -680,6 +691,14 @@ func _clear_pending_confirmation_presentation() -> void:
 		_backpack.clear_pending_source()
 	if _notary_box != null:
 		_notary_box.clear_pending_source()
+
+
+func _set_dock_visible(visible: bool) -> void:
+	var dock := get_node_or_null("LootGridPanel") as Control
+	if dock != null:
+		dock.visible = visible
+	if _close_button != null:
+		_close_button.visible = visible
 
 
 func _label(node_name: String, key: StringName, font_size: int) -> Label:

@@ -13,7 +13,9 @@ static func create() -> Theme:
 	theme.set_default_font_size(20)
 	theme.set_color("font_color", "Label", INK)
 	theme.set_color("font_color", "Button", PAPER)
-	theme.set_color("font_disabled_color", "Button", MUTED)
+	# Disabled actions remain informational (not blank): the lock/progress icon
+	# and localized label need the same paper-on-muted contrast as the panel.
+	theme.set_color("font_disabled_color", "Button", PAPER)
 	theme.set_stylebox("normal", "Button", _button_style(INK, PAPER, 2))
 	theme.set_stylebox("hover", "Button", _button_style(STAMP_RED, PAPER, 3))
 	theme.set_stylebox("pressed", "Button", _button_style(STAMP_RED.darkened(0.18), PAPER, 3))

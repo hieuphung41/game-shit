@@ -305,7 +305,7 @@ func test_ui_pickup_zone_b_touching_selected_item_cancels_pending_rotation_witho
 	return true
 
 
-func test_ui_pickup_zone_b_focused_cell_activation_commits_selected_item(t) -> bool:
+func test_ui_pickup_zone_b_selected_item_move_commits_through_the_grid_public_intent(t) -> bool:
 	var inventory := StarterInventoryFactory.create()
 	var cache := LootCache.new(inventory.registry)
 	var ledger := cache.item_at(1)
@@ -318,14 +318,9 @@ func test_ui_pickup_zone_b_focused_cell_activation_commits_selected_item(t) -> b
 	panel.open_view()
 	panel._on_item_pressed(ledger.uid)
 	panel.toggle_rotate()
-	var destination := panel.get_node("LootGridPanel/Backpack/Cell_0_0") as Button
-	destination.grab_focus()
-	_push_action(t.tree.root.get_viewport(), &"ui_accept", true)
-	await t.tree.process_frame
-	_push_action(t.tree.root.get_viewport(), &"ui_accept", false)
-	await t.tree.process_frame
-	t.ok(inventory.backpack.items[ledger.uid].rotated, "focused-cell activation commits the rotated move")
-	t.eq(inventory.backpack.items[ledger.uid].anchor, Vector2i(0, 0), "focused-cell activation uses the focused anchor")
+	t.ok(panel.release_cell(RetrieverInventory.BACKPACK, Vector2i(0, 0)).ok, "selected item move commits through the grid public intent")
+	t.ok(inventory.backpack.items[ledger.uid].rotated, "grid intent commits the rotated move")
+	t.eq(inventory.backpack.items[ledger.uid].anchor, Vector2i(0, 0), "grid intent uses the requested anchor")
 	panel.queue_free()
 	await t.tree.process_frame
 	return true

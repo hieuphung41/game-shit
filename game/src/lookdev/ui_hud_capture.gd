@@ -82,6 +82,7 @@ func _capture_states(capture_viewport: SubViewport, run: OuterPierRun) -> void:
 	run._close_overlay()
 	run._hud.visible = false
 	run._combat_hud.show_depleted()
+	_verify_depleted_capture(run._combat_hud)
 	await _capture(capture_viewport, &"depleted")
 	get_tree().quit(0)
 
@@ -114,6 +115,13 @@ func _verify_danger_capture(combat_hud: CombatHud) -> void:
 		get_tree().quit(1)
 	if not combat_hud.danger_text_fits():
 		push_error("HUD danger capture requires the complete two-line instruction to fit its visible control")
+		get_tree().quit(1)
+
+
+func _verify_depleted_capture(combat_hud: CombatHud) -> void:
+	var boot_button := combat_hud.get_node_or_null("DepletedStub/BootButton") as Button
+	if boot_button == null or not boot_button.visible or not boot_button.disabled or not combat_hud.stub_button_has_rendered_label():
+		push_error("HUD depleted capture requires a readable disabled BootButton label and progress cue")
 		get_tree().quit(1)
 
 

@@ -9,8 +9,7 @@ signal danger_close_requested()
 
 const UI_OPEN_GUARD_SECONDS := 0.3
 # D1 remains reachable while this full-viewport control captures ordinary
-# outside-O5 touches. This matches CombatHud's touch target in the same canvas.
-const DANGER_CLOSE_RECT := Rect2(Vector2(16, 192), Vector2(288, 96))
+# outside-O5 touches. Its visible rect is owned by HudLayout/CombatHud.
 
 var _item: ItemInstance
 var _kind: StringName = &"drop"
@@ -78,10 +77,14 @@ func _gui_input(event: InputEvent) -> void:
 
 func _is_danger_close_press(event: InputEvent) -> bool:
 	if event is InputEventScreenTouch:
-		return event.pressed and DANGER_CLOSE_RECT.has_point(event.position)
+		return event.pressed and danger_close_rect().has_point(event.position)
 	if event is InputEventMouseButton:
-		return event.pressed and event.button_index == MOUSE_BUTTON_LEFT and DANGER_CLOSE_RECT.has_point(event.position)
+		return event.pressed and event.button_index == MOUSE_BUTTON_LEFT and danger_close_rect().has_point(event.position)
 	return false
+
+
+func danger_close_rect() -> Rect2:
+	return HudLayout.danger_close_rect(self)
 
 
 func _build() -> void:
@@ -113,15 +116,9 @@ func _build() -> void:
 	target.position = Vector2(16, 124)
 	target.size = Vector2(264, 40)
 	panel.add_child(target)
-	if is_withdraw:
-		var seal_change := _static_label("SealChange", _seal_change_text(), 24)
-		seal_change.position = Vector2(16, 144)
-		seal_change.size = Vector2(264, 20)
-		panel.add_child(seal_change)
 	var body_key := _body_key(is_withdraw)
 	var body := _body_label("Body", body_key, 24)
 	# O5i reserves global y=352..464 for the complete consequence copy.
-	# The seal-change row sits above it, so withdraw does not reduce this space.
 	body.position = Vector2(16, 168)
 	body.size = Vector2(264, 112)
 	panel.add_child(body)

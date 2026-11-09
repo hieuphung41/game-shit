@@ -6,6 +6,8 @@ extends RefCounted
 const SAFE_MARGIN := 16.0
 const SAFE_AREA_CONFIG_SECTION := "ui"
 const SAFE_AREA_CONFIG_KEY := "use_display_safe_area"
+const DANGER_CLOSE_OFFSET := Vector2(0, 176)
+const DANGER_CLOSE_SIZE := Vector2(320, 128)
 
 
 static func safe_rect(control: Control) -> Rect2:
@@ -39,6 +41,14 @@ static func safe_rect_from_display(viewport_size: Vector2, window_rect: Rect2, d
 	safe.position += Vector2(SAFE_MARGIN, SAFE_MARGIN)
 	safe.size -= Vector2(SAFE_MARGIN * 2.0, SAFE_MARGIN * 2.0)
 	return safe if safe.size.x > 0.0 and safe.size.y > 0.0 else fallback
+
+
+## D1 is shared by CombatHud and full-screen overlays that must forward its
+## one-tap cancel action. Keeping its safe-area geometry here prevents a
+## visible button and its captured touch region from drifting apart.
+static func danger_close_rect(control: Control) -> Rect2:
+	var safe := safe_rect(control)
+	return Rect2(safe.position + DANGER_CLOSE_OFFSET, DANGER_CLOSE_SIZE)
 
 
 static func place_top_left(control: Control, safe: Rect2, at: Vector2, dimensions: Vector2) -> void:

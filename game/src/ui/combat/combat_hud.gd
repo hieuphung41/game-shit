@@ -127,7 +127,15 @@ func danger_text_fits() -> bool:
 
 
 func stub_button_has_rendered_label() -> bool:
-	return _stub_button != null and _stub_button.visible and not _stub_button.text.strip_edges().is_empty() and _button_text_fits(_stub_button)
+	if _stub_button == null or not _stub_button.visible or _stub_button.text.strip_edges().is_empty() or not _button_text_fits(_stub_button):
+		return false
+	if not _stub_button.disabled:
+		return true
+	var disabled_style := _stub_button.get_theme_stylebox("disabled")
+	if not disabled_style is StyleBoxFlat:
+		return false
+	var disabled_text := _stub_button.get_theme_color("font_disabled_color")
+	return not disabled_text.is_equal_approx((disabled_style as StyleBoxFlat).bg_color)
 
 
 func show_depleted() -> void:
@@ -495,7 +503,7 @@ func _layout_hud() -> void:
 	HudLayout.place_top_left(_health_low, Rect2(Vector2.ZERO, _health_panel.size), Vector2.ZERO, Vector2(164, 40))
 	HudLayout.place_top_left(_warning, safe, Vector2(0, 112), Vector2(352, 48))
 	HudLayout.place_top_left(_status, safe, Vector2(0, 320), Vector2(392, 96))
-	HudLayout.place_top_left(_danger, safe, Vector2(0, 176), Vector2(320, 128))
+	HudLayout.place_top_left(_danger, safe, HudLayout.DANGER_CLOSE_OFFSET, HudLayout.DANGER_CLOSE_SIZE)
 	for button: Button in [_attack, _dodge, _guard, _remedy]:
 		HudLayout.place_bottom_right(button, safe, float(button.get_meta(&"hud_right")), float(button.get_meta(&"hud_bottom")), button.size)
 	HudLayout.place_top_center(_stub, safe, 248.0, Vector2(544, 192))

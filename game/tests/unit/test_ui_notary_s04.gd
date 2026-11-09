@@ -46,11 +46,6 @@ func test_ui_notary_withdraw_confirms_before_commit_and_unblocks_tax_stamp_seal(
 	t.eq(backpack_preview.touch_preview_cells, [Vector2i(0, 0), Vector2i(0, 1)], "withdraw O5i keeps the selected backpack footprint preview visible")
 	t.ok(backpack_preview.touch_preview_ok, "withdraw O5i keeps its destination preview valid")
 	t.ok((panel.get_node("LootGridPanel/NotaryBox/Item_%d" % remedy.uid) as Button).text.begins_with("┄🔓"), "withdraw O5i marks the sealed source as pending")
-	var withdraw_source_overlay := panel.get_node("LootGridPanel/NotaryBox/PendingSourceOverlay_%d" % remedy.uid) as Control
-	t.ok(withdraw_source_overlay != null, "withdraw O5i draws a source footprint overlay above the sealed item")
-	var withdraw_source_cell := withdraw_source_overlay.get_node("Cell_0_0") as Control
-	t.ok((withdraw_source_cell.get_node("TopDottedBorder") as Label).text.contains("┄"), "withdraw source has a visible dotted border")
-	t.eq((withdraw_source_cell.get_node("PendingSourceCue") as Label).text, "🔓", "withdraw source shows the unlock cue above its item button")
 	var withdraw_target := panel._confirmation.get_node("InventoryConfirmPanel/TargetRow") as Label
 	t.eq(withdraw_target.text, tr("INVENTORY_CONFIRM_TARGET_BACKPACK_ANCHOR").format({"column": 1, "row": 1}), "withdraw O5i names the selected backpack anchor")
 	var confirm_panel := panel._confirmation.get_node("InventoryConfirmPanel") as Control
@@ -143,12 +138,6 @@ func test_ui_notary_cargo_cannot_seal_and_only_confirmed_drop_emits_world_intent
 	t.eq(drop_preview.touch_preview_cells, [Vector2i(0, 0), Vector2i(1, 0), Vector2i(0, 1), Vector2i(1, 1)], "drop O5i keeps the source footprint preview visible")
 	t.ok(drop_preview.touch_preview_ok, "drop O5i keeps its source preview valid")
 	t.ok((panel.get_node("LootGridPanel/Backpack/Item_%d" % cargo.uid) as Button).text.begins_with("┄↓"), "drop O5i marks the source with the dotted ground cue")
-	var drop_source_overlay := panel.get_node("LootGridPanel/Backpack/PendingSourceOverlay_%d" % cargo.uid) as Control
-	t.ok(drop_source_overlay != null, "drop O5i draws the source footprint overlay above cargo")
-	for cell_name: String in ["Cell_0_0", "Cell_1_0", "Cell_0_1", "Cell_1_1"]:
-		var source_cell := drop_source_overlay.get_node(cell_name) as Control
-		t.ok((source_cell.get_node("TopDottedBorder") as Label).text.contains("┄"), "each cargo source cell has a dotted pending border")
-		t.eq((source_cell.get_node("PendingSourceCue") as Label).text, "↓", "each cargo source cell shows the ground-drop arrow")
 	var drop_body := panel._confirmation.get_node("InventoryConfirmPanel/Body") as Control
 	t.eq(drop_body.get_global_rect(), Rect2(328, 352, 264, 112), "drop O5i reserves the required complete consequence-copy region")
 	t.eq(drops.size(), 0, "world drop signal waits for confirmation")
@@ -394,7 +383,13 @@ func test_ui_notary_d1_input_cancels_o5_and_closes_dock_without_mutation(t) -> b
 		panel.queue_free()
 		await t.tree.process_frame
 		return false
-	var d1_center := InventoryConfirmPanel.DANGER_CLOSE_RECT.get_center()
+	var d1_rect := confirmation.danger_close_rect()
+	t.eq(d1_rect.size, HudLayout.DANGER_CLOSE_SIZE, "O5i forwards the entire visible 320x128 D1 rect")
+	var right_edge := Vector2(d1_rect.end.x - 1.0, d1_rect.get_center().y)
+	var bottom_edge := Vector2(d1_rect.get_center().x, d1_rect.end.y - 1.0)
+	t.ok(confirmation._is_danger_close_press(_screen_touch(right_edge, true)), "a tap at D1's right visible edge is forwarded through O5i")
+	t.ok(confirmation._is_danger_close_press(_screen_touch(bottom_edge, true)), "a tap at D1's bottom visible edge is forwarded through O5i")
+	var d1_center := d1_rect.get_center()
 	_push_touch(t.tree.root.get_viewport(), d1_center, true)
 	_push_touch(t.tree.root.get_viewport(), d1_center, false)
 	await t.tree.process_frame
@@ -492,11 +487,15 @@ func _inventory_with_full_backpack() -> RetrieverInventory:
 
 
 func _push_touch(viewport: Viewport, position: Vector2, pressed: bool) -> void:
+	viewport.push_input(_screen_touch(position, pressed), true)
+
+
+func _screen_touch(position: Vector2, pressed: bool) -> InputEventScreenTouch:
 	var event := InputEventScreenTouch.new()
 	event.index = 0
 	event.position = position
 	event.pressed = pressed
-	viewport.push_input(event, true)
+	return event
 
 
 func _tap_grid_cell(grid: InventoryGridWidget, anchor: Vector2i) -> void:
