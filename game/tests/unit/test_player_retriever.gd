@@ -2,6 +2,7 @@ extends RefCounted
 
 const BOOT_SCENE_PATH := "res://src/boot/boot.tscn"
 const PLAYER_SCENE_PATH := "res://src/player/retriever.tscn"
+const TOUCH_JOYSTICK_SCENE_PATH := "res://src/ui/touch/touch_joystick.tscn"
 const WORLD_SCENE_PATH := "res://src/world/zone_a_outer_pier.tscn"
 
 
@@ -13,6 +14,10 @@ func test_retriever_movement_converts_input_to_isometric_camera_axes(t) -> bool:
 	t.ok(absf(forward.length() - 1.0) < 0.001, "full joystick input keeps full movement magnitude")
 	t.ok(forward.x < -0.69 and forward.z < -0.69, "upward joystick movement follows the isometric camera forward")
 	t.ok(right.x > 0.69 and right.z < -0.69, "rightward joystick movement follows the isometric camera right")
+	for stick_direction: Vector2 in [Vector2.UP, Vector2.RIGHT, Vector2.DOWN, Vector2.LEFT, Vector2(1.0, -1.0).normalized(), Vector2(1.0, 1.0).normalized(), Vector2(-1.0, 1.0).normalized(), Vector2(-1.0, -1.0).normalized()]:
+		var world_direction := RetrieverMovement.camera_relative_direction(stick_direction, camera_basis)
+		var screen_direction := RetrieverMovement.screen_direction_for_world_direction(world_direction, camera_basis)
+		t.ok(_matches_screen_direction(screen_direction, stick_direction), "joystick %s moves in the same screen direction" % stick_direction)
 	return true
 
 
@@ -23,6 +28,69 @@ func test_touch_joystick_logic_has_a_deadzone_and_clamped_range(t) -> bool:
 	t.eq(resting, Vector2.ZERO, "joystick center is inside the deadzone")
 	t.ok(absf(edge.length() - 1.0) < 0.001, "joystick direction is capped at one")
 	t.ok(edge.x > 0.99 and is_zero_approx(edge.y), "joystick direction preserves touch direction")
+	return true
+
+
+func test_touch_joystick_screen_coordinates_match_across_viewports(t) -> bool:
+	var relative_drag := Vector2(92.0, -68.0)
+	var direction_16_9 := await _touch_direction_for_viewport(t.tree, Vector2i(1280, 720), Vector2(1280.0, 720.0), Vector2.ONE, relative_drag)
+	var direction_20_9 := await _touch_direction_for_viewport(t.tree, Vector2i(2400, 1080), Vector2(1600.0, 720.0), Vector2(1.5, 1.5), relative_drag)
+	var direction_4_3 := await _touch_direction_for_viewport(t.tree, Vector2i(960, 720), Vector2(960.0, 720.0), Vector2.ONE, relative_drag)
+	var expected := TouchJoystickLogic.direction_for_local_position(Vector2(130.0, 130.0) + relative_drag, Vector2(260.0, 260.0))
+	t.ok(direction_16_9.is_equal_approx(expected), "a real joystick Control receives the expected relative drag at 1280x720")
+	t.ok(direction_16_9.is_equal_approx(direction_20_9), "the same relative drag has the same direction at 2400x1080 with expanded canvas scaling")
+	t.ok(direction_16_9.is_equal_approx(direction_4_3), "the same relative drag has the same direction at 960x720 (4:3)")
+	t.ok(direction_16_9.x > 0.0 and direction_16_9.y < 0.0, "the transformed drag remains up-right")
+	return true
+
+
+func _touch_direction_for_viewport(tree: SceneTree, physical_size: Vector2i, canvas_size: Vector2, canvas_scale: Vector2, relative_drag: Vector2) -> Vector2:
+	var viewport := SubViewport.new()
+	viewport.size = physical_size
+	tree.root.add_child(viewport)
+	var canvas := Control.new()
+	canvas.size = canvas_size
+	canvas.scale = canvas_scale
+	viewport.add_child(canvas)
+	var joystick := (load(TOUCH_JOYSTICK_SCENE_PATH) as PackedScene).instantiate() as TouchJoystick
+	canvas.add_child(joystick)
+	joystick.position = Vector2(16.0, canvas_size.y - 276.0)
+	joystick.size = Vector2(260.0, 260.0)
+	await tree.process_frame
+	var canvas_transform := joystick.get_global_transform_with_canvas()
+	_send_joystick_touch(joystick, 7, canvas_transform * (joystick.size * 0.5), true)
+	_send_joystick_drag(joystick, 7, canvas_transform * (joystick.size * 0.5 + relative_drag))
+	var drag_direction := joystick._direction
+	_send_joystick_touch(joystick, 7, canvas_transform * (joystick.size * 0.5 + relative_drag), false)
+	viewport.queue_free()
+	await tree.process_frame
+	return drag_direction
+
+
+func _send_joystick_touch(joystick: TouchJoystick, index: int, position: Vector2, pressed: bool) -> void:
+	var event := InputEventScreenTouch.new()
+	event.index = index
+	event.position = position
+	event.pressed = pressed
+	joystick._gui_input(event)
+
+
+func _send_joystick_drag(joystick: TouchJoystick, index: int, position: Vector2) -> void:
+	var event := InputEventScreenDrag.new()
+	event.index = index
+	event.position = position
+	joystick._gui_input(event)
+
+
+func test_touch_joystick_keeps_its_claimed_pointer(t) -> bool:
+	var active_pointer := TouchJoystickLogic.claim_pointer(TouchJoystickLogic.NO_ACTIVE_POINTER, 4)
+	t.eq(active_pointer, 4, "the first touch claims the joystick")
+	active_pointer = TouchJoystickLogic.claim_pointer(active_pointer, TouchJoystickLogic.MOUSE_POINTER)
+	t.eq(active_pointer, 4, "mouse emulation cannot replace a real touch drag")
+	active_pointer = TouchJoystickLogic.release_pointer(active_pointer, TouchJoystickLogic.MOUSE_POINTER)
+	t.eq(active_pointer, 4, "an unrelated mouse release cannot stop the touch drag")
+	active_pointer = TouchJoystickLogic.release_pointer(active_pointer, 4)
+	t.eq(active_pointer, TouchJoystickLogic.NO_ACTIVE_POINTER, "releasing the owning touch stops the joystick")
 	return true
 
 
@@ -148,6 +216,18 @@ func _action_has_physical_key(action: StringName, expected_key: Key) -> bool:
 		if event is InputEventKey and event.physical_keycode == expected_key:
 			return true
 	return false
+
+
+func _matches_screen_direction(actual: Vector2, expected: Vector2) -> bool:
+	var epsilon := 0.001
+	if absf(expected.x) <= epsilon:
+		if absf(actual.x) > epsilon:
+			return false
+	elif signf(actual.x) != signf(expected.x):
+		return false
+	if absf(expected.y) <= epsilon:
+		return absf(actual.y) <= epsilon
+	return signf(actual.y) == signf(expected.y)
 
 
 func _action_has_joy_button(action: StringName, expected_button: JoyButton) -> bool:
